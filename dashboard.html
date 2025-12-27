@@ -26,11 +26,14 @@
             <div class="navbar-logo">CollegeApps.ai</div>
             <ul class="navbar-links">
                 <li><a href="dashboard.html" class="navbar-link active">Dashboard</a></li>
+                <li><a href="calendar.html" class="navbar-link">Calendar</a></li>
+                <li><a href="analytics.html" class="navbar-link">Analytics</a></li>
+
                 <li><a href="colleges.html" class="navbar-link">Colleges</a></li>
                 <li><a href="essays.html" class="navbar-link">Essays</a></li>
                 <li><a href="documents.html" class="navbar-link">Documents</a></li>
                 <li><a href="ai-counselor.html" class="navbar-link">AI Counselor</a></li>
-                <li><span class="badge badge-primary">Sarah R.</span></li>
+                <li id="user-nav-item"><span class="badge badge-primary" id="user-badge">User</span></li>
             </ul>
             <button class="mobile-menu-toggle" id="mobileToggle">☰</button>
         </div>
@@ -40,8 +43,25 @@
     <div class="container py-2xl">
         <!-- Header -->
         <div class="dashboard-header">
-            <h1 class="dashboard-greeting">Good morning, Sarah! 🌟</h1>
-            <p class="dashboard-date">Thursday, November 28, 2024</p>
+            <div>
+                <h1 class="dashboard-greeting" id="greeting">Good morning! 🌟</h1>
+                <p class="dashboard-date" id="currentDate">Loading date...</p>
+            </div>
+            <div id="aiPlanContainer" style="max-width: 500px; width: 100%;">
+                <div class="card"
+                    style="background: var(--gradient-subtle); border: 1px solid var(--primary-blue); padding: var(--space-md);">
+                    <div
+                        style="display: flex; align-items: center; gap: var(--space-sm); margin-bottom: var(--space-xs);">
+                        <span style="font-size: var(--text-xl);">🤖</span>
+                        <h3 style="font-size: var(--text-md); font-weight: 700; color: var(--primary-blue);">AI Today's
+                            Action Plan</h3>
+                    </div>
+                    <p id="aiActionPlan"
+                        style="font-size: var(--text-sm); line-height: 1.5; color: var(--gray-700); margin: 0;">
+                        Analyzing your progress to create your daily plan...
+                    </p>
+                </div>
+            </div>
         </div>
 
         <!-- Dashboard Grid -->
@@ -173,6 +193,8 @@
                     <h3 style="font-size: var(--text-lg); font-weight: 700; margin-bottom: var(--space-md);">Quick Links
                     </h3>
                     <div style="display: flex; flex-direction: column; gap: var(--space-sm);">
+                        <a href="analytics.html" class="btn btn-ghost" style="justify-content: flex-start;">📊 View My
+                            Analytics</a>
                         <a href="essays.html" class="btn btn-ghost" style="justify-content: flex-start;">✍️ Go to Essay
                             Workspace</a>
                         <a href="documents.html" class="btn btn-ghost" style="justify-content: flex-start;">📁 Upload
@@ -188,6 +210,7 @@
     </div>
 
     <script src="js/main.js"></script>
+    <script type="module" src="js/dashboard.js"></script>
 </body>
 
 </html>

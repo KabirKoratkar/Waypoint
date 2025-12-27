@@ -6,6 +6,7 @@ import {
     getUserConversations,
     saveMessage
 } from './supabase-config.js';
+import { updateNavbarUser } from './ui.js';
 import config from './config.js';
 
 const AI_SERVER_URL = config.apiUrl;
@@ -18,9 +19,12 @@ document.addEventListener('DOMContentLoaded', async function () {
     currentUser = await getCurrentUser();
 
     if (!currentUser) {
-        window.location.href = 'login.html';
+        window.location.href = new URL('login.html', window.location.href).href;
         return;
     }
+
+    // Update UI
+    updateNavbarUser(currentUser);
 
     // Load conversation history
     await loadConversationHistory();

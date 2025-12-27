@@ -1,16 +1,7 @@
-// Supabase Configuration and Client Setup
-// Replace with your actual Supabase credentials
+import config from './config.js';
 
-// SETUP INSTRUCTIONS:
-// 1. Go to https://supabase.com and create a free account
-// 2. Create a new project
-// 3. Go to Settings > API
-// 4. Copy your Project URL and anon/public key
-// 5. Replace the values below
-// 6. Run the schema SQL in your Supabase SQL Editor
-
-const SUPABASE_URL = 'https://qcwwxiqgylzvvvjoiphq.supabase.co'; // e.g., 'https://xxxxx.supabase.co'
-const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFjd3d4aXFneWx6dnZ2am9pcGhxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQyNzg0MjIsImV4cCI6MjA3OTg1NDQyMn0.v_70i3s8bOR9uwAi7fVZlXf-i6FeCpEN_-psTciF__4';
+const SUPABASE_URL = config.supabaseUrl;
+const SUPABASE_ANON_KEY = config.supabaseKey;
 
 // Import Supabase client from CDN
 import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
@@ -22,12 +13,20 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 // Get current user
 async function getCurrentUser() {
+    // 1. Try to get real Supabase user first
     const { data: { user }, error } = await supabase.auth.getUser();
-    if (error) {
-        console.error('Error getting user:', error);
-        return null;
+    if (user) {
+        return user;
     }
-    return user;
+
+    // 2. Fallback to mock dev session if no real user found
+    const devUser = localStorage.getItem('dev_user');
+    if (devUser) {
+        console.log('[DEV MODE] Using mock user session');
+        return JSON.parse(devUser);
+    }
+
+    return null;
 }
 
 // Get user profile
@@ -76,7 +75,38 @@ async function getUserColleges(userId) {
     return data;
 }
 
-async function addCollege(college) {
+async function addCollege(userIdOrObject, name = null) {
+    // If it's a smart addition (userId and name provided)
+    if (name && typeof userIdOrObject === 'string') {
+        try {
+            console.log(`Attempting smart college add for: ${name}`);
+            const response = await fetch(`${config.apiUrl}/api/colleges/add`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ userId: userIdOrObject, collegeName: name })
+            });
+            if (response.ok) {
+                const result = await response.json();
+                console.log('Smart college add success:', result);
+                return result.collegeId ? { id: result.collegeId, ...result.college } : result;
+            }
+        } catch (e) {
+            console.warn('AI Server add college failed, falling back to direct Supabase insert:', e);
+        }
+    }
+
+    // Fallback/Manual: Direct Supabase insert
+    let college;
+    if (typeof userIdOrObject === 'object' && !name) {
+        college = userIdOrObject;
+    } else {
+        college = {
+            user_id: userIdOrObject,
+            name: name,
+            status: 'Not Started'
+        };
+    }
+
     const { data, error } = await supabase
         .from('colleges')
         .insert(college)
@@ -413,6 +443,166 @@ async function signOut() {
     return true;
 }
 
+// Sharing
+async function shareEssay(essayId, sharedBy, sharedWithEmail, permission = 'view') {
+    const { data, error } = await supabase
+        .from('essay_shares')
+        .insert({
+            essay_id: essayId,
+            shared_by: sharedBy,
+            shared_with_email: sharedWithEmail,
+            permission
+        })
+        .select()
+        .single();
+
+    if (error) {
+        console.error('Error sharing essay:', error);
+        return null;
+    }
+    return data;
+}
+
+async function getSharedEssays(userEmail) {
+    const { data, error } = await supabase
+        .from('essay_shares')
+        .select(`
+            *,
+            essays (
+                *,
+                profiles:user_id (full_name, email)
+            )
+        `)
+        .eq('shared_with_email', userEmail);
+
+    if (error) {
+        console.error('Error fetching shared essays:', error);
+        return [];
+    }
+    return data;
+}
+
+// Comments
+async function addComment(essayId, userId, content) {
+    const { data, error } = await supabase
+        .from('essay_comments')
+        .insert({ essay_id: essayId, user_id: userId, content })
+        .select()
+        .single();
+
+    if (error) {
+        console.error('Error adding comment:', error);
+        return null;
+    }
+    return data;
+}
+
+async function getEssayComments(essayId) {
+    const { data, error } = await supabase
+        .from('essay_comments')
+        .select(`
+            *,
+            profiles:user_id (full_name, email)
+        `)
+        .eq('essay_id', essayId)
+        .order('created_at', { ascending: true });
+
+    if (error) {
+        console.error('Error fetching comments:', error);
+        return [];
+    }
+    return data;
+}
+
+async function deleteDocument(docId, filePath) {
+    // Delete from storage
+    const { error: storageError } = await supabase.storage
+        .from('documents')
+        .remove([filePath]);
+
+    if (storageError) {
+        console.error('Error deleting file from storage:', storageError);
+    }
+
+    // Delete from database
+    const { error } = await supabase
+        .from('documents')
+        .delete()
+        .eq('id', docId);
+
+    if (error) {
+        console.error('Error deleting document record:', error);
+        return false;
+    }
+
+    return true;
+}
+
+async function linkDocumentToEssay(essayId, documentId) {
+    const { data, error } = await supabase
+        .from('essay_documents')
+        .insert({ essay_id: essayId, document_id: documentId })
+        .select()
+        .single();
+
+    if (error) {
+        console.error('Error linking document to essay:', error);
+        return null;
+    }
+    return data;
+}
+
+async function unlinkDocumentFromEssay(essayId, documentId) {
+    const { error } = await supabase
+        .from('essay_documents')
+        .delete()
+        .eq('essay_id', essayId)
+        .eq('document_id', documentId);
+
+    if (error) {
+        console.error('Error unlinking document from essay:', error);
+        return false;
+    }
+    return true;
+}
+
+async function getEssayDocuments(essayId) {
+    const { data, error } = await supabase
+        .from('essay_documents')
+        .select(`
+            document_id,
+            documents:document_id (*)
+        `)
+        .eq('essay_id', essayId);
+
+    if (error) {
+        console.error('Error fetching essay documents:', error);
+        return [];
+    }
+    return data.map(item => item.documents);
+}
+
+async function signInWithGoogle(nextPath = 'dashboard.html') {
+    // Robustly construct redirect URL from current origin and pathname
+    // We use the folder path of the current page to ensure we stay in the correct subdirectory
+    // Example: http://localhost:8000/collegeapps-ai/login.html -> http://localhost:8000/collegeapps-ai/dashboard.html
+    const folderPath = window.location.pathname.substring(0, window.location.pathname.lastIndexOf('/') + 1);
+    const redirectUrl = window.location.origin + folderPath + nextPath;
+
+    const { data, error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+            redirectTo: redirectUrl
+        }
+    });
+
+    if (error) {
+        console.error('Error signing in with Google:', error);
+        return null;
+    }
+    return data;
+}
+
 // Export all functions
 export {
     supabase,
@@ -437,7 +627,33 @@ export {
     getUserDocuments,
     uploadDocument,
     getDocumentUrl,
+    deleteDocument,
+    linkDocumentToEssay,
+    unlinkDocumentFromEssay,
+    getEssayDocuments,
     signUp,
     signIn,
-    signOut
+    signOut,
+    signInWithGoogle,
+    shareEssay,
+    getSharedEssays,
+    addComment,
+    getEssayComments,
+    syncEssays
 };
+
+async function syncEssays(userId) {
+    try {
+        const response = await fetch(`${config.apiUrl}/api/essays/sync`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ userId })
+        });
+        if (response.ok) {
+            return await response.json();
+        }
+    } catch (e) {
+        console.error('Error syncing essays:', e);
+    }
+    return null;
+}

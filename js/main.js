@@ -1,12 +1,12 @@
 // Main JavaScript - Navigation and Global Functionality
 
 // Mobile Menu Toggle
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', function () {
     const mobileToggle = document.getElementById('mobileToggle');
     const navLinks = document.querySelector('.navbar-links');
-    
+
     if (mobileToggle) {
-        mobileToggle.addEventListener('click', function() {
+        mobileToggle.addEventListener('click', function () {
             navLinks.classList.toggle('active');
         });
     }
@@ -35,31 +35,87 @@ document.addEventListener('DOMContentLoaded', function() {
             link.classList.add('active');
         }
     });
+
+    // Check if user is logged in for landing page CTA update
+    if (currentPage === 'index.html' || currentPage === '') {
+        const navLinks = document.getElementById('navLinks');
+        const devUser = localStorage.getItem('dev_user');
+
+        // We can't use await here easily without making the whole thing async, 
+        // so we check localStorage or just let the page-specific scripts handle it.
+        // For index.html, we'll do a quick check.
+        if (devUser) {
+            updateLandingNav();
+        }
+    }
 });
+
+async function updateLandingNav() {
+    const navLinks = document.getElementById('navLinks');
+    if (!navLinks) return;
+
+    // We'll import dynamically to avoid polluting non-module script
+    try {
+        const { getCurrentUser } = await import('./supabase-config.js');
+        const user = await getCurrentUser();
+        if (user) {
+            navLinks.innerHTML = `
+                <li><a href="#features" class="navbar-link">Features</a></li>
+                <li><a href="dashboard.html" class="navbar-link">Dashboard</a></li>
+                <li><a href="ai-counselor.html" class="navbar-link">AI Counselor</a></li>
+                <li><a href="dashboard.html" class="btn btn-primary btn-sm">Go to Dashboard</a></li>
+            `;
+        }
+    } catch (e) {
+        console.log('Not in module context or Supabase not ready');
+    }
+}
 
 // Utility Functions
 function showNotification(message, type = 'info') {
-    // Simple notification system
+    // Premium notification system
     const notification = document.createElement('div');
+    const icon = type === 'success' ? '✅' : type === 'error' ? '❌' : type === 'warning' ? '⚠️' : 'ℹ️';
+    const bg = type === 'success' ? 'var(--success)' : type === 'error' ? 'var(--error)' : type === 'warning' ? 'var(--warning)' : 'var(--primary-blue)';
+
     notification.style.cssText = `
         position: fixed;
-        top: 20px;
-        right: 20px;
-        background: ${type === 'success' ? '#10B981' : type === 'error' ? '#EF4444' : '#5B8DEE'};
-        color: white;
+        bottom: 30px;
+        right: 30px;
+        background: white;
+        color: var(--gray-800);
         padding: 1rem 1.5rem;
-        border-radius: 12px;
-        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
-        z-index: 1000;
-        animation: slideIn 0.3s ease-out;
+        border-radius: var(--radius-xl);
+        box-shadow: var(--shadow-2xl);
+        z-index: 2000;
+        display: flex;
+        align-items: center;
+        gap: var(--space-md);
+        border-left: 5px solid ${bg};
+        min-width: 300px;
+        transform: translateX(400px);
+        transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
     `;
-    notification.textContent = message;
+
+    notification.innerHTML = `
+        <span style="font-size: 1.25rem;">${icon}</span>
+        <div style="flex: 1;">
+            <div style="font-weight: 700; font-size: var(--text-sm);">${type.charAt(0) + type.slice(1)}</div>
+            <div style="font-size: var(--text-xs); color: var(--gray-500);">${message}</div>
+        </div>
+    `;
+
     document.body.appendChild(notification);
 
+    // Trigger slide in
     setTimeout(() => {
-        notification.style.animation = 'slideOut 0.3s ease-out';
-        setTimeout(() => notification.remove(), 300);
-    }, 3000);
+        notification.style.transform = 'translateX(0)';
+    }, 10);
+
+    setTimeout(() => {
+        notification.style.transform = 'translateX(400px)';
+        setTimeout(() => notification.remove(), 400);
+    }, 4000);
 }
 
 // Add animation styles

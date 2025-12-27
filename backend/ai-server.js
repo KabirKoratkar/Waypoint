@@ -6,7 +6,12 @@ import cors from 'cors';
 import OpenAI from 'openai';
 import dotenv from 'dotenv';
 import { createClient } from '@supabase/supabase-js';
-import { collegeDatabase, findCollege } from './college-data.js';
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const LOCAL_CATALOG_PATH = path.join(__dirname, 'college_catalog.json');
 
 dotenv.config();
 
@@ -29,6 +34,7 @@ app.use(cors({
     origin: [
         'http://localhost:5500',
         'http://127.0.0.1:5500',
+        'http://localhost:8000',
         /\.vercel\.app$/  // Allow any Vercel deployment
     ],
     credentials: true
@@ -68,9 +74,9 @@ When users ask for help with essays:
 
 Be conversational, supportive, and specific. When you add colleges or create tasks, let the user know what you've done.
 
-Available colleges in database: Stanford, MIT, USC, UC Berkeley, UCLA, Carnegie Mellon, Georgia Tech, University of Michigan.
+Available colleges with detailed data: Stanford, Harvard, Yale, Princeton, MIT, Columbia, UPenn, Brown, Cornell, Dartmouth, NYU, UC Berkeley, UCLA, UMichigan, Duke, Northwestern, JHU, Caltech, Rice, Georgetown, USC, Northeastern, Boston University, Georgia Tech, UT Austin, UNC, UVA, CMU, ASU, and more.
 
-When discussing essays, be specific about word limits and requirements. When users ask questions, provide accurate, helpful information.`
+If a college is not in this specific list, you can still add it! The system will default to a standard Common App template, but you should still provide helpful guidance based on your general knowledge. When discussing essays, be specific about word limits and requirements. When users ask questions, provide accurate, helpful information.`
             },
             ...conversationHistory.map(msg => ({
                 role: msg.role,
@@ -189,7 +195,7 @@ When discussing essays, be specific about word limits and requirements. When use
 
         // Call OpenAI with function calling
         const completion = await openai.chat.completions.create({
-            model: 'gpt-4-turbo-preview',
+            model: 'gpt-4o-mini',
             messages,
             functions,
             function_call: 'auto',
@@ -216,7 +222,7 @@ When discussing essays, be specific about word limits and requirements. When use
                     functionResult = await handleCreateTasks(userId, functionArgs.tasks);
                     break;
                 case 'getCollegeRequirements':
-                    functionResult = handleGetCollegeRequirements(functionArgs.collegeName);
+                    functionResult = await handleGetCollegeRequirements(functionArgs.collegeName);
                     break;
                 case 'brainstormEssay':
                     functionResult = handleBrainstormEssay(functionArgs.prompt, functionArgs.context);
@@ -237,7 +243,7 @@ When discussing essays, be specific about word limits and requirements. When use
             });
 
             const secondCompletion = await openai.chat.completions.create({
-                model: 'gpt-4-turbo-preview',
+                model: 'gpt-4o-mini',
                 messages,
                 temperature: 0.7
             });
@@ -272,13 +278,117 @@ When discussing essays, be specific about word limits and requirements. When use
     }
 });
 
+// Smart College Addition Endpoint (Adds college + creates essays)
+app.post('/api/colleges/add', async (req, res) => {
+    try {
+        const { userId, collegeName } = req.body;
+        if (!userId || !collegeName) {
+            return res.status(400).json({ error: 'userId and collegeName are required' });
+        }
+
+        console.log(`Adding college ${collegeName} for user ${userId}`);
+
+        // 1. Add College
+        const collegeResult = await handleAddCollege(userId, collegeName);
+        if (!collegeResult.success) {
+            return res.status(404).json(collegeResult);
+        }
+
+        // 2. Automatically create essays for this college
+        const essayResult = await handleCreateEssays(userId, collegeName);
+
+        res.json({
+            success: true,
+            college: collegeResult.college,
+            collegeId: collegeResult.collegeId,
+            essays: essayResult.success ? essayResult.essays : [],
+            message: `Successfully added ${collegeName} and created its associated essays.`
+        });
+
+    } catch (error) {
+        console.error('Error adding college via API:', error);
+        res.status(500).json({ error: 'Internal server error', details: error.message });
+    }
+});
+
+// Sync Missing Essays for existing colleges
+app.post('/api/essays/sync', async (req, res) => {
+    try {
+        const { userId } = req.body;
+        if (!userId) {
+            return res.status(400).json({ error: 'userId is required' });
+        }
+
+        // 1. Get user's colleges
+        const { data: colleges, error: fetchError } = await supabase
+            .from('colleges')
+            .select('*')
+            .eq('user_id', userId);
+
+        if (fetchError) throw fetchError;
+
+        let totalCreated = 0;
+        const results = [];
+
+        for (const college of colleges) {
+            // Check if this college has essays in the essays table
+            const { count, error: countError } = await supabase
+                .from('essays')
+                .select('*', { count: 'exact', head: true })
+                .eq('college_id', college.id);
+
+            if (countError) continue;
+
+            // If no essays found in the essays table, but we have data for it in collegeDatabase
+            if (count === 0) {
+                const collegeData = await getCollegeInfo(college.name);
+                if (collegeData && collegeData.essays_required.length > 0) {
+                    console.log(`Syncing essays for ${college.name}...`);
+                    const syncResult = await handleCreateEssays(userId, college.name);
+                    if (syncResult.success) {
+                        totalCreated += syncResult.essays.length;
+                        results.push({ college: college.name, count: syncResult.essays.length });
+                    }
+                }
+            }
+        }
+
+        res.json({
+            success: true,
+            message: `Synced ${totalCreated} missing essays across ${results.length} colleges.`,
+            details: results
+        });
+
+    } catch (error) {
+        console.error('Error syncing essays:', error);
+        res.status(500).json({ error: 'Internal server error', details: error.message });
+    }
+});
+
 // Function handlers
 
 async function handleAddCollege(userId, collegeName) {
-    const collegeData = findCollege(collegeName);
+    let collegeData = await getCollegeInfo(collegeName);
 
     if (!collegeData) {
-        return { success: false, error: 'College not found in database' };
+        console.log(`College ${collegeName} not found in DB. Using generic template.`);
+        collegeData = {
+            name: collegeName,
+            application_platform: "Common App",
+            deadline: "2025-01-01",
+            deadline_type: "RD",
+            test_policy: "Test Optional",
+            lors_required: 2,
+            portfolio_required: false,
+            essays_required: [
+                {
+                    title: "Common App Personal Statement",
+                    essay_type: "Common App",
+                    prompt: "Choose one of the 7 Common App prompts",
+                    word_limit: 650
+                }
+            ]
+        };
     }
 
     // Check if college already exists
@@ -325,10 +435,20 @@ async function handleAddCollege(userId, collegeName) {
 }
 
 async function handleCreateEssays(userId, collegeName) {
-    const collegeData = findCollege(collegeName);
+    let collegeData = await getCollegeInfo(collegeName);
 
     if (!collegeData) {
-        return { success: false, error: 'College not found in database' };
+        collegeData = {
+            name: collegeName,
+            essays_required: [
+                {
+                    title: "Common App Personal Statement",
+                    essay_type: "Common App",
+                    prompt: "Choose one of the 7 Common App prompts",
+                    word_limit: 650
+                }
+            ]
+        };
     }
 
     // Get college ID
@@ -401,8 +521,8 @@ async function handleCreateTasks(userId, tasks) {
     };
 }
 
-function handleGetCollegeRequirements(collegeName) {
-    const collegeData = findCollege(collegeName);
+async function handleGetCollegeRequirements(collegeName) {
+    const collegeData = await getCollegeInfo(collegeName);
 
     if (!collegeData) {
         return { success: false, error: 'College not found in database' };
@@ -456,8 +576,52 @@ async function saveConversation(userId, userMessage, aiResponse, functionCall = 
     }
 }
 
+// Helper to find college info (Supabase Catalog -> Local JSON fallback)
+async function getCollegeInfo(name) {
+    try {
+        console.log(`Searching catalog for: ${name}`);
+        // 1. Try Supabase Catalog
+        const { data: catalogData, error } = await supabase
+            .from('college_catalog')
+            .select('*')
+            .ilike('name', `%${name}%`)
+            .limit(1)
+            .single();
+
+        if (catalogData) {
+            console.log(`Found ${name} in Supabase Catalog`);
+            return {
+                name: catalogData.name,
+                application_platform: catalogData.application_platform,
+                deadline: catalogData.deadline_date,
+                deadline_type: catalogData.deadline_type,
+                test_policy: catalogData.test_policy,
+                lors_required: catalogData.lors_required,
+                portfolio_required: catalogData.portfolio_required,
+                essays_required: catalogData.essays
+            };
+        }
+
+        // 2. Fallback to Local JSON
+        if (fs.existsSync(LOCAL_CATALOG_PATH)) {
+            const localData = JSON.parse(fs.readFileSync(LOCAL_CATALOG_PATH, 'utf8'));
+            const lowerName = name.toLowerCase();
+            const college = Object.values(localData).find(c =>
+                c.name.toLowerCase().includes(lowerName) || lowerName.includes(c.name.toLowerCase())
+            );
+            if (college) {
+                console.log(`Found ${name} in local JSON catalog`);
+                return college;
+            }
+        }
+    } catch (e) {
+        console.error('Lookup error:', e);
+    }
+    return null;
+}
+
 // Start server
 app.listen(PORT, () => {
     console.log(`🤖 AI Server running on http://localhost:${PORT}`);
-    console.log(`📚 College database loaded with ${Object.keys(collegeDatabase).length} colleges`);
+    console.log(`📚 Reference catalog: ${fs.existsSync(LOCAL_CATALOG_PATH) ? 'JSON + Supabase' : 'Supabase Only'}`);
 });

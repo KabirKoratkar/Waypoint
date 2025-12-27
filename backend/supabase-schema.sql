@@ -211,5 +211,27 @@ CREATE INDEX idx_tasks_due_date ON public.tasks(due_date);
 CREATE INDEX idx_documents_user_id ON public.documents(user_id);
 CREATE INDEX idx_conversations_user_id ON public.conversations(user_id);
 
--- Sample college data (optional - for AI knowledge base)
--- You can populate this with actual college requirements
+-- Global College Catalog (Reference data for all users)
+CREATE TABLE public.college_catalog (
+    id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+    name TEXT UNIQUE NOT NULL,
+    application_platform TEXT,
+    deadline_date DATE,
+    deadline_type TEXT,
+    test_policy TEXT,
+    lors_required INTEGER,
+    portfolio_required BOOLEAN DEFAULT false,
+    essays JSONB DEFAULT '[]'::jsonb,
+    verified BOOLEAN DEFAULT true,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Enable RLS (Read-only for public)
+ALTER TABLE public.college_catalog ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Anyone can view college catalog"
+    ON public.college_catalog FOR SELECT
+    USING (true);
+
+-- Indexes
+CREATE INDEX idx_college_catalog_name ON public.college_catalog(name);

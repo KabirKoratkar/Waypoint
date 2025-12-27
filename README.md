@@ -11,6 +11,7 @@ CollegeApps.ai is a command center for college applications. Instead of juggling
 ## ✨ Features
 
 - **Daily Task Dashboard** - Know exactly what to work on today
+- **Calendar View** - Visual monthly calendar showing all deadlines, essays, and tasks
 - **Essay Workspace** - Notion-like editor for all your college essays
 - **AI Counselor** - 24/7 expert guidance on requirements and deadlines
 - **College Requirement Loader** - Automatic loading of requirements, essays, and deadlines
@@ -26,6 +27,7 @@ collegeapps-ai/
 ├── signup.html             # Sign up page
 ├── onboarding.html         # Multi-step onboarding flow
 ├── dashboard.html          # Main dashboard
+├── calendar.html           # Calendar view
 ├── colleges.html           # College list management
 ├── essays.html             # Essay workspace
 ├── documents.html          # Document vault
@@ -38,6 +40,7 @@ collegeapps-ai/
 │   ├── main.js             # Global functionality
 │   ├── auth.js             # Authentication
 │   ├── onboarding.js       # Onboarding flow
+│   ├── calendar.js         # Calendar view
 │   ├── essays.js           # Essay editor
 │   ├── colleges.js         # College list
 │   ├── documents.js        # Document vault
@@ -72,6 +75,7 @@ This is a static website built with vanilla HTML, CSS, and JavaScript. No build 
 3. **Onboarding** (`onboarding.html`) - 3-step setup: graduation year, major, college list, deadlines
 4. **Dashboard** (`dashboard.html`) - See today's tasks, weekly goals, and progress
 5. **Explore Features:**
+   - **Calendar** - Visual monthly view of all deadlines, essays, and tasks
    - **Colleges** - Manage your college list and view requirements
    - **Essays** - Write and organize all your application essays
    - **Documents** - Upload and manage transcripts, resumes, etc.
@@ -122,6 +126,14 @@ The website is fully responsive and works on:
 - Weekly goals with progress bars
 - Deadline countdowns
 - Quick links to other sections
+
+### Calendar View
+- Monthly grid showing all deadlines, essays, and tasks
+- Color-coded events (red for deadlines, blue for essays, purple for tasks)
+- Filter by college or event type
+- Navigate between months with arrow buttons
+- Click events to view full details in modal
+- Responsive design for mobile and desktop
 
 ### Essay Workspace
 - Sidebar navigation for all essays
