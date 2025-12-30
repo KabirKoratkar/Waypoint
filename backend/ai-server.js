@@ -99,6 +99,11 @@ If a college is not in this specific list, you can still add it! The system will
                         collegeName: {
                             type: 'string',
                             description: 'The name of the college (e.g., "Stanford University", "MIT", "USC")'
+                        },
+                        type: {
+                            type: 'string',
+                            enum: ['Reach', 'Target', 'Safety'],
+                            description: 'The categorization of the college for the student (e.g., "Reach", "Target", "Safety")'
                         }
                     },
                     required: ['collegeName']
@@ -213,7 +218,7 @@ If a college is not in this specific list, you can still add it! The system will
 
             switch (functionName) {
                 case 'addCollege':
-                    functionResult = await handleAddCollege(userId, functionArgs.collegeName);
+                    functionResult = await handleAddCollege(userId, functionArgs.collegeName, functionArgs.type);
                     break;
                 case 'createEssays':
                     functionResult = await handleCreateEssays(userId, functionArgs.collegeName);
@@ -281,15 +286,15 @@ If a college is not in this specific list, you can still add it! The system will
 // Smart College Addition Endpoint (Adds college + creates essays)
 app.post('/api/colleges/add', async (req, res) => {
     try {
-        const { userId, collegeName } = req.body;
+        const { userId, collegeName, type } = req.body;
         if (!userId || !collegeName) {
             return res.status(400).json({ error: 'userId and collegeName are required' });
         }
 
-        console.log(`Adding college ${collegeName} for user ${userId}`);
+        console.log(`Adding college ${collegeName} (${type || 'No Type'}) for user ${userId}`);
 
         // 1. Add College
-        const collegeResult = await handleAddCollege(userId, collegeName);
+        const collegeResult = await handleAddCollege(userId, collegeName, type);
         if (!collegeResult.success) {
             return res.status(404).json(collegeResult);
         }
@@ -367,13 +372,14 @@ app.post('/api/essays/sync', async (req, res) => {
 
 // Function handlers
 
-async function handleAddCollege(userId, collegeName) {
+async function handleAddCollege(userId, collegeName, type) {
     let collegeData = await getCollegeInfo(collegeName);
 
     if (!collegeData) {
         console.log(`College ${collegeName} not found in DB. Using generic template.`);
         collegeData = {
             name: collegeName,
+            type: type || 'Target',
             application_platform: "Common App",
             deadline: "2025-01-01",
             deadline_type: "RD",
@@ -389,6 +395,8 @@ async function handleAddCollege(userId, collegeName) {
                 }
             ]
         };
+    } else if (type) {
+        collegeData.type = type;
     }
 
     // Check if college already exists
@@ -412,6 +420,7 @@ async function handleAddCollege(userId, collegeName) {
             application_platform: collegeData.application_platform,
             deadline: collegeData.deadline,
             deadline_type: collegeData.deadline_type,
+            type: collegeData.type,
             essays_required: collegeData.essays_required,
             test_policy: collegeData.test_policy,
             lors_required: collegeData.lors_required,

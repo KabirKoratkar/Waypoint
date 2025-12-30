@@ -3,7 +3,7 @@
  * Handles data fetching and chart rendering for the analytics page.
  */
 
-import { getCurrentUser, getUserColleges, getUserEssays, getUserTasks } from './supabase-config.js';
+import { getCurrentUser, getUserColleges, getUserEssays, getUserTasks, getUserConversations, getEssayComments, supabase } from './supabase-config.js';
 import { updateNavbarUser } from './ui.js';
 
 document.addEventListener('DOMContentLoaded', async () => {
@@ -19,28 +19,25 @@ document.addEventListener('DOMContentLoaded', async () => {
             colleges = await getUserColleges(user.id);
             essays = await getUserEssays(user.id);
             tasks = await getUserTasks(user.id);
+
+            // Get activity data
+            const activityData = await fetchActivityData(user.id);
+
             updateNavbarUser(user);
             console.log(`Found ${colleges.length} colleges, ${essays.length} essays, ${tasks.length} tasks`);
-        }
 
-        // Fallback to mock data if no data found or not logged in
-        if (colleges.length === 0) {
-            console.log('Using mock data for demonstration');
-            colleges = [
-                { name: 'Stanford', status: 'In Progress', type: 'Reach' },
-                { name: 'UC Berkeley', status: 'In Progress', type: 'Target' },
-                { name: 'UCLA', status: 'Not Started', type: 'Target' },
-                { name: 'MIT', status: 'Not Started', type: 'Reach' },
-                { name: 'USC', status: 'Completed', type: 'Target' },
-                { name: 'Georgia Tech', status: 'Not Started', type: 'Target' }
-            ];
+            updateSummaryStats(colleges, essays, tasks);
+            renderCollegeBreakdown(colleges);
+            renderAppStatus(colleges);
+            renderActivity(activityData);
+            renderEssayProgress(essays);
+        } else {
+            console.log('No user found, using default view');
+            renderCollegeBreakdown([]);
+            renderAppStatus([]);
+            renderActivity({});
+            renderEssayProgress([]);
         }
-
-        updateSummaryStats(colleges, essays, tasks);
-        renderCollegeBreakdown(colleges);
-        renderAppStatus(colleges);
-        renderActivity();
-        renderEssayProgress(essays);
 
     } catch (error) {
         console.error('Error initializing analytics:', error);
@@ -49,6 +46,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
 function updateSummaryStats(colleges, essays, tasks) {
     const completionCard = document.querySelector('.stats-summary .card:nth-child(1) div:last-child');
+    const daysCard = document.querySelector('.stats-summary .card:nth-child(2) div:last-child');
     const essaysCard = document.querySelector('.stats-summary .card:nth-child(3) div:last-child');
     const tasksCard = document.querySelector('.stats-summary .card:nth-child(4) div:last-child');
 
@@ -59,14 +57,31 @@ function updateSummaryStats(colleges, essays, tasks) {
         completionCard.textContent = `${percent}%`;
     }
 
+    if (daysCard) {
+        // Calculate days to nearest deadline
+        const now = new Date();
+        const futureDeadlines = colleges
+            .filter(c => c.deadline && new Date(c.deadline) > now)
+            .map(c => new Date(c.deadline));
+
+        if (futureDeadlines.length > 0) {
+            const nearest = new Date(Math.min(...futureDeadlines));
+            const diffTime = Math.abs(nearest - now);
+            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+            daysCard.textContent = diffDays;
+        } else {
+            daysCard.textContent = '--';
+        }
+    }
+
     if (essaysCard) {
         const drafted = essays.filter(e => e.word_count > 100).length;
-        essaysCard.textContent = `${drafted} / ${essays.length || 12}`;
+        essaysCard.textContent = `${drafted} / ${essays.length || 0}`;
     }
 
     if (tasksCard) {
         const done = tasks.filter(t => t.completed).length;
-        tasksCard.textContent = `${done} / ${tasks.length || 20}`;
+        tasksCard.textContent = `${done} / ${tasks.length || 0}`;
     }
 }
 
@@ -151,19 +166,62 @@ function renderAppStatus(colleges) {
     });
 }
 
-function renderActivity() {
+async function fetchActivityData(userId) {
+    const sevenDaysAgo = new Date();
+    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 6);
+    sevenDaysAgo.setHours(0, 0, 0, 0);
+
+    const { data: convData } = await supabase
+        .from('conversations')
+        .select('created_at')
+        .eq('user_id', userId)
+        .eq('role', 'user')
+        .gte('created_at', sevenDaysAgo.toISOString());
+
+    const { data: essayVers } = await supabase
+        .from('essay_versions')
+        .select('created_at')
+        .eq('user_id', userId)
+        .gte('created_at', sevenDaysAgo.toISOString());
+
+    const { data: comments } = await supabase
+        .from('essay_comments')
+        .select('created_at')
+        .eq('user_id', userId)
+        .gte('created_at', sevenDaysAgo.toISOString());
+
+    const activityByDay = {};
+    const allActivity = [...(convData || []), ...(essayVers || []), ...(comments || [])];
+
+    allActivity.forEach(a => {
+        const day = new Date(a.created_at).toLocaleDateString('en-US', { weekday: 'short' });
+        activityByDay[day] = (activityByDay[day] || 0) + 1;
+    });
+
+    return activityByDay;
+}
+
+function renderActivity(activityData) {
     const ctx = document.getElementById('activityChart').getContext('2d');
 
-    // Mock activity data for the last 7 days
-    const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-    const sessions = [12, 19, 3, 5, 2, 3, 10];
+    const days = [];
+    const sessions = [];
+    const now = new Date();
+
+    for (let i = 6; i >= 0; i--) {
+        const d = new Date();
+        d.setDate(now.getDate() - i);
+        const dayLabel = d.toLocaleDateString('en-US', { weekday: 'short' });
+        days.push(dayLabel);
+        sessions.push(activityData[dayLabel] || 0);
+    }
 
     new Chart(ctx, {
         type: 'line',
         data: {
             labels: days,
             datasets: [{
-                label: 'Daily Tasks/Edits',
+                label: 'Interactions (Chat, Saves, Comments)',
                 data: sessions,
                 fill: true,
                 borderColor: '#5B8DEE',
@@ -180,7 +238,10 @@ function renderActivity() {
                 legend: { display: false }
             },
             scales: {
-                y: { beginAtZero: true }
+                y: {
+                    beginAtZero: true,
+                    ticks: { stepSize: 1 }
+                }
             }
         }
     });

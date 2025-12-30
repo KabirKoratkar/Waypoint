@@ -75,7 +75,7 @@ async function getUserColleges(userId) {
     return data;
 }
 
-async function addCollege(userIdOrObject, name = null) {
+async function addCollege(userIdOrObject, name = null, type = null) {
     // If it's a smart addition (userId and name provided)
     if (name && typeof userIdOrObject === 'string') {
         try {
@@ -83,7 +83,7 @@ async function addCollege(userIdOrObject, name = null) {
             const response = await fetch(`${config.apiUrl}/api/colleges/add`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ userId: userIdOrObject, collegeName: name })
+                body: JSON.stringify({ userId: userIdOrObject, collegeName: name, type })
             });
             if (response.ok) {
                 const result = await response.json();
@@ -103,6 +103,7 @@ async function addCollege(userIdOrObject, name = null) {
         college = {
             user_id: userIdOrObject,
             name: name,
+            type: type || 'Target',
             status: 'Not Started'
         };
     }
