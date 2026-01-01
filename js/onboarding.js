@@ -166,7 +166,14 @@ document.addEventListener('DOMContentLoaded', async function () {
                 if (location) profileData.location = location;
                 if (birthDate) profileData.birth_date = birthDate;
 
-                await upsertProfile(profileData);
+                console.log('Creating profile...', profileData);
+                const createdProfile = await upsertProfile(profileData);
+
+                if (!createdProfile) {
+                    throw new Error('Failed to create profile');
+                }
+
+                console.log('Profile created successfully');
 
                 // 2. Add Colleges
                 for (const name of selectedColleges) {
@@ -175,13 +182,23 @@ document.addEventListener('DOMContentLoaded', async function () {
 
                 if (window.showNotification) window.showNotification('Setup complete! Welcome to CollegeApps.ai', 'success');
 
+                // 3. Verify profile exists before redirecting
+                console.log('Verifying profile...');
+                const verifyProfile = await getUserProfile(currentUser.id);
+                if (!verifyProfile) {
+                    console.error('Profile verification failed');
+                    throw new Error('Profile was not saved correctly. Please try again.');
+                }
+
+                console.log('Profile verified, redirecting to dashboard...');
+
                 // Redirect to dashboard
                 setTimeout(() => {
                     window.location.assign('dashboard.html');
                 }, 1500);
             } catch (error) {
                 console.error('Onboarding Error:', error);
-                if (window.showNotification) window.showNotification('Something went wrong. Please try again.', 'error');
+                if (window.showNotification) window.showNotification('Error: ' + error.message, 'error');
             }
         });
     }
