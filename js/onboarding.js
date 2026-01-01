@@ -167,28 +167,7 @@ document.addEventListener('DOMContentLoaded', async function () {
                 if (birthDate) profileData.birth_date = birthDate;
 
                 console.log('Creating profile...', profileData);
-                try {
-                    await upsertProfile(profileData);
-                } catch (profileError) {
-                    console.error('Failed to save full profile:', profileError);
-
-                    if (profileError.message.includes('column')) {
-                        console.log('Retrying with minimal profile (omitting optional fields)...');
-                        const minimalData = {
-                            id: currentUser.id,
-                            email: currentUser.email,
-                            graduation_year: parseInt(gradYear),
-                            intended_major: major,
-                            full_name: fullName
-                        };
-                        await upsertProfile(minimalData);
-                        if (window.showNotification) {
-                            window.showNotification('Profile saved, but some optional fields were skipped (DB update needed).', 'warning');
-                        }
-                    } else {
-                        throw profileError;
-                    }
-                }
+                await upsertProfile(profileData);
 
                 console.log('Profile created successfully');
 
