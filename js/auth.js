@@ -72,15 +72,17 @@ document.addEventListener('DOMContentLoaded', function () {
             } else {
                 // Production: use Supabase
                 console.log('Creating account for:', email);
-                const result = await signUp(email, password, fullName);
-
-                if (result) {
-                    showNotification('Account created successfully!', 'success');
-                    setTimeout(() => {
-                        window.location.assign('onboarding.html');
-                    }, 1500);
-                } else {
-                    showNotification('Failed to create account. Please try again.', 'error');
+                try {
+                    const result = await signUp(email, password, fullName);
+                    if (result) {
+                        showNotification('Account created successfully!', 'success');
+                        setTimeout(() => {
+                            window.location.assign('onboarding.html');
+                        }, 1500);
+                    }
+                } catch (err) {
+                    console.error('Signup Failure:', err);
+                    showNotification(err.message, 'error');
                 }
             }
         });
@@ -110,15 +112,17 @@ document.addEventListener('DOMContentLoaded', function () {
             } else {
                 // Production: use Supabase
                 console.log('Logging in:', email);
-                const result = await signIn(email, password);
-
-                if (result) {
-                    showNotification('Login successful!', 'success');
-                    setTimeout(() => {
-                        window.location.assign('dashboard.html');
-                    }, 1500);
-                } else {
-                    showNotification('Invalid email or password.', 'error');
+                try {
+                    const result = await signIn(email, password);
+                    if (result) {
+                        showNotification('Login successful!', 'success');
+                        setTimeout(() => {
+                            window.location.assign('dashboard.html');
+                        }, 1500);
+                    }
+                } catch (err) {
+                    console.error('Login Failure:', err);
+                    showNotification(err.message, 'error');
                 }
             }
         });

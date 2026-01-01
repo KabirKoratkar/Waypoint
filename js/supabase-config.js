@@ -404,16 +404,22 @@ async function signUp(email, password, fullName) {
 
     if (error) {
         console.error('Error signing up:', error);
-        return null;
+        throw new Error(`Signup error: ${error.message}`);
     }
 
     // Create profile
     if (data.user) {
-        await upsertProfile({
-            id: data.user.id,
-            email,
-            full_name: fullName
-        });
+        try {
+            await upsertProfile({
+                id: data.user.id,
+                email,
+                full_name: fullName
+            });
+        } catch (profileError) {
+            console.error('Profile creation failed after signup:', profileError);
+            // We don't throw here because the user IS created in Auth, 
+            // but we should probably warn about the profile.
+        }
     }
 
     return data;
@@ -427,7 +433,7 @@ async function signIn(email, password) {
 
     if (error) {
         console.error('Error signing in:', error);
-        return null;
+        throw new Error(`Login error: ${error.message}`);
     }
 
     return data;
