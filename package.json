@@ -3,10 +3,13 @@
     "version": "1.0.0",
     "private": true,
     "description": "Root package for monorepo build detection",
+    "workspaces": [
+        "backend"
+    ],
     "scripts": {
-        "start": "cd backend && npm start",
-        "build": "cd backend && npm install",
-        "dev": "cd backend && npm run dev"
+        "start": "npm start -w backend",
+        "build": "echo 'Building root...'",
+        "dev": "npm run dev -w backend"
     },
     "engines": {
         "node": ">=18.0.0"
