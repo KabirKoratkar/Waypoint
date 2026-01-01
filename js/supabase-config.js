@@ -398,7 +398,8 @@ async function signUp(email, password, fullName) {
         options: {
             data: {
                 full_name: fullName
-            }
+            },
+            emailRedirectTo: `${window.location.origin}/onboarding.html`
         }
     });
 
@@ -437,6 +438,20 @@ async function signIn(email, password) {
     }
 
     return data;
+}
+
+async function resendConfirmationEmail(email) {
+    const { error } = await supabase.auth.resend({
+        type: 'signup',
+        email: email,
+    });
+
+    if (error) {
+        console.error('Error resending confirmation:', error);
+        throw new Error(`Resend error: ${error.message}`);
+    }
+
+    return true;
 }
 
 async function signOut() {
@@ -486,7 +501,8 @@ async function getSharedEssays(userEmail) {
         console.error('Error fetching shared essays:', error);
         return [];
     }
-    return data;
+    // Filter out shares where the original essay was deleted
+    return (data || []).filter(item => item.essays !== null);
 }
 
 // Comments
@@ -586,7 +602,10 @@ async function getEssayDocuments(essayId) {
         console.error('Error fetching essay documents:', error);
         return [];
     }
-    return data.map(item => item.documents);
+    // Filter out links where the document was deleted
+    return (data || [])
+        .filter(item => item.documents !== null)
+        .map(item => item.documents);
 }
 
 async function signInWithGoogle(nextPath = 'dashboard.html') {
@@ -642,6 +661,7 @@ export {
     signIn,
     signOut,
     signInWithGoogle,
+    resendConfirmationEmail,
     shareEssay,
     getSharedEssays,
     addComment,

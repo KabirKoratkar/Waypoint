@@ -1,29 +1,33 @@
 import { getCurrentUser, getUserTasks, getUserEssays, getUserColleges, getUserProfile } from './supabase-config.js';
-import { updateNavbarUser } from './ui.js';
+import { updateNavbarUser, showLoading, hideLoading } from './ui.js';
 import config from './config.js';
 
 let currentUser = null;
 
 document.addEventListener('DOMContentLoaded', async function () {
+    showLoading('Waking up your command center...');
+
     currentUser = await getCurrentUser();
     if (!currentUser) {
         window.location.assign('login.html');
         return;
     }
 
-    // Check if profile exists (if not, they need onboarding)
-    // Only check for real users, skip for dev-mode mock users
-    if (!currentUser.id.startsWith('dev-user-')) {
+    // Check for "Complete" profile (has graduation_year)
+    if (currentUser.id && !currentUser.id.startsWith('dev-user-')) {
         const profile = await getUserProfile(currentUser.id);
-        if (!profile) {
-            console.log('No profile found, redirecting to onboarding...');
+        if (!profile || !profile.graduation_year) {
+            console.log('Incomplete profile found, redirecting to onboarding...');
             window.location.assign('onboarding.html');
             return;
         }
         window.currentUserProfile = profile;
     }
 
-    // Update Basic UI
+    hideLoading();
+
+    // UI Updates
+    // Basic UI
     updateNavbarUser(currentUser);
     updateHeader(window.currentUserProfile);
 
@@ -34,6 +38,8 @@ document.addEventListener('DOMContentLoaded', async function () {
 
     // Render Data
     renderDashboard(tasks, essays, colleges);
+
+    hideLoading();
 
     // Generate AI Action Plan
     generateAIActionPlan(tasks, essays, colleges);

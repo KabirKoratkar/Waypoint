@@ -189,15 +189,18 @@ async function loadComments(essayId) {
         return;
     }
 
-    commentList.innerHTML = comments.map(c => `
-        <div style="margin-bottom: var(--space-md); padding-bottom: var(--space-sm); border-bottom: 1px solid var(--gray-100);">
-            <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
-                <span style="font-weight: 700; font-size: var(--text-xs); color: var(--primary-blue);">${c.profiles?.full_name || c.profiles?.email}</span>
-                <span style="font-size: 10px; color: var(--gray-400);">${new Date(c.created_at).toLocaleDateString()}</span>
+    commentList.innerHTML = comments.map(c => {
+        const userName = c.profiles?.full_name || c.profiles?.email || 'Unknown User';
+        return `
+            <div style="margin-bottom: var(--space-md); padding-bottom: var(--space-sm); border-bottom: 1px solid var(--gray-100);">
+                <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
+                    <span style="font-weight: 700; font-size: var(--text-xs); color: var(--primary-blue);">${userName}</span>
+                    <span style="font-size: 10px; color: var(--gray-400);">${c.created_at ? new Date(c.created_at).toLocaleDateString() : 'Unknown Date'}</span>
+                </div>
+                <div style="font-size: var(--text-sm); line-height: 1.4;">${c.content || ''}</div>
             </div>
-            <div style="font-size: var(--text-sm); line-height: 1.4;">${c.content}</div>
-        </div>
-    `).join('');
+        `;
+    }).join('');
 
     commentList.scrollTop = commentList.scrollHeight;
 }
@@ -212,17 +215,20 @@ async function loadLinkedDocuments(essayId) {
         return;
     }
 
-    list.innerHTML = docs.map(doc => `
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--space-sm); padding: var(--space-xs); background: var(--gray-50); border-radius: var(--radius-sm);">
-            <div style="font-size: var(--text-sm); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex: 1;">
-                📄 ${doc.name}
+    list.innerHTML = docs.map(doc => {
+        if (!doc) return '';
+        return `
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--space-sm); padding: var(--space-xs); background: var(--gray-50); border-radius: var(--radius-sm);">
+                <div style="font-size: var(--text-sm); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex: 1;">
+                    📄 ${doc.name || 'Unnamed Document'}
+                </div>
+                <div style="display: flex; gap: 4px;">
+                    <button class="btn btn-sm btn-ghost" onclick="viewFile('${doc.file_path}')" style="padding: 2px 4px;">📂</button>
+                    <button class="btn btn-sm btn-ghost" onclick="unlinkDocument('${doc.id}')" style="padding: 2px 4px;">✕</button>
+                </div>
             </div>
-            <div style="display: flex; gap: 4px;">
-                <button class="btn btn-sm btn-ghost" onclick="viewFile('${doc.file_path}')" style="padding: 2px 4px;">📂</button>
-                <button class="btn btn-sm btn-ghost" onclick="unlinkDocument('${doc.id}')" style="padding: 2px 4px;">✕</button>
-            </div>
-        </div>
-    `).join('');
+        `;
+    }).join('');
 }
 
 async function linkDocument() {
@@ -307,8 +313,10 @@ async function loadEssays() {
 
         sharedEssays.forEach(item => {
             const essay = item.essays;
-            const navItem = createNavItem(essay, true);
-            sharedSection.appendChild(navItem);
+            if (essay) {
+                const navItem = createNavItem(essay, true);
+                sharedSection.appendChild(navItem);
+            }
         });
 
         navList.appendChild(sharedSection);
@@ -332,15 +340,18 @@ async function loadEssays() {
 }
 
 function createNavItem(essay, isShared = false) {
+    if (!essay) return document.createElement('div');
     const navItem = document.createElement('div');
     navItem.className = 'essay-nav-item';
     navItem.dataset.essayId = essay.id;
     if (isShared) navItem.dataset.shared = "true";
 
+    const userName = isShared ? (essay.profiles?.full_name || essay.profiles?.email || 'Unknown') : '';
+
     navItem.innerHTML = `
-        <div style="font-weight: 600; margin-bottom: 0.25rem;">${essay.title}</div>
+        <div style="font-weight: 600; margin-bottom: 0.25rem;">${essay.title || 'Untitled Essay'}</div>
         <div style="font-size: var(--text-xs); color: var(--gray-500);">
-            ${isShared ? 'From: ' + (essay.profiles?.full_name || essay.profiles?.email) : (essay.word_limit || 0) + ' words'}
+            ${isShared ? 'From: ' + userName : (essay.word_limit || 0) + ' words'}
         </div>
     `;
 

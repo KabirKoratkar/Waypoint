@@ -1,4 +1,4 @@
-import { signUp, signIn, signInWithGoogle } from './supabase-config.js';
+import { signUp, signIn, signInWithGoogle, resendConfirmationEmail } from './supabase-config.js';
 
 // DEV MODE: Set to true for local testing without Supabase email confirmation
 const DEV_MODE = false;
@@ -61,6 +61,8 @@ document.addEventListener('DOMContentLoaded', function () {
                 return;
             }
 
+            showLoading('Creating your account...');
+
             if (DEV_MODE) {
                 // Dev mode: create mock session
                 console.log('[DEV MODE] Creating mock account for:', email);
@@ -77,12 +79,13 @@ document.addEventListener('DOMContentLoaded', function () {
                     if (result) {
                         showNotification('Account created successfully!', 'success');
                         setTimeout(() => {
-                            window.location.assign('onboarding.html');
+                            window.location.assign(`confirm-email.html?email=${encodeURIComponent(email)}`);
                         }, 1500);
                     }
                 } catch (err) {
                     console.error('Signup Failure:', err);
                     showNotification(err.message, 'error');
+                    hideLoading();
                 }
             }
         });
@@ -101,11 +104,16 @@ document.addEventListener('DOMContentLoaded', function () {
                 return;
             }
 
-            if (DEV_MODE) {
+            showLoading('Logging you in...');
+
+            // Check if DEV_MODE is active via localStorage
+            const isDevModeActive = localStorage.getItem('dev_mode_active') === 'true';
+
+            if (isDevModeActive) {
                 // Dev mode: create mock session
                 console.log('[DEV MODE] Logging in:', email);
                 createDevSession(email, 'Dev User');
-                showNotification('Login successful! (Dev Mode)', 'success');
+                showNotification('Login successful! (Mock Mode)', 'success');
                 setTimeout(() => {
                     window.location.assign('dashboard.html');
                 }, 1000);
@@ -122,9 +130,42 @@ document.addEventListener('DOMContentLoaded', function () {
                     }
                 } catch (err) {
                     console.error('Login Failure:', err);
-                    showNotification(err.message, 'error');
+
+                    // Handle "Email not confirmed" specifically
+                    if (err.message.includes('Email not confirmed')) {
+                        showNotification('Email not confirmed. Please check your inbox and verify your account before logging in.', 'warning');
+                    } else {
+                        showNotification('Login failed: ' + err.message, 'error');
+                    }
+                    hideLoading();
                 }
             }
         });
+    }
+
+    // Dev Mode Toggle Listener
+    const toggleDevMode = document.getElementById('toggleDevMode');
+    if (toggleDevMode) {
+        toggleDevMode.addEventListener('click', function (e) {
+            e.preventDefault();
+            const isActive = localStorage.getItem('dev_mode_active') === 'true';
+            localStorage.setItem('dev_mode_active', !isActive);
+
+            if (!isActive) {
+                showNotification('Mock Mode enabled! You can now log in with any credentials.', 'success');
+                this.textContent = 'Disable Dev Mode';
+                this.style.color = 'var(--success)';
+            } else {
+                showNotification('Mock Mode disabled. Real authentication required.', 'info');
+                this.textContent = 'Use Dev Mode (Bypass)';
+                this.style.color = 'var(--primary-blue)';
+            }
+        });
+
+        // Initialize display
+        if (localStorage.getItem('dev_mode_active') === 'true') {
+            toggleDevMode.textContent = 'Disable Dev Mode';
+            toggleDevMode.style.color = 'var(--success)';
+        }
     }
 });

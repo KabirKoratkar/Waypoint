@@ -143,3 +143,44 @@ style.textContent = `
     }
 `;
 document.head.appendChild(style);
+// Loading Overlay Helpers
+function showLoading(message = 'Loading...') {
+    let overlay = document.getElementById('globalLoading');
+    if (!overlay) {
+        overlay = document.createElement('div');
+        overlay.id = 'globalLoading';
+        overlay.className = 'loading-overlay';
+        overlay.innerHTML = `
+            <div class="loading-logo">CollegeApps.ai</div>
+            <div class="loading-bars">
+                <div class="loading-bar"></div>
+                <div class="loading-bar"></div>
+                <div class="loading-bar"></div>
+                <div class="loading-bar"></div>
+            </div>
+            <div style="color: var(--gray-600); font-weight: 500; font-size: var(--text-sm);">${message}</div>
+        `;
+        document.body.appendChild(overlay);
+    } else {
+        overlay.querySelector('div:last-child').textContent = message;
+    }
+
+    overlay.style.display = 'flex';
+    // Small delay to trigger transition
+    setTimeout(() => overlay.classList.add('active'), 10);
+}
+
+function hideLoading() {
+    const overlay = document.getElementById('globalLoading');
+    if (overlay) {
+        overlay.classList.remove('active');
+        setTimeout(() => {
+            overlay.style.display = 'none';
+        }, 400);
+    }
+}
+
+// Export to window
+window.showLoading = showLoading;
+window.hideLoading = hideLoading;
+window.showNotification = showNotification;

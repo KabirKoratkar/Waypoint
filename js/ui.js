@@ -26,3 +26,19 @@ export function updateNavbarUser(user) {
         });
     }
 }
+
+export function showLoading(message = 'Loading...') {
+    if (window.showLoading) {
+        window.showLoading(message);
+    } else {
+        console.warn('showLoading not found on window. Ensure main.js is loaded.');
+    }
+}
+
+export function hideLoading() {
+    if (window.hideLoading) {
+        window.hideLoading();
+    } else {
+        console.warn('hideLoading not found on window. Ensure main.js is loaded.');
+    }
+}

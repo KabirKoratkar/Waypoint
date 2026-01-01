@@ -6,11 +6,42 @@ let selectedColleges = [];
 let currentUser = null;
 
 async function init() {
+    showLoading('Securing your session...');
+
+    // 1. Wait a moment for Supabase to process hash from URL (email confirmation links)
+    if (window.location.hash || window.location.search.includes('access_token')) {
+        console.log('Detected auth token in URL, waiting for session...');
+        // Small delay to allow Supabase client to catch the hash
+        await new Promise(resolve => setTimeout(resolve, 1000));
+    }
+
     currentUser = await getCurrentUser();
+
     if (!currentUser) {
         window.location.assign('login.html');
         return;
     }
+
+    // Strict Email Confirmation Check (unless mock user)
+    const isMockUser = currentUser.id && currentUser.id.startsWith('dev-user-');
+    if (!isMockUser && !currentUser.email_confirmed_at) {
+        window.location.assign(`confirm-email.html?email=${encodeURIComponent(currentUser.email)}`);
+        return;
+    }
+
+    // 2. Check if already onboarded (Profile complete)
+    try {
+        const profile = await getUserProfile(currentUser.id);
+        if (profile && profile.graduation_year) {
+            console.log('Profile already complete, skipping onboarding...');
+            window.location.assign('dashboard.html');
+            return;
+        }
+    } catch (err) {
+        console.log('No profile yet or error fetching, proceeding to onboarding steps');
+    }
+
+    hideLoading();
     showStep(1);
 }
 
