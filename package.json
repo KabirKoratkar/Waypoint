@@ -8,10 +8,10 @@
     ],
     "scripts": {
         "start": "npm start -w backend",
-        "build": "echo 'Building root...'",
+        "build": "",
         "dev": "npm run dev -w backend"
     },
     "engines": {
-        "node": ">=18.0.0"
+        "node": "20.x"
     }
 }
