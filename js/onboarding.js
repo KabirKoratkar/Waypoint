@@ -167,11 +167,7 @@ document.addEventListener('DOMContentLoaded', async function () {
                 if (birthDate) profileData.birth_date = birthDate;
 
                 console.log('Creating profile...', profileData);
-                const createdProfile = await upsertProfile(profileData);
-
-                if (!createdProfile) {
-                    throw new Error('Failed to create profile');
-                }
+                await upsertProfile(profileData);
 
                 console.log('Profile created successfully');
 

@@ -54,7 +54,7 @@ async function upsertProfile(profile) {
 
     if (error) {
         console.error('Error upserting profile:', error);
-        return null;
+        throw new Error(`Database error: ${error.message} (${error.hint || 'no hint'})`);
     }
     return data;
 }
