@@ -1,8 +1,5 @@
 {
-    "rewrites": [
-        {
-            "source": "/(.*)",
-            "destination": "/$1"
-        }
-    ]
+    "buildCommand": null,
+    "outputDirectory": ".",
+    "installCommand": null
 }
