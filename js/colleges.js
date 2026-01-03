@@ -66,12 +66,15 @@ function renderSearchResults(results) {
         resultsContainer.innerHTML = '<div style="padding: var(--space-md); color: var(--gray-500); text-align: center;">No colleges found. Try a different name?</div>';
     } else {
         resultsContainer.innerHTML = results.map(c => `
-            <div style="display: flex; justify-content: space-between; align-items: center; padding: var(--space-md); border-bottom: 1px solid var(--gray-100); cursor: pointer;" class="search-item">
+            <div style="display: flex; justify-content: space-between; align-items: center; padding: var(--space-md); border-bottom: 1px solid var(--gray-100); cursor: pointer;" class="search-item" onclick="if(!event.target.closest('button')) window.location.href='college-explorer.html?name=${encodeURIComponent(c.name)}'">
                 <div>
                     <div style="font-weight: 600; color: var(--gray-800);">${c.name}</div>
                     <div style="font-size: var(--text-xs); color: var(--gray-500);">${c.application_platform || 'Common App'} • ${c.deadline_type || 'RD'} Deadline</div>
                 </div>
-                <button class="btn btn-sm btn-ghost" onclick="addFromSearch('${c.name}')" style="color: var(--primary-blue);">+ Add</button>
+                <div style="display: flex; gap: var(--space-xs);">
+                    <a href="college-explorer.html?name=${encodeURIComponent(c.name)}" class="btn btn-sm btn-ghost" style="color: var(--gray-600);">View Details</a>
+                    <button class="btn btn-sm btn-ghost" onclick="addFromSearch('${c.name}')" style="color: var(--primary-blue);">+ Add</button>
+                </div>
             </div>
         `).join('');
     }
@@ -140,7 +143,7 @@ async function loadAndRenderColleges() {
             <tr data-id="${c.id}">
                 <td>
                     <div style="display: flex; align-items: center; gap: var(--space-sm);">
-                        <strong>${c.name}</strong>
+                        <a href="college-explorer.html?name=${encodeURIComponent(c.name)}" style="color: inherit; text-decoration: none;"><strong>${c.name}</strong></a>
                         <button class="btn btn-sm btn-ghost" onclick="getAIStrategy('${c.name}')" title="Get AI Strategy">✨</button>
                     </div>
                 </td>

@@ -46,6 +46,20 @@ app.get('/health', (req, res) => {
     res.json({ status: 'ok', message: 'AI server is running' });
 });
 
+// New endpoint for detailed college research
+app.get('/api/colleges/research', async (req, res) => {
+    try {
+        const { name } = req.query;
+        if (!name) return res.status(400).json({ error: 'College name is required' });
+
+        const research = await handleResearchCollege(name);
+        res.json(research);
+    } catch (error) {
+        console.error('Error researching college:', error);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+});
+
 // Main AI chat endpoint
 app.post('/api/chat', async (req, res) => {
     try {
@@ -99,7 +113,10 @@ Be conversational, supportive, and specific. When you add colleges or create tas
 
 Available colleges with detailed data: Stanford, Harvard, Yale, Princeton, MIT, Columbia, UPenn, Brown, Cornell, Dartmouth, NYU, UC Berkeley, UCLA, UMichigan, Duke, Northwestern, JHU, Caltech, Rice, Georgetown, USC, Northeastern, Boston University, Georgia Tech, UT Austin, UNC, UVA, CMU, ASU, and more.
 
-If a college is not in this specific list, you can still add it! The system will default to a standard Common App template, but you should still provide helpful guidance based on your general knowledge. When discussing essays, be specific about word limits and requirements. When users ask questions, provide accurate, helpful information.`
+If a college is not in this specific list, you can still add it! The system will default to a standard Common App template, but you should still provide helpful guidance based on your general knowledge. When discussing essays, be specific about word limits and requirements.
+
+Use the researchCollege function to get detailed stats (SAT, GPA, acceptance rates) when users ask about a specific college's profile or if they should apply there based on their stats.
+When users ask questions, provide accurate, helpful information.`
             },
             ...conversationHistory.map(msg => ({
                 role: msg.role,
@@ -218,6 +235,20 @@ If a college is not in this specific list, you can still add it! The system will
                     },
                     required: ['essayContent']
                 }
+            },
+            {
+                name: 'researchCollege',
+                description: 'Search for detailed college information including SAT/ACT scores, GPA, acceptance rates, and description.',
+                parameters: {
+                    type: 'object',
+                    properties: {
+                        collegeName: {
+                            type: 'string',
+                            description: 'The name of the college to research'
+                        }
+                    },
+                    required: ['collegeName']
+                }
             }
         ];
 
@@ -257,6 +288,9 @@ If a college is not in this specific list, you can still add it! The system will
                     break;
                 case 'reviewEssay':
                     functionResult = handleReviewEssay(functionArgs.essayContent, functionArgs.focusArea);
+                    break;
+                case 'researchCollege':
+                    functionResult = await handleResearchCollege(functionArgs.collegeName);
                     break;
                 default:
                     functionResult = { error: 'Unknown function' };
@@ -639,6 +673,82 @@ function handleReviewEssay(essayContent, focusArea) {
         focusArea,
         length: essayContent.length
     };
+}
+
+async function handleResearchCollege(collegeName) {
+    try {
+        // 1. Check if we already have detailed research in Supabase catalog
+        const { data: existing } = await supabase
+            .from('college_catalog')
+            .select('*')
+            .ilike('name', `%${collegeName}%`)
+            .maybeSingle();
+
+        if (existing && existing.description) {
+            console.log(`Found ${collegeName} details in catalog.`);
+            return { success: true, college: existing };
+        }
+
+        // 2. If not, use AI to research the college
+        console.log(`Researching college: ${collegeName} via AI...`);
+        const completion = await openai.chat.completions.create({
+            model: 'gpt-4o-mini',
+            messages: [
+                {
+                    role: 'system',
+                    content: `You are a college data expert. Provide detailed statistics and information about the requested college in valid JSON format.
+                    Include: description (2-3 sentences), location (City, State), website, median_sat (e.g. 1450), median_act (e.g. 32), avg_gpa (e.g. 3.9), acceptance_rate (e.g. 4.5), enrollment (integer), cost_of_attendance (integer), and image_url (use a professional unsplash link related to college architecture).
+                    Important: Provide REAL, accurate data as of 2024-2025.
+                    Format:
+                    {
+                        "name": "Full College Name",
+                        "description": "...",
+                        "location": "...",
+                        "website": "...",
+                        "median_sat": 1450,
+                        "median_act": 32,
+                        "avg_gpa": 3.9,
+                        "acceptance_rate": 4.5,
+                        "enrollment": 15000,
+                        "cost_of_attendance": 85000,
+                        "image_url": "..."
+                    }`
+                },
+                {
+                    role: 'user',
+                    content: `Research ${collegeName}`
+                }
+            ],
+            response_format: { type: "json_object" }
+        });
+
+        const parsedData = JSON.parse(completion.choices[0].message.content);
+
+        // 3. Update the catalog so we don't have to research again
+        const { data: updated, error } = await supabase
+            .from('college_catalog')
+            .upsert({
+                name: parsedData.name || collegeName,
+                description: parsedData.description,
+                location: parsedData.location,
+                website: parsedData.website,
+                median_sat: parsedData.median_sat,
+                median_act: parsedData.median_act,
+                avg_gpa: parsedData.avg_gpa,
+                acceptance_rate: parsedData.acceptance_rate,
+                enrollment: parsedData.enrollment,
+                cost_of_attendance: parsedData.cost_of_attendance,
+                image_url: parsedData.image_url,
+                verified: false
+            }, { onConflict: 'name' })
+            .select()
+            .single();
+
+        return { success: true, college: updated || parsedData };
+    } catch (error) {
+        console.error('Research error:', error);
+        return { success: false, error: 'Failed to research college' };
+    }
 }
 
 async function saveConversation(userId, userMessage, aiResponse, functionCall = null) {
