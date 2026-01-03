@@ -184,3 +184,26 @@ function hideLoading() {
 window.showLoading = showLoading;
 window.hideLoading = hideLoading;
 window.showNotification = showNotification;
+
+// Initialize AI Chat Widget for logged-in users (not on landing or counselor page)
+document.addEventListener('DOMContentLoaded', async () => {
+    const currentPage = window.location.pathname.split('/').pop() || 'index.html';
+    const excludedPages = ['index.html', 'login.html', 'signup.html', 'confirm-email.html', 'ai-counselor.html', 'onboarding.html'];
+
+    if (!excludedPages.includes(currentPage)) {
+        try {
+            // We use dynamic import for the module
+            const { getCurrentUser } = await import('./supabase-config.js');
+            const user = await getCurrentUser();
+
+            if (user) {
+                const widgetScript = document.createElement('script');
+                widgetScript.type = 'module';
+                widgetScript.src = 'js/chat-widget.js';
+                document.body.appendChild(widgetScript);
+            }
+        } catch (e) {
+            console.error('Failed to load chat widget:', e);
+        }
+    }
+});
