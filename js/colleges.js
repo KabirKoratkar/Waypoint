@@ -10,6 +10,7 @@ window.openAddCollegeModal = openAddCollegeModal;
 window.closeAddCollegeModal = closeAddCollegeModal;
 window.submitModalAdd = submitModalAdd;
 window.getAIStrategy = getAIStrategy;
+window.deepResearch = deepResearch;
 window.updateStatus = updateStatus;
 window.addFromSearch = addFromSearch;
 
@@ -179,7 +180,10 @@ async function loadAndRenderColleges() {
                 <td>
                     <div style="display: flex; align-items: center; gap: var(--space-sm);">
                         <a href="college-explorer.html?name=${encodeURIComponent(c.name)}" style="color: inherit; text-decoration: none;"><strong>${c.name}</strong></a>
-                        <button class="btn btn-sm btn-ghost" onclick="getAIStrategy('${c.name}')" title="Get AI Strategy">✨</button>
+                        <div style="display: flex; gap: 4px;">
+                            <button class="btn btn-sm btn-ghost" onclick="getAIStrategy('${c.name}')" title="Admission Strategy">✨</button>
+                            <button class="btn btn-sm btn-ghost" onclick="deepResearch('${c.name}')" title="'Why Us' Research">🔍</button>
+                        </div>
                     </div>
                 </td>
                 <td><span class="badge">${c.application_platform || 'TBD'}</span></td>
@@ -346,6 +350,85 @@ function showAIModal(title, content) {
             </div>
             <div style="margin-top: var(--space-2xl); display: flex; gap: var(--space-md);">
                 <button class="btn btn-primary flex-1" onclick="this.closest('.modal-overlay').remove()">Got it, let's win!</button>
+            </div>
+        </div>
+    `;
+
+    document.body.appendChild(modal);
+}
+
+async function deepResearch(collegeName) {
+    showNotification(`Deep researching ${collegeName} for your "Why Us" essays...`, 'info');
+
+    try {
+        const response = await fetch(`${config.apiUrl}/api/colleges/research-deep`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                userId: currentUser.id,
+                collegeName: collegeName
+            })
+        });
+
+        if (!response.ok) throw new Error('Research failed');
+
+        const data = await response.json();
+        showResearchModal(data.findings);
+    } catch (error) {
+        console.error('Research Error:', error);
+        showNotification('Failed to research gems. Check if the AI server is running.', 'error');
+    }
+}
+
+function showResearchModal(findings) {
+    const modal = document.createElement('div');
+    modal.className = 'modal-overlay active';
+    modal.style.cssText = `
+        position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+        background: rgba(15, 23, 42, 0.7); display: flex; align-items: center; justify-content: center;
+        z-index: 2000; backdrop-filter: blur(12px);
+    `;
+
+    const opportunitiesHtml = findings.opportunities.map(opt => `
+        <div style="background: var(--gray-50); border-radius: var(--radius-lg); padding: var(--space-lg); border-left: 4px solid var(--primary-blue); margin-bottom: var(--space-md);">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px;">
+                <h4 style="margin: 0; color: var(--gray-900);">${opt.title}</h4>
+                <span class="badge" style="font-size: 10px; background: white;">${opt.category}</span>
+            </div>
+            <p style="margin: 0 0 8px; font-size: var(--text-sm); line-height: 1.5; color: var(--gray-600);">${opt.description}</p>
+            <div style="font-size: 11px; font-style: italic; color: var(--primary-blue);">
+                <strong>Impact:</strong> ${opt.why_it_fits}
+            </div>
+        </div>
+    `).join('');
+
+    modal.innerHTML = `
+        <div class="card" style="max-width: 700px; width: 95%; padding: 0; max-height: 90vh; overflow-y: auto; background: white; box-shadow: var(--shadow-2xl); border: none;">
+            <div style="position: sticky; top: 0; background: white; padding: var(--space-xl) var(--space-2xl); border-bottom: 1px solid var(--gray-100); display: flex; justify-content: space-between; align-items: center; z-index: 10;">
+                <div style="display: flex; align-items: center; gap: var(--space-md);">
+                    <span style="font-size: 28px;">🔍</span>
+                    <div>
+                        <h2 style="margin: 0; font-size: var(--text-xl); font-weight: 800;">"Why ${findings.college}" Gems</h2>
+                        <p style="margin: 0; font-size: var(--text-xs); color: var(--gray-500);">Specific hooks for your supplements</p>
+                    </div>
+                </div>
+                <button onclick="this.closest('.modal-overlay').remove()" style="background: var(--gray-100); border: none; width: 32px; height: 32px; border-radius: 50%; cursor: pointer;">×</button>
+            </div>
+
+            <div style="padding: var(--space-2xl);">
+                <div style="background: var(--gradient-subtle); padding: var(--space-lg); border-radius: var(--radius-lg); margin-bottom: var(--space-xl); border: 1px dashed var(--primary-blue);">
+                    <h5 style="margin: 0 0 4px; color: var(--primary-blue); font-size: var(--text-xs); text-transform: uppercase; letter-spacing: 0.05em;">Suggested Essay Hook</h5>
+                    <p style="margin: 0; font-size: var(--text-md); font-weight: 500; font-style: italic; color: var(--gray-800);">"${findings.essay_hook}"</p>
+                </div>
+
+                <div style="display: flex; flex-direction: column;">
+                    ${opportunitiesHtml}
+                </div>
+
+                <div style="margin-top: var(--space-xl); text-align: center;">
+                    <p style="font-size: var(--text-xs); color: var(--gray-500); margin-bottom: var(--space-lg);">Tip: Mentions of specific labs, professors, or student orgs show deep interest and fit.</p>
+                    <button class="btn btn-primary w-full" onclick="this.closest('.modal-overlay').remove()">Add to My Notes</button>
+                </div>
             </div>
         </div>
     `;

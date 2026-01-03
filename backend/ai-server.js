@@ -511,6 +511,77 @@ app.post('/api/onboarding/plan', async (req, res) => {
     }
 });
 
+// Deep "Why Us" Research Engine
+app.post('/api/colleges/research-deep', async (req, res) => {
+    try {
+        const { userId, collegeName } = req.body;
+
+        if (!userId || !collegeName) {
+            return res.status(400).json({ error: 'userId and collegeName are required' });
+        }
+
+        console.log(`Deep researching ${collegeName} for user ${userId}...`);
+
+        // Fetch user profile for context (major, graduation year, etc.)
+        const { data: profile } = await supabase
+            .from('profiles')
+            .select('*')
+            .eq('id', userId)
+            .single();
+
+        const major = profile?.intended_major || 'undecided';
+
+        const completion = await openai.chat.completions.create({
+            model: 'gpt-4o-mini',
+            messages: [
+                {
+                    role: 'system',
+                    content: `You are an expert college admissions researcher. Your task is to find specific, non-obvious "gems" at a university that a student can use in a "Why Us" essay.
+                    
+                    College: ${collegeName}
+                    Student Major: ${major}
+                    
+                    Find 4 distinct areas:
+                    1. Academics: A specific unique program, lab, or professor related to ${major}.
+                    2. Community: A unique student organization or tradition.
+                    3. Location/Industry: How the school's location connects to ${major} (e.g., internships, local ecosystem).
+                    4. "The X Factor": A quirky or prestigious fact/program that makes ${collegeName} stand out from its peers.
+                    
+                    Return the data in structured JSON:
+                    {
+                        "college": "${collegeName}",
+                        "opportunities": [
+                            {
+                                "category": "Academic | Student Life | Career | Unique",
+                                "title": "Name of the target (e.g. The Vertigo Lab)",
+                                "description": "1-2 sentence description explaining exactly what it is.",
+                                "why_it_fits": "1 sentence explanation of why this specific student (Major: ${major}) would benefit from it."
+                            }
+                        ],
+                        "essay_hook": "A one-sentence 'hook' or angle they could use to start their Why Us essay."
+                    }`
+                },
+                {
+                    role: 'user',
+                    content: `Research ${collegeName} for me.`
+                }
+            ],
+            response_format: { type: "json_object" }
+        });
+
+        const findings = JSON.parse(completion.choices[0].message.content);
+
+        res.json({
+            success: true,
+            findings: findings
+        });
+
+    } catch (error) {
+        console.error('Deep research error:', error);
+        res.status(500).json({ error: 'Internal server error', details: error.message });
+    }
+});
+
 // Function handlers
 
 async function handleAddCollege(userId, collegeName, type) {
