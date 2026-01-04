@@ -83,7 +83,7 @@
 
             // Poll for verification status
             const checkStatus = async () => {
-                // We use getSession first to ensure the client has the latest token if refreshed elsewhere
+                // Force fresh read of session from storage
                 const { data: { session } } = await supabase.auth.getSession();
                 const { data: { user } } = await supabase.auth.getUser();
 
@@ -99,17 +99,17 @@
 
                     setTimeout(() => {
                         window.location.assign('onboarding.html');
-                    }, 1500);
+                    }, 1000);
                     return true;
                 }
                 return false;
             };
 
-            // Start polling every 3 seconds
+            // Start polling every 2 seconds
             const intervalId = setInterval(async () => {
                 const isConfirmed = await checkStatus();
                 if (isConfirmed) clearInterval(intervalId);
-            }, 3000);
+            }, 2000);
 
             // Initial check
             checkStatus();

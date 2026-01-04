@@ -62,6 +62,20 @@
         </div>
     </div>
 
+    <script type="module">
+        import { supabase } from './js/supabase-config.js';
+
+        // When this page loads, Supabase will automatically pick up the 
+        // access_token from the URL hash and save it to storage.
+        document.addEventListener('DOMContentLoaded', async () => {
+            console.log('Verifying session...');
+            const { data, error } = await supabase.auth.getSession();
+            if (data.session) {
+                console.log('Session secured! Tab can be safely closed.');
+            }
+        });
+    </script>
+
     <style>
         @keyframes bounce {
 
