@@ -191,6 +191,7 @@
     flex: 1;
     border: none;
     outline: none;
+    background: transparent;
     font-family: inherit;
     font-size: var(--text-sm);
     padding: var(--space-sm) 0;
