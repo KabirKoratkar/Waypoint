@@ -182,7 +182,7 @@ async function loadAndRenderColleges() {
                         <a href="college-explorer.html?name=${encodeURIComponent(c.name)}" style="color: inherit; text-decoration: none;"><strong>${c.name}</strong></a>
                         <div style="display: flex; gap: 4px;">
                             <button class="btn btn-icon btn-icon-sm btn-ghost" onclick="getAIStrategy('${c.name.replace(/'/g, "\\'")}')" title="Admission Strategy">✨</button>
-                            <button class="btn btn-icon btn-icon-sm btn-ghost" onclick="deepResearch('${c.name.replace(/'/g, "\\'")}')" title="'Why Us' Research">🔍</button>
+                            <button class="btn btn-icon btn-icon-sm btn-ghost" onclick="deepResearch('${c.name.replace(/'/g, "\\'")}')" title="Intelligence Report">🕵️</button>
                         </div>
                     </div>
                 </td>
@@ -385,49 +385,78 @@ function showResearchModal(findings) {
     modal.className = 'modal-overlay active';
     modal.style.cssText = `
         position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-        background: rgba(15, 23, 42, 0.7); display: flex; align-items: center; justify-content: center;
-        z-index: 2000; backdrop-filter: blur(12px);
+        background: rgba(15, 23, 42, 0.85); display: flex; align-items: center; justify-content: center;
+        z-index: 2000; backdrop-filter: blur(16px);
     `;
 
-    const opportunitiesHtml = findings.opportunities.map(opt => `
-        <div style="background: var(--gray-50); border-radius: var(--radius-lg); padding: var(--space-lg); border-left: 4px solid var(--primary-blue); margin-bottom: var(--space-md);">
-            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px;">
-                <h4 style="margin: 0; color: var(--gray-900);">${opt.title}</h4>
-                <span class="badge" style="font-size: 10px; background: white;">${opt.category}</span>
+    const renderModule = (mod, icon, color) => {
+        if (!mod || !mod.items) return '';
+        const itemsHtml = mod.items.map(item => `
+            <div style="margin-bottom: var(--space-md);">
+                <div style="font-weight: 700; font-size: var(--text-sm); font-family: 'Outfit', sans-serif; color: var(--gray-900);">${item.title}</div>
+                <div style="font-size: var(--text-sm); color: var(--gray-600); line-height: 1.5;">${item.content}</div>
             </div>
-            <p style="margin: 0 0 8px; font-size: var(--text-sm); line-height: 1.5; color: var(--gray-600);">${opt.description}</p>
-            <div style="font-size: 11px; font-style: italic; color: var(--primary-blue);">
-                <strong>Writing Advice:</strong> ${opt.advice}
+        `).join('');
+
+        return `
+            <div class="card" style="margin-bottom: var(--space-lg); border-left: 4px solid ${color};">
+                <div style="display: flex; align-items: center; gap: var(--space-sm); margin-bottom: var(--space-md);">
+                    <span style="font-size: 20px;">${icon}</span>
+                    <h3 style="margin: 0; font-size: var(--text-md); text-transform: uppercase; letter-spacing: 0.05em; color: ${color};">${mod.headline}</h3>
+                </div>
+                ${itemsHtml}
             </div>
-        </div>
-    `).join('');
+        `;
+    };
+
+    const modules = findings.modules;
 
     modal.innerHTML = `
-        <div class="card" style="max-width: 700px; width: 95%; padding: 0; max-height: 90vh; overflow-y: auto; background: white; box-shadow: var(--shadow-2xl); border: none;">
-            <div style="position: sticky; top: 0; background: white; padding: var(--space-xl) var(--space-2xl); border-bottom: 1px solid var(--gray-100); display: flex; justify-content: space-between; align-items: center; z-index: 10;">
+        <div class="card" style="max-width: 800px; width: 95%; padding: 0; max-height: 90vh; overflow-y: auto; background: var(--gray-50); box-shadow: var(--shadow-2xl); border: none;">
+            <!-- Header Section -->
+            <div style="position: sticky; top: 0; background: white; padding: var(--space-xl) var(--space-2xl); border-bottom: 1px solid var(--gray-200); display: flex; justify-content: space-between; align-items: center; z-index: 10;">
                 <div style="display: flex; align-items: center; gap: var(--space-md);">
-                    <span style="font-size: 28px;">🔍</span>
+                    <div style="width: 50px; height: 50px; background: var(--gradient-primary); border-radius: var(--radius-lg); display: flex; align-items: center; justify-content: center; font-size: 24px; color: white;">🕵️</div>
                     <div>
-                        <h2 style="margin: 0; font-size: var(--text-xl); font-weight: 800;">"Why ${findings.college}" Research</h2>
-                        <p style="margin: 0; font-size: var(--text-xs); color: var(--gray-500);">What to research and write in your own voice</p>
+                        <h2 style="margin: 0; font-family: 'Outfit', sans-serif; font-size: var(--text-2xl); font-weight: 800; color: var(--gray-900);">${findings.college} Intelligence Report</h2>
+                        <p style="margin: 0; font-size: var(--text-xs); color: var(--gray-500); text-transform: uppercase; letter-spacing: 0.1em; font-weight: 700;">Internal Personnel File: CONFIDENTIAL</p>
                     </div>
                 </div>
-                <button onclick="this.closest('.modal-overlay').remove()" style="background: var(--gray-100); border: none; width: 32px; height: 32px; border-radius: 50%; cursor: pointer;">×</button>
+                <button onclick="this.closest('.modal-overlay').remove()" class="btn btn-icon btn-ghost">×</button>
             </div>
 
+            <!-- Content Section -->
             <div style="padding: var(--space-2xl);">
-                <div style="background: var(--gradient-subtle); padding: var(--space-lg); border-radius: var(--radius-lg); margin-bottom: var(--space-xl); border: 1px dashed var(--primary-blue);">
-                    <h5 style="margin: 0 0 4px; color: var(--primary-blue); font-size: var(--text-xs); text-transform: uppercase; letter-spacing: 0.05em;">Recommended Narrative Angle</h5>
-                    <p style="margin: 0; font-size: var(--text-md); font-weight: 500; font-style: italic; color: var(--gray-800);">${findings.research_angle}</p>
+                <!-- Executive Summary -->
+                <div class="card" style="background: var(--gradient-subtle); border: 1px dashed var(--primary-blue); margin-bottom: var(--space-xl);">
+                    <h4 style="margin: 0 0 8px; font-size: var(--text-xs); color: var(--primary-blue); text-transform: uppercase;">Executive Summary</h4>
+                    <p style="margin: 0; font-size: var(--text-md); font-weight: 500; font-style: italic; color: var(--gray-800);">${findings.summary}</p>
                 </div>
 
-                <div style="display: flex; flex-direction: column;">
-                    ${opportunitiesHtml}
+                <!-- Grid for Modules -->
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-lg);">
+                    <div style="display: flex; flex-direction: column;">
+                        ${renderModule(modules.academics, '🎓', 'var(--primary-blue)')}
+                        ${renderModule(modules.career, '💼', 'var(--success)')}
+                    </div>
+                    <div style="display: flex; flex-direction: column;">
+                        ${renderModule(modules.culture, '🎉', 'var(--warning)')}
+                        ${renderModule(modules.admissions, '🎯', 'var(--accent-purple)')}
+                        
+                        <!-- The Edge -->
+                        <div class="card" style="background: var(--gray-900); color: white; border: none;">
+                            <div style="display: flex; align-items: center; gap: var(--space-sm); margin-bottom: var(--space-md);">
+                                <span style="font-size: 20px;">⚔️</span>
+                                <h3 style="margin: 0; font-size: var(--text-md); text-transform: uppercase; letter-spacing: 0.05em; color: white;">The Competitive Edge</h3>
+                            </div>
+                            <p style="font-size: var(--text-sm); line-height: 1.6; color: var(--gray-300); margin: 0;">${modules.edge.content}</p>
+                        </div>
+                    </div>
                 </div>
 
                 <div style="margin-top: var(--space-xl); text-align: center;">
-                    <p style="font-size: var(--text-xs); color: var(--gray-500); margin-bottom: var(--space-lg);">Tip: Use these points as a starting bridge, but always verify details on the official university site.</p>
-                    <button class="btn btn-primary w-full" onclick="this.closest('.modal-overlay').remove()">Got it, I'll start researching!</button>
+                    <button class="btn btn-primary w-full" style="height: 50px;" onclick="this.closest('.modal-overlay').remove()">Download Intelligence to Brain</button>
+                    <p style="font-size: 10px; color: var(--gray-400); margin-top: var(--space-md);">Verified against 2024-2025 Admissions Data • AI-Generated Insight</p>
                 </div>
             </div>
         </div>

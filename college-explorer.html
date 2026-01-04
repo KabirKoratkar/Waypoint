@@ -197,12 +197,16 @@
             <div class="navbar-logo">CollegeApps.ai</div>
             <ul class="navbar-links">
                 <li><a href="dashboard.html" class="navbar-link">Dashboard</a></li>
+                <li><a href="calendar.html" class="navbar-link">Calendar</a></li>
+                <li><a href="analytics.html" class="navbar-link">Analytics</a></li>
                 <li><a href="colleges.html" class="navbar-link active">Colleges</a></li>
                 <li><a href="essays.html" class="navbar-link">Essays</a></li>
+                <li><a href="documents.html" class="navbar-link">Documents</a></li>
                 <li><a href="ai-counselor.html" class="navbar-link">AI Counselor</a></li>
                 <li><a href="settings.html" class="navbar-link">Settings</a></li>
                 <li id="user-nav-item"><span class="badge badge-primary" id="user-badge">User</span></li>
             </ul>
+            <button class="mobile-menu-toggle" id="mobileToggle">☰</button>
         </div>
     </nav>
 
@@ -218,7 +222,12 @@
                             style="color: white; text-decoration: underline;">Visit Website</a>
                     </div>
                 </div>
-                <button class="btn btn-primary" id="addCollegeBtn">+ Add to List</button>
+                <div style="display: flex; gap: var(--space-md);">
+                    <button class="btn btn-secondary" id="intelligenceReportBtn"
+                        style="background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.3); color: white; backdrop-filter: blur(10px);">🕵️
+                        Intelligence Report</button>
+                    <button class="btn btn-primary" id="addCollegeBtn">+ Add to List</button>
+                </div>
             </div>
         </div>
     </header>

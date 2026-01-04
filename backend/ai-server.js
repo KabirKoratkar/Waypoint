@@ -516,7 +516,7 @@ app.post('/api/onboarding/plan', async (req, res) => {
     }
 });
 
-// Deep "Why Us" Research Engine
+// Comprehensive College Intelligence Engine
 app.post('/api/colleges/research-deep', async (req, res) => {
     try {
         const { userId, collegeName } = req.body;
@@ -525,9 +525,9 @@ app.post('/api/colleges/research-deep', async (req, res) => {
             return res.status(400).json({ error: 'userId and collegeName are required' });
         }
 
-        console.log(`Deep researching ${collegeName} for user ${userId}...`);
+        console.log(`Generating intelligence report for ${collegeName} for user ${userId}...`);
 
-        // Fetch user profile for context (major, graduation year, etc.)
+        // Fetch user profile for context
         const { data: profile } = await supabase
             .from('profiles')
             .select('*')
@@ -541,36 +541,67 @@ app.post('/api/colleges/research-deep', async (req, res) => {
             messages: [
                 {
                     role: 'system',
-                    content: `You are an expert college admissions researcher. Your task is to find specific, non-obvious "research points" at a university that a student can use to write their own "Why Us" essay.
-                    
-                    CRITICAL RULE: DO NOT write any draft text, sentences, or copy-pasteable hooks. Your output MUST ONLY consist of facts, program names, and advice on WHAT the student should research and write about in their OWN voice.
+                    content: `You are a high-level College Admissions Intelligence Officer. Your task is to generate a comprehensive, actionable intelligence report on a university that goes far beyond surface-level facts.
                     
                     College: ${collegeName}
-                    Student Major: ${major}
+                    Student's Target Major: ${major}
                     
-                    Find 4 distinct research areas:
-                    1. Academics: A specific unique program, lab, or professor related to ${major}.
-                    2. Community: A unique student organization or tradition.
-                    3. Location/Industry: How the school's location connects to ${major} (e.g., internships, local ecosystem).
-                    4. "The X Factor": A quirky or prestigious fact/program that makes ${collegeName} stand out from its peers.
+                    Your report must be divided into 5 modules:
                     
-                    Return the data in structured JSON:
+                    1. ACADEMIC DEPTH:
+                       - One specific "Signature Program" or highly niche lab/resource related to ${major}.
+                       - A specific notable professor in ${major} and why they are famous.
+                       - A unique graduation requirement or academic tradition.
+                    
+                    2. CAREER & OUTCOMES:
+                       - Mention 2-3 specific "top-tier" companies or industries that recruit heavily from this school for ${major}.
+                       - A specific alumni fact or network advantage (e.g., "The Trojan Family" for USC).
+                    
+                    3. CAMPUS SOUL & CULTURE:
+                       - A unique student tradition or annual event (non-athletic).
+                       - The "vibe" description (e.g., "Work hard, play hard" vs "Eclectic and intellectual").
+                       - A specific hidden gem spot on or near campus.
+                    
+                    4. ADMISSIONS INSIDER:
+                       - What is the "Ideal Student Profile" this school looks for? (e.g., Socially conscious leaders, hardcore researchers).
+                       - A specific tip for the supplementals that isn't commonly discussed.
+                    
+                    5. THE COMPETITIVE EDGE:
+                       - One thing this school has that its direct rivals (e.g., if Stanford, then rival is Berkeley) do NOT have.
+                    
+                    CRITICAL: Do NOT write the student's essay. Provide intelligence, facts, and strategic advice.
+                    
+                    Return as structured JSON:
                     {
                         "college": "${collegeName}",
-                        "opportunities": [
-                            {
-                                "category": "Academic | Student Life | Career | Unique",
-                                "title": "Name of the target (e.g. The Vertigo Lab)",
-                                "description": "1-2 sentence factual explanation of what this is.",
-                                "advice": "Briefly describe WHAT the student should emphasize about this in their essay (e.g., 'Mention how your interest in X aligns with this lab's focus on Y')."
+                        "summary": "A 2-sentence 'executive summary' of the school's brand identity.",
+                        "modules": {
+                            "academics": {
+                                "headline": "Deep Academic Bench",
+                                "items": [{"title": "...", "content": "..."}]
+                            },
+                            "career": {
+                                "headline": "Return on Investment",
+                                "items": [{"title": "...", "content": "..."}]
+                            },
+                            "culture": {
+                                "headline": "The Campus Soul",
+                                "items": [{"title": "...", "content": "..."}]
+                            },
+                            "admissions": {
+                                "headline": "Admissions Strategy",
+                                "items": [{"title": "...", "content": "..."}]
+                            },
+                            "edge": {
+                                "headline": "The X-Factor",
+                                "content": "..."
                             }
-                        ],
-                        "research_angle": "A one-sentence suggestion for the structural 'angle' or 'theme' the student should research to build their narrative."
+                        }
                     }`
                 },
                 {
                     role: 'user',
-                    content: `Research ${collegeName} for me.`
+                    content: `Generate a full intelligence report for ${collegeName}.`
                 }
             ],
             response_format: { type: "json_object" }
@@ -584,7 +615,7 @@ app.post('/api/colleges/research-deep', async (req, res) => {
         });
 
     } catch (error) {
-        console.error('Deep research error:', error);
+        console.error('Intelligence report error:', error);
         res.status(500).json({ error: 'Internal server error', details: error.message });
     }
 });
