@@ -44,13 +44,19 @@
 
             <p
                 style="color: var(--gray-500); font-size: var(--text-sm); margin-bottom: var(--space-xl); line-height: 1.6;">
-                Click the link in the email to verify your account. Once you see the "Verified" page, you can come back
-                here to log in, or just continue from the new tab.
+                Click the link in the email to verify your account. Once confirmed, you can log in to your dashboard.
             </p>
 
             <div style="display: flex; flex-direction: column; gap: var(--space-md);">
                 <a href="login.html" class="btn btn-primary" style="width: 100%;">Go to Log In</a>
                 <button id="resendBtn" class="btn btn-outline" style="width: 100%;">Resend Email</button>
+            </div>
+
+            <div id="statusArea"
+                style="margin-top: var(--space-xl); padding: var(--space-md); border-radius: var(--radius-lg); background: var(--gray-50); border: 1px solid var(--gray-200); display: flex; align-items: center; justify-content: center; gap: var(--space-sm);">
+                <span class="loading-spinner"></span>
+                <span style="font-size: var(--text-sm); color: var(--gray-600); font-weight: 500;">Waiting for
+                    verification...</span>
             </div>
 
             <p
@@ -63,7 +69,7 @@
 
     <script src="js/main.js"></script>
     <script type="module">
-        import { resendConfirmationEmail } from './js/supabase-config.js';
+        import { resendConfirmationEmail, supabase } from './js/supabase-config.js';
 
         document.addEventListener('DOMContentLoaded', function () {
             const urlParams = new URLSearchParams(window.location.search);
@@ -75,8 +81,42 @@
                 emailDisplay.textContent = email;
             }
 
+            // Poll for verification status
+            const checkStatus = async () => {
+                // We use getSession first to ensure the client has the latest token if refreshed elsewhere
+                const { data: { session } } = await supabase.auth.getSession();
+                const { data: { user } } = await supabase.auth.getUser();
+
+                if (user && user.email_confirmed_at) {
+                    const statusArea = document.getElementById('statusArea');
+                    statusArea.innerHTML = `
+                        <span style="font-size: 20px;">✅</span>
+                        <span style="font-size: var(--text-sm); color: var(--success); font-weight: 600;">Success! Redirecting...</span>
+                    `;
+                    statusArea.style.borderColor = 'var(--success)';
+
+                    if (window.showNotification) showNotification('Email verified! Redirecting...', 'success');
+
+                    setTimeout(() => {
+                        window.location.assign('onboarding.html');
+                    }, 1500);
+                    return true;
+                }
+                return false;
+            };
+
+            // Start polling every 3 seconds
+            const intervalId = setInterval(async () => {
+                const isConfirmed = await checkStatus();
+                if (isConfirmed) clearInterval(intervalId);
+            }, 3000);
+
+            // Initial check
+            checkStatus();
+
             if (resendBtn) {
                 resendBtn.addEventListener('click', async function () {
+                    // ... existing resend logic ...
                     if (!email) {
                         showNotification('Email address missing. Please try signing up again.', 'error');
                         return;
