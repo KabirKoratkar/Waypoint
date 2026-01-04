@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Email Verified - CollegeApps.ai</title>
+
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Outfit:wght@700;800&display=swap"
+        rel="stylesheet">
+
+    <!-- Styles -->
+    <link rel="stylesheet" href="css/design-system.css">
+    <link rel="stylesheet" href="css/components.css">
+    <link rel="stylesheet" href="css/pages.css">
+
+    <!-- Theme Initialization -->
+    <script>
+        (function () {
+            const savedTheme = localStorage.getItem('theme');
+            if (savedTheme === 'dark' || (!savedTheme && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+                document.documentElement.setAttribute('data-theme', 'dark');
+            }
+        })();
+    </script>
+
+    <style>
+        .verified-card {
+            max-width: 500px;
+            width: 90%;
+            text-align: center;
+            padding: var(--space-3xl);
+            background: var(--white);
+            border-radius: var(--radius-2xl);
+            box-shadow: var(--shadow-2xl);
+            animation: slideUp 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .success-icon {
+            font-size: 5rem;
+            margin-bottom: var(--space-xl);
+            display: inline-block;
+            animation: bounce 2s infinite;
+        }
+
+        @keyframes bounce {
+
+            0%,
+            20%,
+            50%,
+            80%,
+            100% {
+                transform: translateY(0);
+            }
+
+            40% {
+                transform: translateY(-20px);
+            }
+
+            60% {
+                transform: translateY(-10px);
+            }
+        }
+
+        .confetti {
+            position: absolute;
+            width: 10px;
+            height: 10px;
+            background-color: var(--primary-blue);
+            border-radius: 2px;
+        }
+    </style>
+</head>
+
+<body class="flex-center" style="min-height: 100vh; background: var(--gray-50);">
+    <div class="verified-card">
+        <div class="success-icon">🎉</div>
+        <h1
+            style="font-size: var(--text-3xl); font-weight: 800; margin-bottom: var(--space-sm); color: var(--gray-900);">
+            Email Verified!</h1>
+        <p
+            style="color: var(--gray-600); margin-bottom: var(--space-2xl); font-size: var(--text-lg); line-height: 1.6;">
+            Your account is now active. You can close this tab and return to the previous one, or continue here to set
+            up your profile.
+        </p>
+
+        <div style="display: flex; flex-direction: column; gap: var(--space-md);">
+            <a href="onboarding.html" class="btn btn-primary btn-lg" style="width: 100%;">Continue to Onboarding</a>
+            <p style="font-size: var(--text-xs); color: var(--gray-400); margin-top: var(--space-sm);">
+                Redirecting you automatically in <span id="countdown">10</span> seconds...
+            </p>
+        </div>
+    </div>
+
+    <script>
+        // Simple countdown and redirect
+        let seconds = 10;
+        const countdownEl = document.getElementById('countdown');
+
+        const interval = setInterval(() => {
+            seconds--;
+            countdownEl.textContent = seconds;
+            if (seconds <= 0) {
+                clearInterval(interval);
+                window.location.href = 'onboarding.html';
+            }
+        }, 1000);
+
+        // Fallback: If they came from a link with a hash (access_token), 
+        // Supabase might have already handled it.
+        // We'll keep them here for the "wow" factor before redirecting.
+    </script>
+</body>
+
+</html>

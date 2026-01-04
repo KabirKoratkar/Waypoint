@@ -399,7 +399,7 @@ async function signUp(email, password, fullName) {
             data: {
                 full_name: fullName
             },
-            emailRedirectTo: `${window.location.origin}/onboarding.html`
+            emailRedirectTo: `${window.location.origin}/verified.html`
         }
     });
 
