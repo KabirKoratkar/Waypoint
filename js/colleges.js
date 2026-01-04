@@ -412,9 +412,9 @@ function showResearchModal(findings) {
     const modules = findings.modules;
 
     modal.innerHTML = `
-        <div class="card" style="max-width: 800px; width: 95%; padding: 0; max-height: 90vh; overflow-y: auto; background: var(--gray-50); box-shadow: var(--shadow-2xl); border: none;">
+        <div class="card" style="max-width: 800px; width: 95%; padding: 0; max-height: 90vh; overflow-y: auto; background: var(--gray-50); box-shadow: var(--shadow-2xl); border: 1px solid var(--gray-200);">
             <!-- Header Section -->
-            <div style="position: sticky; top: 0; background: white; padding: var(--space-xl) var(--space-2xl); border-bottom: 1px solid var(--gray-200); display: flex; justify-content: space-between; align-items: center; z-index: 10;">
+            <div style="position: sticky; top: 0; background: var(--white); padding: var(--space-xl) var(--space-2xl); border-bottom: 1px solid var(--gray-200); display: flex; justify-content: space-between; align-items: center; z-index: 10; backdrop-filter: blur(10px);">
                 <div style="display: flex; align-items: center; gap: var(--space-md);">
                     <div style="width: 50px; height: 50px; background: var(--gradient-primary); border-radius: var(--radius-lg); display: flex; align-items: center; justify-content: center; font-size: 24px; color: white;">🕵️</div>
                     <div>
@@ -428,7 +428,7 @@ function showResearchModal(findings) {
             <!-- Content Section -->
             <div style="padding: var(--space-2xl);">
                 <!-- Executive Summary -->
-                <div class="card" style="background: var(--gradient-subtle); border: 1px dashed var(--primary-blue); margin-bottom: var(--space-xl);">
+                <div class="card" style="background: var(--white); border: 1px dashed var(--primary-blue); margin-bottom: var(--space-xl);">
                     <h4 style="margin: 0 0 8px; font-size: var(--text-xs); color: var(--primary-blue); text-transform: uppercase;">Executive Summary</h4>
                     <p style="margin: 0; font-size: var(--text-md); font-weight: 500; font-style: italic; color: var(--gray-800);">${findings.summary}</p>
                 </div>

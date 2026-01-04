@@ -145,8 +145,8 @@ function showIntelligenceModal(findings) {
     const modules = findings.modules;
 
     modal.innerHTML = `
-        <div class="card" style="max-width: 800px; width: 95%; padding: 0; max-height: 90vh; overflow-y: auto; background: var(--gray-50); box-shadow: var(--shadow-2xl); border: none;">
-            <div style="position: sticky; top: 0; background: white; padding: var(--space-xl) var(--space-2xl); border-bottom: 1px solid var(--gray-200); display: flex; justify-content: space-between; align-items: center; z-index: 10;">
+        <div class="card" style="max-width: 800px; width: 95%; padding: 0; max-height: 90vh; overflow-y: auto; background: var(--gray-50); box-shadow: var(--shadow-2xl); border: 1px solid var(--gray-200);">
+            <div style="position: sticky; top: 0; background: var(--white); padding: var(--space-xl) var(--space-2xl); border-bottom: 1px solid var(--gray-200); display: flex; justify-content: space-between; align-items: center; z-index: 10; backdrop-filter: blur(10px);">
                 <div style="display: flex; align-items: center; gap: var(--space-md);">
                     <div style="width: 50px; height: 50px; background: var(--gradient-primary); border-radius: var(--radius-lg); display: flex; align-items: center; justify-content: center; font-size: 24px; color: white;">🕵️</div>
                     <div>
@@ -154,11 +154,11 @@ function showIntelligenceModal(findings) {
                         <p style="margin: 0; font-size: var(--text-xs); color: var(--gray-500); text-transform: uppercase; letter-spacing: 0.1em; font-weight: 700;">Internal Personnel File: CONFIDENTIAL</p>
                     </div>
                 </div>
-                <button onclick="this.closest('.modal-overlay').remove()" style="background: var(--gray-100); border: none; width: 32px; height: 32px; border-radius: 50%; cursor: pointer;">×</button>
+                <button onclick="this.closest('.modal-overlay').remove()" style="background: var(--gray-100); border: none; width: 32px; height: 32px; border-radius: 50%; cursor: pointer; color: var(--gray-600);">×</button>
             </div>
 
             <div style="padding: var(--space-2xl);">
-                <div class="card" style="background: var(--gradient-subtle); border: 1px dashed var(--primary-blue); margin-bottom: var(--space-xl); background: white; padding: var(--space-lg);">
+                <div class="card" style="border: 1px dashed var(--primary-blue); margin-bottom: var(--space-xl); background: var(--white); padding: var(--space-lg);">
                     <h4 style="margin: 0 0 8px; font-size: var(--text-xs); color: var(--primary-blue); text-transform: uppercase;">Executive Summary</h4>
                     <p style="margin: 0; font-size: var(--text-md); font-weight: 500; font-style: italic; color: var(--gray-800);">${findings.summary}</p>
                 </div>

@@ -140,7 +140,7 @@
     font-family: var(--font-primary);
     color: var(--gray-800);
     background: var(--white);
-    border: 2px solid var(--gray-300);
+    border: 2px solid var(--gray-200);
     border-radius: var(--radius-lg);
     transition: all var(--transition-base);
     outline: none;
@@ -236,7 +236,7 @@
     position: sticky;
     top: 0;
     z-index: 100;
-    background: rgba(255, 255, 255, 0.95);
+    background: var(--white);
     backdrop-filter: blur(10px);
     -webkit-backdrop-filter: blur(10px);
     border-bottom: 1px solid var(--gray-200);
@@ -809,7 +809,7 @@
     left: 0;
     right: 0;
     bottom: 0;
-    background: rgba(255, 255, 255, 0.85);
+    background: var(--white);
     backdrop-filter: blur(12px);
     -webkit-backdrop-filter: blur(12px);
     z-index: 9999;
