@@ -81,35 +81,70 @@
                 emailDisplay.textContent = email;
             }
 
-            // Poll for verification status
+            // Success handler
+            let verified = false;
+            const handleSuccess = () => {
+                if (verified) return;
+                verified = true;
+
+                const statusArea = document.getElementById('statusArea');
+                statusArea.innerHTML = `
+                    <span style="font-size: 20px;">✅</span>
+                    <span style="font-size: var(--text-sm); color: var(--success); font-weight: 600;">Email Verified! Redirecting...</span>
+                `;
+                statusArea.style.borderColor = 'var(--success)';
+                statusArea.style.background = 'rgba(16, 185, 129, 0.1)';
+
+                if (window.showNotification) showNotification('Email verified! Redirecting...', 'success');
+
+                setTimeout(() => {
+                    window.location.assign('onboarding.html');
+                }, 1500);
+            };
+
+            // Listen for auth state changes (Cross-tab sync)
+            const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+                console.log('Auth event detected:', event);
+                // Check if we have a session and the email is confirmed
+                if (session?.user?.email_confirmed_at) {
+                    console.log('User confirmed via auth event');
+                    handleSuccess();
+                }
+            });
+
+            // Poll for verification status as a fallback
             const checkStatus = async () => {
-                // Force fresh read of session from storage
-                const { data: { session } } = await supabase.auth.getSession();
-                const { data: { user } } = await supabase.auth.getUser();
+                if (verified) return true;
 
-                if (user && user.email_confirmed_at) {
-                    const statusArea = document.getElementById('statusArea');
-                    statusArea.innerHTML = `
-                        <span style="font-size: 20px;">✅</span>
-                        <span style="font-size: var(--text-sm); color: var(--success); font-weight: 600;">Success! Redirecting...</span>
-                    `;
-                    statusArea.style.borderColor = 'var(--success)';
+                try {
+                    // Try to get session first as it's faster
+                    const { data: { session } } = await supabase.auth.getSession();
 
-                    if (window.showNotification) showNotification('Email verified! Redirecting...', 'success');
+                    if (session?.user?.email_confirmed_at) {
+                        handleSuccess();
+                        return true;
+                    }
 
-                    setTimeout(() => {
-                        window.location.assign('onboarding.html');
-                    }, 1000);
-                    return true;
+                    // Fallback to getUser which checks with server if needed
+                    const { data: { user } } = await supabase.auth.getUser();
+                    if (user && user.email_confirmed_at) {
+                        handleSuccess();
+                        return true;
+                    }
+                } catch (err) {
+                    console.error('Status check error:', err);
                 }
                 return false;
             };
 
-            // Start polling every 2 seconds
+            // Start polling every 3 seconds
             const intervalId = setInterval(async () => {
                 const isConfirmed = await checkStatus();
-                if (isConfirmed) clearInterval(intervalId);
-            }, 2000);
+                if (isConfirmed) {
+                    clearInterval(intervalId);
+                    subscription.unsubscribe();
+                }
+            }, 3000);
 
             // Initial check
             checkStatus();

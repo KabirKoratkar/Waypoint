@@ -18,7 +18,16 @@ async function init() {
 
     currentUser = await getCurrentUser();
 
+    // If no user found immediately, wait a moment and try one more time
+    // (Handles race conditions from cross-tab verification redirects)
     if (!currentUser) {
+        console.log('No session found, waiting briefly...');
+        await new Promise(resolve => setTimeout(resolve, 1500));
+        currentUser = await getCurrentUser();
+    }
+
+    if (!currentUser) {
+        console.log('Final check: No session found, redirecting to login');
         window.location.assign('login.html');
         return;
     }

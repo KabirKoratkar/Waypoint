@@ -124,14 +124,21 @@ document.addEventListener('DOMContentLoaded', async function () {
         }
     });
 
-    // AI assistance buttons (New Sidebar Buttons)
-    const aiButtons = document.querySelectorAll('.ai-action-btn');
-    aiButtons.forEach(btn => {
-        btn.addEventListener('click', function () {
-            const action = this.dataset.action || this.textContent.trim();
-            handleAIAction(action);
+    // Conceptual AI Review
+    const reviewBtn = document.getElementById('reviewSelectionBtn');
+    if (reviewBtn) {
+        reviewBtn.addEventListener('click', async () => {
+            const editor = document.getElementById('essayEditor');
+            const selection = editor.value.substring(editor.selectionStart, editor.selectionEnd).trim();
+
+            if (!selection) {
+                showNotification('Please highlight some text in your essay first!', 'warning');
+                return;
+            }
+
+            await handleConceptualReview(selection);
         });
-    });
+    }
 
     // Save on page unload
     window.addEventListener('beforeunload', async function (e) {
@@ -532,37 +539,47 @@ function updateCounts() {
     }
 }
 
-async function handleAIAction(action) {
-    console.log('AI Action:', action);
+async function handleConceptualReview(selection) {
+    if (!currentEssay) return;
 
-    if (action.includes('Save')) {
-        await saveCurrentEssay();
-        return;
-    }
-
-    if (!currentEssay) {
-        showNotification('Select an essay first!', 'warning');
-        return;
-    }
-
-    const essayEditor = document.getElementById('essayEditor');
-    const content = essayEditor.value;
+    const feedbackContainer = document.getElementById('aiFeedbackContainer');
+    const editor = document.getElementById('essayEditor');
+    const content = editor.value;
     const prompt = currentEssay.prompt || currentEssay.title;
 
-    showNotification(`AI is working on ${action}...`, 'info');
-    showSavingIndicator(true, 'AI Processing...');
+    // Show loading state in the container
+    const loadingId = 'loading-' + Date.now();
+    const loadingHtml = `
+        <div id="${loadingId}" class="card" style="padding: var(--space-md); background: var(--gray-50); border: 1px dashed var(--primary-blue); margin-bottom: var(--space-sm);">
+            <div style="display: flex; align-items: center; gap: var(--space-sm);">
+                <div class="loading-spinner" style="width: 14px; height: 14px;"></div>
+                <span style="font-size: var(--text-xs); color: var(--gray-500);">Analyzing selection...</span>
+            </div>
+        </div>
+    `;
+
+    // Remove empty state if present
+    const emptyState = feedbackContainer.querySelector('.empty-state');
+    if (emptyState) emptyState.remove();
+
+    feedbackContainer.insertAdjacentHTML('afterbegin', loadingHtml);
+    feedbackContainer.scrollTop = 0;
 
     try {
-        let aiMessage = '';
-        if (action.includes('Brainstorm')) {
-            aiMessage = `Please brainstorm 3-5 unique angles for this essay prompt: "${prompt}". My current context: ${content || 'No draft yet.'}`;
-        } else if (action.includes('Outline')) {
-            aiMessage = `Please provide a structured outline for this essay: "${prompt}". Use my current content as a base if any: ${content}`;
-        } else if (action.includes('Rewrite')) {
-            aiMessage = `Please rewrite the following essay content to make it more compelling while maintaining my voice: \n\n${content}`;
-        } else if (action.includes('Improve')) {
-            aiMessage = `Please review and improve the clarity, grammar, and flow of this essay: \n\n${content}`;
-        }
+        const aiMessage = `
+            Task: Provide CONCEPTUAL and STRATEGIC feedback on the following selection from a college essay.
+            
+            Essay Prompt: "${prompt}"
+            Full Essay Content: "${content}"
+            HIGHLIGHTED SELECTION: "${selection}"
+            
+            STRICT RULES:
+            - Do NOT provide rewrites.
+            - Do NOT provide better sentences.
+            - Focus ONLY on conceptual growth: what's missing, what the theme is, how it connects to the prompt.
+            - Be concise (2-3 bullet points maximum).
+            - Use a professional, counselor-like tone.
+        `;
 
         const response = await fetch(`${config.apiUrl}/api/chat`, {
             method: 'POST',
@@ -570,80 +587,41 @@ async function handleAIAction(action) {
             body: JSON.stringify({
                 message: aiMessage,
                 userId: currentUser.id,
-                conversationHistory: [] // Start fresh for specific actions
+                conversationHistory: []
             })
         });
 
         if (!response.ok) throw new Error('AI Server error');
 
         const data = await response.json();
-        showSavingIndicator(false);
+        const feedback = data.response;
 
-        // For rewrite or improve, we might want to offer to replace the text
-        // For now, let's show it in a notification or a custom modal
-        // In a real app, you'd have a "diff" view. 
-        // Let's just create a simple modal or alert with the response.
-
-        const result = data.response;
-
-        // Simple way to show AI result for brainstorming/outlining
-        if (action.includes('Brainstorm') || action.includes('Outline')) {
-            // Create a temporary overlay to show the AI's thoughts
-            showAIResultModal(action, result);
-        } else {
-            // For rewrite/improve, maybe show it and ask to apply
-            const apply = confirm(`AI Suggestion:\n\n${result.slice(0, 300)}...\n\nWould you like to replace your current draft with this improved version?`);
-            if (apply) {
-                essayEditor.value = result;
-                updateCounts();
-                await saveCurrentEssay();
-                showNotification('AI improvements applied!', 'success');
-            }
+        // Replace loading with real feedback
+        const loadingEl = document.getElementById(loadingId);
+        if (loadingEl) {
+            loadingEl.innerHTML = `
+                <div style="font-size: var(--text-xs); color: var(--primary-blue); font-weight: 700; margin-bottom: var(--space-xs); display: flex; justify-content: space-between; align-items: center;">
+                    <span style="display: flex; align-items: center; gap: 4px;">🎯 Insight</span>
+                    <span style="font-weight: 400; color: var(--gray-400);">${new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                </div>
+                <div style="font-size: 11px; color: var(--gray-500); font-style: italic; margin-bottom: var(--space-md); border-left: 2px solid var(--gray-200); padding-left: var(--space-sm); line-height: 1.4;">
+                    "${selection.length > 70 ? selection.substring(0, 70) + '...' : selection}"
+                </div>
+                <div style="font-size: var(--text-sm); line-height: 1.5; color: var(--gray-800);">
+                    ${feedback.replace(/\n/g, '<br>')}
+                </div>
+            `;
+            loadingEl.style.background = 'var(--white)';
+            loadingEl.style.borderStyle = 'solid';
+            loadingEl.style.borderColor = 'var(--gray-200)';
+            loadingEl.style.animation = 'fadeIn 0.5s ease-out';
         }
 
     } catch (error) {
-        console.error('AI Action Error:', error);
-        showSavingIndicator(false);
-        showNotification('AI service is currently unavailable. Please check your internet connection or try again later.', 'error');
+        console.error('AI Review Error:', error);
+        const loadingEl = document.getElementById(loadingId);
+        if (loadingEl) {
+            loadingEl.innerHTML = `<p style="color: var(--error); font-size: var(--text-xs);">Failed to get AI feedback. Ensure backend is running.</p>`;
+        }
     }
-}
-
-function showAIResultModal(title, content) {
-    const modal = document.createElement('div');
-    modal.style.cssText = `
-        position: fixed;
-        top: 0; left: 0; width: 100%; height: 100%;
-        background: rgba(15, 23, 42, 0.85);
-        display: flex; align-items: center; justify-content: center;
-        z-index: 2000;
-        backdrop-filter: blur(16px);
-    `;
-
-    const card = document.createElement('div');
-    card.className = 'card';
-    card.style.cssText = `
-        max-width: 600px; width: 90%; max-height: 80vh;
-        overflow-y: auto; padding: var(--space-xl);
-        position: relative; background: var(--gray-50); border: 1px solid var(--gray-200);
-    `;
-
-    const header = document.createElement('h2');
-    header.textContent = `AI ${title}`;
-    header.style.marginBottom = 'var(--space-lg)';
-
-    const body = document.createElement('div');
-    body.innerHTML = content.replace(/\n/g, '<br>');
-    body.style.lineHeight = '1.6';
-
-    const closeBtn = document.createElement('button');
-    closeBtn.className = 'btn btn-primary';
-    closeBtn.textContent = 'Close';
-    closeBtn.style.marginTop = 'var(--space-xl)';
-    closeBtn.onclick = () => modal.remove();
-
-    card.appendChild(header);
-    card.appendChild(body);
-    card.appendChild(closeBtn);
-    modal.appendChild(card);
-    document.body.appendChild(modal);
 }

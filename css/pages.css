@@ -573,6 +573,18 @@
     margin-bottom: var(--space-md);
 }
 
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
 .empty-state {
     color: var(--gray-400);
     font-size: var(--text-sm);
