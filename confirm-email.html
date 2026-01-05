@@ -48,14 +48,18 @@
             </p>
 
             <div style="display: flex; flex-direction: column; gap: var(--space-md);">
-                <a href="login.html" class="btn btn-primary" style="width: 100%;">Go to Log In</a>
+                <button id="loginRedirectBtn" class="btn btn-secondary"
+                    style="width: 100%; opacity: 0.6; cursor: not-allowed;" disabled>
+                    <span style="margin-right: 8px;">🔒</span> Go to Log In (Verify First)
+                </button>
                 <button id="resendBtn" class="btn btn-outline" style="width: 100%;">Resend Email</button>
             </div>
 
             <div id="statusArea"
-                style="margin-top: var(--space-xl); padding: var(--space-md); border-radius: var(--radius-lg); background: var(--gray-50); border: 1px solid var(--gray-200); display: flex; align-items: center; justify-content: center; gap: var(--space-sm);">
-                <span class="loading-spinner"></span>
-                <span style="font-size: var(--text-sm); color: var(--gray-600); font-weight: 500;">Waiting for
+                style="margin-top: var(--space-xl); padding: var(--space-md); border-radius: var(--radius-lg); background: var(--gray-50); border: 1px solid var(--gray-200); display: flex; align-items: center; justify-content: center; gap: var(--space-sm); transition: all 0.3s ease;">
+                <span class="loading-spinner" id="statusSpinner"></span>
+                <span id="statusText"
+                    style="font-size: var(--text-sm); color: var(--gray-600); font-weight: 500;">Waiting for
                     verification...</span>
             </div>
 
@@ -77,6 +81,8 @@
             const emailDisplay = document.getElementById('userEmail');
             const resendBtn = document.getElementById('resendBtn');
 
+            const loginRedirectBtn = document.getElementById('loginRedirectBtn');
+
             if (email) {
                 emailDisplay.textContent = email;
             }
@@ -87,28 +93,51 @@
                 if (verified) return;
                 verified = true;
 
+                // Update Status Area
                 const statusArea = document.getElementById('statusArea');
-                statusArea.innerHTML = `
-                    <span style="font-size: 20px;">✅</span>
-                    <span style="font-size: var(--text-sm); color: var(--success); font-weight: 600;">Email Verified! Redirecting...</span>
-                `;
+                const statusSpinner = document.getElementById('statusSpinner');
+                const statusText = document.getElementById('statusText');
+
+                if (statusSpinner) statusSpinner.style.display = 'none';
+                if (statusText) statusText.textContent = 'Email Verified! Redirecting...';
+
                 statusArea.style.borderColor = 'var(--success)';
                 statusArea.style.background = 'rgba(16, 185, 129, 0.1)';
+
+                // Update Action Button
+                if (loginRedirectBtn) {
+                    loginRedirectBtn.disabled = false;
+                    loginRedirectBtn.style.opacity = '1';
+                    loginRedirectBtn.style.cursor = 'pointer';
+                    loginRedirectBtn.classList.remove('btn-secondary');
+                    loginRedirectBtn.classList.add('btn-primary');
+                    loginRedirectBtn.innerHTML = 'Continue to Onboarding →';
+                    loginRedirectBtn.onclick = () => window.location.assign('onboarding.html');
+                }
 
                 if (window.showNotification) showNotification('Email verified! Redirecting...', 'success');
 
                 setTimeout(() => {
                     window.location.assign('onboarding.html');
-                }, 1500);
+                }, 2000);
             };
 
-            // Listen for auth state changes (Cross-tab sync)
+            // Listen for auth state changes (Native Supabase sync)
             const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-                console.log('Auth event detected:', event);
-                // Check if we have a session and the email is confirmed
-                if (session?.user?.email_confirmed_at) {
-                    console.log('User confirmed via auth event');
+                console.log('Auth event:', event);
+                if (session?.user?.email_confirmed_at || event === 'SIGNED_IN') {
+                    console.log('Verification detected via auth change');
                     handleSuccess();
+                }
+            });
+
+            // Cross-tab fallback: Listen for storage changes directly
+            // This is often more reliable than onAuthStateChange for cross-tab session syncing
+            window.addEventListener('storage', async (event) => {
+                if (event.key && event.key.includes('supabase.auth.token')) {
+                    console.log('Supabase storage change detected, checking session...');
+                    const isConfirmed = await checkStatus();
+                    if (isConfirmed) clearInterval(intervalId);
                 }
             });
 
@@ -117,22 +146,16 @@
                 if (verified) return true;
 
                 try {
-                    // Try to get session first as it's faster
-                    const { data: { session } } = await supabase.auth.getSession();
+                    // Try to get fresh user data
+                    const { data: { user }, error } = await supabase.auth.getUser();
 
-                    if (session?.user?.email_confirmed_at) {
-                        handleSuccess();
-                        return true;
-                    }
-
-                    // Fallback to getUser which checks with server if needed
-                    const { data: { user } } = await supabase.auth.getUser();
                     if (user && user.email_confirmed_at) {
+                        console.log('Verification detected via polling');
                         handleSuccess();
                         return true;
                     }
                 } catch (err) {
-                    console.error('Status check error:', err);
+                    // Silently fail polling
                 }
                 return false;
             };
