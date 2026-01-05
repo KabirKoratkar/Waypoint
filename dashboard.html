@@ -55,132 +55,135 @@
     <!-- Main Content -->
     <div class="container py-2xl">
         <!-- Header -->
-        <div class="dashboard-header">
-            <div>
-                <h1 class="dashboard-greeting" id="greeting">Good morning! 🌟</h1>
-                <p class="dashboard-date" id="currentDate">Loading date...</p>
-            </div>
-            <div id="aiPlanContainer"
-                style="background: var(--gradient-subtle); border: 2px solid rgba(91, 141, 238, 0.3); cursor: pointer; transition: transform 0.2s ease; padding: var(--space-xl); border-radius: var(--radius-2xl); margin-bottom: var(--space-2xl);">
-                <div
-                    style="display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--space-lg);">
-                    <div>
-                        <h2
-                            style="font-size: var(--text-xl); font-weight: 800; margin-bottom: 0; color: var(--primary-blue);">
-                            AI Strategic Plan 🎯
-                        </h2>
-                    </div>
-                    <div id="aiStatsBreakdown"
-                        style="display: flex; gap: var(--space-lg); padding: var(--space-sm) var(--space-md); background: var(--white); border-radius: var(--radius-lg); box-shadow: var(--shadow-sm); border: 1px solid var(--gray-100);">
-                        <!-- Dynamic stats -->
-                    </div>
+        <div class="dashboard-header"
+            style="background: transparent; padding: 0; color: var(--gray-900); display: block; margin-bottom: var(--space-2xl);">
+            <div
+                style="display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--space-xl);">
+                <div>
+                    <h1 class="dashboard-greeting" id="greeting"
+                        style="font-size: var(--text-3xl); font-weight: 800; margin-bottom: 4px;">Good morning! 🌟</h1>
+                    <p class="dashboard-date" id="currentDate"
+                        style="color: var(--gray-500); font-size: var(--text-lg);">Loading date...</p>
                 </div>
+                <!-- Stats moved outside the blue box per user request -->
+                <div id="aiStatsBreakdown"
+                    style="display: flex; gap: var(--space-xl); background: var(--white); padding: var(--space-md) var(--space-xl); border-radius: var(--radius-xl); box-shadow: var(--shadow-md); border: 1px solid var(--gray-100); color: var(--gray-700);">
+                    <!-- Dynamic stats injected here -->
+                </div>
+            </div>
 
+            <!-- AI Strategic Plan Box - Focused on TODAY's action -->
+            <div id="aiPlanContainer"
+                style="background: var(--gradient-subtle); border: 2px solid rgba(91, 141, 238, 0.4); cursor: pointer; transition: all 0.2s ease; padding: var(--space-xl) var(--space-2xl); border-radius: var(--radius-2xl);">
+                <div
+                    style="font-size: 11px; font-weight: 800; color: var(--primary-blue); text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: var(--space-sm);">
+                    AI Tactical Focus for Today 🎯
+                </div>
                 <div id="aiActionPlan"
-                    style="font-size: 1.15rem; line-height: 1.6; color: var(--gray-800); font-weight: 600; min-height: 50px;">
-                    <div class="flex flex-center" style="height: 50px;">
+                    style="font-size: 1.3rem; line-height: 1.6; color: var(--gray-900); font-weight: 700;">
+                    <div class="flex flex-center" style="height: 60px;">
                         <div class="loading-spinner"></div>
                     </div>
                 </div>
             </div>
-
-            <!-- Dashboard Grid -->
-            <div class="dashboard-grid">
-                <!-- Main Column -->
-                <div>
-                    <div class="grid grid-2 gap-xl">
-                        <!-- Today's Tasks -->
-                        <div class="card" style="padding: 0; overflow: hidden; grid-column: span 2;">
-                            <div
-                                style="padding: var(--space-xl); border-bottom: 1px solid var(--gray-100); display: flex; justify-content: space-between; align-items: center; background: var(--gray-50);">
-                                <h2 style="font-size: var(--text-lg); font-weight: 800; margin: 0;">Pending Tasks</h2>
-                                <span class="badge badge-primary" style="display: none;">0 tasks</span>
-                            </div>
-                            <div style="padding: var(--space-xl);" class="task-render-target">
-                                <!-- Task container will be injected here -->
-                            </div>
+        </div>
+        <!-- Dashboard Grid -->
+        <div class="dashboard-grid">
+            <!-- Main Column -->
+            <div>
+                <div class="grid grid-2 gap-xl">
+                    <!-- Today's Tasks -->
+                    <div class="card" style="padding: 0; overflow: hidden; grid-column: span 2;">
+                        <div
+                            style="padding: var(--space-xl); border-bottom: 1px solid var(--gray-100); display: flex; justify-content: space-between; align-items: center; background: var(--gray-50);">
+                            <h2 style="font-size: var(--text-lg); font-weight: 800; margin: 0;">Pending Tasks</h2>
+                            <span class="badge badge-primary" style="display: none;">0 tasks</span>
+                        </div>
+                        <div style="padding: var(--space-xl);" class="task-render-target">
+                            <!-- Task container will be injected here -->
                         </div>
                     </div>
+                </div>
 
 
+            </div>
+        </div>
+
+        <!-- Sidebar -->
+        <div>
+            <!-- Deadline Countdown -->
+            <div class="deadline-card mb-xl">
+                <div class="deadline-days">15</div>
+                <div class="deadline-label">Days Until UC Application Deadline</div>
+            </div>
+
+            <div class="deadline-card mb-xl" style="background: linear-gradient(135deg, #5B8DEE 0%, #8B7BF7 100%);">
+                <div class="deadline-days">48</div>
+                <div class="deadline-label">Days Until Regular Decision Deadlines</div>
+            </div>
+
+            <!-- Progress Widgets -->
+            <div class="progress-widget mb-md">
+                <h3 style="font-size: var(--text-lg); font-weight: 700; margin-bottom: var(--space-md);">Essays
+                    Progress</h3>
+                <div class="progress-label">
+                    <span>Completed</span>
+                    <span>4/12</span>
+                </div>
+                <div class="progress-bar progress-lg">
+                    <div class="progress-fill" style="width: 33%;"></div>
                 </div>
             </div>
 
-            <!-- Sidebar -->
-            <div>
-                <!-- Deadline Countdown -->
-                <div class="deadline-card mb-xl">
-                    <div class="deadline-days">15</div>
-                    <div class="deadline-label">Days Until UC Application Deadline</div>
+            <div class="progress-widget mb-md">
+                <h3 style="font-size: var(--text-lg); font-weight: 700; margin-bottom: var(--space-md);">Tasks
+                    Completed</h3>
+                <div class="progress-label">
+                    <span>Completed</span>
+                    <span>18/27</span>
                 </div>
-
-                <div class="deadline-card mb-xl" style="background: linear-gradient(135deg, #5B8DEE 0%, #8B7BF7 100%);">
-                    <div class="deadline-days">48</div>
-                    <div class="deadline-label">Days Until Regular Decision Deadlines</div>
+                <div class="progress-bar progress-lg">
+                    <div class="progress-fill" style="width: 67%;"></div>
                 </div>
+            </div>
 
-                <!-- Progress Widgets -->
-                <div class="progress-widget mb-md">
-                    <h3 style="font-size: var(--text-lg); font-weight: 700; margin-bottom: var(--space-md);">Essays
-                        Progress</h3>
-                    <div class="progress-label">
-                        <span>Completed</span>
-                        <span>4/12</span>
-                    </div>
-                    <div class="progress-bar progress-lg">
-                        <div class="progress-fill" style="width: 33%;"></div>
-                    </div>
+            <div class="progress-widget">
+                <h3 style="font-size: var(--text-lg); font-weight: 700; margin-bottom: var(--space-md);">
+                    Application
+                    Progress</h3>
+                <div class="progress-label">
+                    <span>Completed</span>
+                    <span>5/8</span>
                 </div>
-
-                <div class="progress-widget mb-md">
-                    <h3 style="font-size: var(--text-lg); font-weight: 700; margin-bottom: var(--space-md);">Tasks
-                        Completed</h3>
-                    <div class="progress-label">
-                        <span>Completed</span>
-                        <span>18/27</span>
-                    </div>
-                    <div class="progress-bar progress-lg">
-                        <div class="progress-fill" style="width: 67%;"></div>
-                    </div>
+                <div class="progress-bar progress-lg">
+                    <div class="progress-fill" style="width: 62.5%;"></div>
                 </div>
+            </div>
 
-                <div class="progress-widget">
-                    <h3 style="font-size: var(--text-lg); font-weight: 700; margin-bottom: var(--space-md);">
-                        Application
-                        Progress</h3>
-                    <div class="progress-label">
-                        <span>Completed</span>
-                        <span>5/8</span>
-                    </div>
-                    <div class="progress-bar progress-lg">
-                        <div class="progress-fill" style="width: 62.5%;"></div>
-                    </div>
-                </div>
-
-                <!-- Quick Links -->
-                <div class="card mt-xl">
-                    <h3 style="font-size: var(--text-lg); font-weight: 700; margin-bottom: var(--space-md);">Quick
-                        Links
-                    </h3>
-                    <div style="display: flex; flex-direction: column; gap: var(--space-sm);">
-                        <a href="analytics.html" class="btn btn-ghost" style="justify-content: flex-start;">📊 View
-                            My
-                            Analytics</a>
-                        <a href="essays.html" class="btn btn-ghost" style="justify-content: flex-start;">✍️ Go to
-                            Essay
-                            Workspace</a>
-                        <a href="documents.html" class="btn btn-ghost" style="justify-content: flex-start;">📁
-                            Upload
-                            Documents</a>
-                        <a href="ai-counselor.html" class="btn btn-ghost" style="justify-content: flex-start;">🤖
-                            Ask AI
-                            Counselor</a>
-                        <a href="colleges.html" class="btn btn-ghost" style="justify-content: flex-start;">🎓 Manage
-                            College List</a>
-                    </div>
+            <!-- Quick Links -->
+            <div class="card mt-xl">
+                <h3 style="font-size: var(--text-lg); font-weight: 700; margin-bottom: var(--space-md);">Quick
+                    Links
+                </h3>
+                <div style="display: flex; flex-direction: column; gap: var(--space-sm);">
+                    <a href="analytics.html" class="btn btn-ghost" style="justify-content: flex-start;">📊 View
+                        My
+                        Analytics</a>
+                    <a href="essays.html" class="btn btn-ghost" style="justify-content: flex-start;">✍️ Go to
+                        Essay
+                        Workspace</a>
+                    <a href="documents.html" class="btn btn-ghost" style="justify-content: flex-start;">📁
+                        Upload
+                        Documents</a>
+                    <a href="ai-counselor.html" class="btn btn-ghost" style="justify-content: flex-start;">🤖
+                        Ask AI
+                        Counselor</a>
+                    <a href="colleges.html" class="btn btn-ghost" style="justify-content: flex-start;">🎓 Manage
+                        College List</a>
                 </div>
             </div>
         </div>
+    </div>
     </div>
 
     <footer class="footer"
