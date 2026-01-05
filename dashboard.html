@@ -55,38 +55,52 @@
     <!-- Main Content -->
     <div class="container py-2xl">
         <!-- Header -->
-        <div class="dashboard-header">
-            <div>
-                <h1 class="dashboard-greeting" id="greeting">Good morning! 🌟</h1>
-                <p class="dashboard-date" id="currentDate">Loading date...</p>
+        <div class="dashboard-header"
+            style="display: flex; flex-direction: column; gap: var(--space-xl); padding: var(--space-2xl);">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                <div>
+                    <h1 class="dashboard-greeting" id="greeting" style="margin-bottom: 4px;">Good morning! 🌟</h1>
+                    <p class="dashboard-date" id="currentDate" style="opacity: 0.8; margin-bottom: 0;">Loading date...
+                    </p>
+                </div>
             </div>
-            <div id="aiPlanContainer" style="max-width: 600px; width: 100%; cursor: pointer;">
+
+            <div id="aiPlanContainer" style="width: 100%; cursor: pointer;">
                 <div class="card ai-plan-card"
-                    style="background: var(--gradient-subtle); border: 1px solid var(--primary-blue); padding: var(--space-lg); transition: all 0.3s ease; position: relative; overflow: hidden;">
+                    style="background: rgba(255, 255, 255, 0.95); border: none; padding: var(--space-xl); transition: all 0.3s ease; box-shadow: var(--shadow-xl); border-radius: var(--radius-2xl);">
                     <div
-                        style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: var(--space-sm);">
-                        <div style="display: flex; align-items: center; gap: var(--space-sm);">
-                            <span style="font-size: var(--text-2xl);">🤖</span>
-                            <h3
-                                style="font-size: var(--text-lg); font-weight: 800; color: var(--primary-blue); margin: 0;">
-                                Today's Strategic Plan</h3>
+                        style="display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--space-lg);">
+                        <div style="display: flex; align-items: center; gap: var(--space-md);">
+                            <span style="font-size: 2rem;">🤖</span>
+                            <div>
+                                <h3
+                                    style="font-size: var(--text-xl); font-weight: 800; color: var(--primary-blue); margin: 0;">
+                                    Today's Strategic Plan</h3>
+                                <p
+                                    style="font-size: 11px; color: var(--gray-500); margin: 0; text-transform: uppercase; letter-spacing: 0.05em; font-weight: 700;">
+                                    Curated tactical advice</p>
+                            </div>
                         </div>
-                        <span class="badge badge-primary">AI Powered</span>
+                        <div id="aiStatsBreakdown"
+                            style="display: flex; gap: var(--space-2xl); padding: var(--space-sm) var(--space-xl); background: var(--gray-50); border-radius: var(--radius-xl); border: 1px solid var(--gray-100);">
+                            <!-- Injected by JS -->
+                        </div>
                     </div>
-                    <div id="aiActionPlan"
-                        style="font-size: var(--text-base); line-height: 1.6; color: var(--gray-800); margin-bottom: var(--space-md);">
-                        <div class="loading-spinner-small"></div> Analyzing your application state...
-                    </div>
-                    <div id="aiStatsBreakdown"
-                        style="display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--space-sm); border-top: 1px solid rgba(91, 141, 238, 0.2); padding-top: var(--space-md);">
-                        <!-- Injected by JS -->
-                    </div>
+
                     <div
-                        style="margin-top: var(--space-md); text-align: right; font-size: var(--text-xs); color: var(--primary-blue); font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em;">
-                        Click to discuss strategy with Counselor →
+                        style="display: grid; grid-template-columns: 1fr auto; gap: var(--space-xl); align-items: center;">
+                        <div id="aiActionPlan"
+                            style="font-size: 1.1rem; line-height: 1.6; color: var(--gray-800); font-weight: 500;">
+                            <div class="loading-spinner-small"></div> Analyzing your application state...
+                        </div>
+                        <div
+                            style="font-size: var(--text-xs); color: var(--primary-blue); font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; background: rgba(91, 141, 238, 0.1); padding: var(--space-sm) var(--space-md); border-radius: var(--radius-full); white-space: nowrap;">
+                            Discuss with Counselor →
+                        </div>
                     </div>
                 </div>
             </div>
+
         </div>
 
         <!-- Dashboard Grid -->

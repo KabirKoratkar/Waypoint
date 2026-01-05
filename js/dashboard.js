@@ -289,19 +289,20 @@ async function generateAIActionPlan(tasks, essays, colleges) {
     const upcomingDeadlines = colleges.filter(c => c.deadline && new Date(c.deadline) > new Date());
 
     breakdownEl.innerHTML = `
-        <div style="text-align: center;">
+        <div style="text-align: center; padding: 0 var(--space-md);">
             <div style="font-size: var(--text-lg); font-weight: 800; color: var(--primary-blue);">${pendingTasks.length}</div>
-            <div style="font-size: 10px; color: var(--gray-500); text-transform: uppercase;">Tasks</div>
+            <div style="font-size: 10px; color: var(--gray-500); text-transform: uppercase; font-weight: 700;">Tasks</div>
         </div>
-        <div style="text-align: center; border-left: 1px solid rgba(0,0,0,0.05); border-right: 1px solid rgba(0,0,0,0.05);">
+        <div style="text-align: center; padding: 0 var(--space-md);">
             <div style="font-size: var(--text-lg); font-weight: 800; color: var(--accent-purple);">${pendingEssays.length}</div>
-            <div style="font-size: 10px; color: var(--gray-500); text-transform: uppercase;">Essays</div>
+            <div style="font-size: 10px; color: var(--gray-500); text-transform: uppercase; font-weight: 700;">Essays</div>
         </div>
-        <div style="text-align: center;">
+        <div style="text-align: center; padding: 0 var(--space-md);">
             <div style="font-size: var(--text-lg); font-weight: 800; color: var(--success);">${upcomingDeadlines.length}</div>
-            <div style="font-size: 10px; color: var(--gray-500); text-transform: uppercase;">Deadlines</div>
+            <div style="font-size: 10px; color: var(--gray-500); text-transform: uppercase; font-weight: 700;">Deadlines</div>
         </div>
     `;
+
 
     try {
         const profile = window.currentUserProfile || await getUserProfile(currentUser.id);
