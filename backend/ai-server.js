@@ -765,25 +765,37 @@ async function handleAddCollege(userId, collegeName, type) {
     let collegeData = await getCollegeInfo(collegeName);
 
     if (!collegeData) {
-        console.log(`College ${collegeName} not found in DB. Using generic template.`);
-        collegeData = {
-            name: collegeName,
-            type: type || 'Target',
-            application_platform: "Common App",
-            deadline: "2025-01-01",
-            deadline_type: "RD",
-            test_policy: "Test Optional",
-            lors_required: 2,
-            portfolio_required: false,
-            essays_required: [
-                {
-                    title: "Common App Personal Statement",
-                    essay_type: "Common App",
-                    prompt: "Choose one of the 7 Common App prompts",
-                    word_limit: 650
-                }
-            ]
-        };
+        console.log(`College ${collegeName} not found in DB. Triggering autonomous research...`);
+        try {
+            const researchedData = await researchAndCatalogCollege(collegeName);
+            if (researchedData) {
+                collegeData = researchedData;
+            }
+        } catch (e) {
+            console.error('Autonomous research failed:', e);
+        }
+
+        // Final fallback if research failed or returned nothing
+        if (!collegeData) {
+            collegeData = {
+                name: collegeName,
+                type: type || 'Target',
+                application_platform: "Common App",
+                deadline: "2025-01-01",
+                deadline_type: "RD",
+                test_policy: "Test Optional",
+                lors_required: 2,
+                portfolio_required: false,
+                essays_required: [
+                    {
+                        title: "Common App Personal Statement",
+                        essay_type: "Common App",
+                        prompt: "Choose one of the 7 Common App prompts",
+                        word_limit: 650
+                    }
+                ]
+            };
+        }
     } else if (type) {
         collegeData.type = type;
     }
@@ -1241,6 +1253,7 @@ async function getCollegeInfo(name) {
         if (catalogData) {
             console.log(`Found ${name} in Supabase Catalog`);
             return {
+                id: catalogData.id,
                 name: catalogData.name,
                 application_platform: catalogData.application_platform,
                 deadline: catalogData.deadline_date,
@@ -1268,6 +1281,88 @@ async function getCollegeInfo(name) {
         console.error('Lookup error:', e);
     }
     return null;
+}
+
+/**
+ * Perform AI research on a new college and add it to the global catalog
+ */
+async function researchAndCatalogCollege(collegeName) {
+    console.log(`🚀 Autonomous Research started for: ${collegeName}`);
+
+    try {
+        const completion = await openai.chat.completions.create({
+            model: 'gpt-4o-mini',
+            messages: [
+                {
+                    role: 'system',
+                    content: `You are a college admissions data expert. Provide the official 2024-2025 application requirements for the requested college.
+                    
+                    Return ONLY a JSON object with this structure:
+                    {
+                        "name": "Full College Name",
+                        "application_platform": "Common App" | "UC App" | "Coalition App" | "Institutional",
+                        "deadline_date": "YYYY-MM-DD",
+                        "deadline_type": "RD" | "EA" | "ED",
+                        "test_policy": "Test Required" | "Test Optional" | "Test Blind",
+                        "lors_required": 2,
+                        "portfolio_required": false,
+                        "essays": [
+                            {
+                                "title": "Main Prompt",
+                                "essay_type": "Personal Statement",
+                                "prompt": "...",
+                                "word_limit": 650
+                            }
+                        ]
+                    }`
+                },
+                {
+                    role: 'user',
+                    content: `Research requirements for: ${collegeName}`
+                }
+            ],
+            response_format: { type: "json_object" }
+        });
+
+        const data = JSON.parse(completion.choices[0].message.content);
+
+        // Standardize the object for handleAddCollege
+        const collegeData = {
+            ...data,
+            deadline: data.deadline_date,
+            essays_required: data.essays
+        };
+
+        // Upsert into master catalog
+        const { data: inserted, error } = await supabase
+            .from('college_catalog')
+            .upsert({
+                name: data.name,
+                application_platform: data.application_platform,
+                deadline_date: data.deadline_date,
+                deadline_type: data.deadline_type,
+                test_policy: data.test_policy,
+                lors_required: data.lors_required,
+                portfolio_required: data.portfolio_required,
+                essays: data.essays,
+                last_updated: new Date().toISOString()
+            }, { onConflict: 'name' })
+            .select()
+            .single();
+
+        if (error) {
+            console.error('Failed to upsert researched college into catalog:', error);
+        } else {
+            console.log(`✅ Successfully cataloged ${data.name} for global use.`);
+            collegeData.id = inserted.id;
+        }
+
+        return collegeData;
+
+    } catch (error) {
+        console.error('AI Research Error:', error);
+        return null;
+    }
 }
 
 // Start server

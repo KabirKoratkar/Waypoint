@@ -163,10 +163,21 @@ function setupCollegeSearch() {
 }
 
 function renderSearchDropdown(results, container) {
+    const query = document.getElementById('collegeInput').value.trim();
+
     if (results.length === 0) {
-        container.innerHTML = '<div style="padding: 10px; color: var(--gray-500); font-size: 13px;">No colleges found. Type to add manually.</div>';
+        container.innerHTML = `
+            <div style="padding: 12px; border-bottom: 1px solid var(--gray-50);">
+                <div style="font-size: 13px; color: var(--gray-500); margin-bottom: 8px;">No colleges found matching "${query}"</div>
+                <button onclick="selectOnboardingCollege('${query.replace(/'/g, "\\'")}')" 
+                        class="btn btn-ghost btn-sm" 
+                        style="width: 100%; border: 1px dashed var(--gray-300); color: var(--primary-blue);">
+                    + Add "${query}" Anyway (AI will research)
+                </button>
+            </div>
+        `;
     } else {
-        container.innerHTML = results.map(c => `
+        let html = results.map(c => `
             <div class="search-item" 
                  style="padding: 10px; cursor: pointer; border-bottom: 1px solid var(--gray-50);" 
                  onclick="selectOnboardingCollege('${c.name.replace(/'/g, "\\'")}')">
@@ -174,6 +185,17 @@ function renderSearchDropdown(results, container) {
                 <div style="font-size: 11px; color: var(--gray-500);">${c.location || 'University'}</div>
             </div>
         `).join('');
+
+        // Add "Add manually" option at the bottom even if there are results
+        html += `
+            <div style="padding: 8px; background: var(--gray-50); text-align: center;">
+                <button onclick="selectOnboardingCollege('${query.replace(/'/g, "\\'")}')" 
+                        style="background: none; border: none; color: var(--gray-400); font-size: 10px; cursor: pointer; text-decoration: underline;">
+                    Don't see it? Add "${query}" manually
+                </button>
+            </div>
+        `;
+        container.innerHTML = html;
     }
     container.style.display = 'block';
 }

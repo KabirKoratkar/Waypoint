@@ -76,11 +76,19 @@ function setupSearch(input, container, mode = 'jump') {
 
 function renderSearchResults(results, container) {
     if (!container) return;
+    const query = document.getElementById('collegeSearchInput').value.trim();
 
     if (results.length === 0) {
-        container.innerHTML = '<div style="padding: var(--space-md); color: var(--gray-500); text-align: center;">No colleges found. Try a different name?</div>';
+        container.innerHTML = `
+            <div style="padding: var(--space-md); color: var(--gray-500); text-align: center;">
+                <p style="margin-bottom: var(--space-sm); font-size: var(--text-sm);">No colleges found matching "${query}"</p>
+                <button class="btn btn-primary btn-sm" onclick="addFromSearch('${query.replace(/'/g, "\\'")}')" style="width: 100%;">
+                    + Research & Add "${query}"
+                </button>
+            </div>
+        `;
     } else {
-        container.innerHTML = results.map(c => `
+        let html = results.map(c => `
             <div style="display: flex; justify-content: space-between; align-items: center; padding: var(--space-sm) var(--space-md); border-bottom: 1px solid var(--gray-100); cursor: pointer;" class="search-item" onclick="if(!event.target.closest('button')) window.location.href='college-explorer.html?name=${encodeURIComponent(c.name)}'">
                 <div style="flex: 1;">
                     <div style="font-weight: 600; color: var(--gray-800); font-size: var(--text-sm);">${c.name}</div>
@@ -89,25 +97,40 @@ function renderSearchResults(results, container) {
                 <button class="btn btn-sm btn-ghost" onclick="addFromSearch('${c.name.replace(/'/g, "\\'")}')" style="color: var(--primary-blue); border: none; padding: 4px 8px;">+ Add</button>
             </div>
         `).join('');
+
+        html += `
+            <div style="padding: 10px; background: var(--gray-50); text-align: center;">
+                <button onclick="addFromSearch('${query.replace(/'/g, "\\'")}')" style="background: none; border: none; color: var(--gray-400); font-size: 11px; cursor: pointer; text-decoration: underline;">
+                    Don't see it? Research "${query}"
+                </button>
+            </div>
+        `;
+        container.innerHTML = html;
     }
     container.style.display = 'block';
 }
 
 function renderModalSearchResults(results, container) {
     if (!container) return;
+    const query = document.getElementById('modalSearchInput').value.trim();
 
     if (results.length === 0) {
-        container.innerHTML = '<div style="padding: var(--space-md); color: var(--gray-500); text-align: center;">New entry? We\'ll create a template!</div>';
-        container.style.display = 'none'; // Don't show if empty, let them type
-        return;
+        container.innerHTML = `
+            <div style="padding: var(--space-md); text-align: center;">
+                <p style="font-size: 12px; color: var(--gray-500); margin-bottom: 8px;">No matches found</p>
+                <button onclick="selectModalCollege('${query.replace(/'/g, "\\'")}')" class="btn btn-ghost btn-sm" style="width: 100%; border: 1px dashed var(--gray-300);">
+                    + Add "${query}" anyway
+                </button>
+            </div>
+        `;
+    } else {
+        container.innerHTML = results.map(c => `
+            <div class="modal-search-item" onclick="selectModalCollege('${c.name.replace(/'/g, "\\'")}')">
+                <div style="font-weight: 600; font-size: var(--text-sm); color: var(--gray-800);">${c.name}</div>
+                <div style="font-size: 11px; color: var(--gray-500);">${c.location || 'University'}</div>
+            </div>
+        `).join('');
     }
-
-    container.innerHTML = results.map(c => `
-        <div class="modal-search-item" onclick="selectModalCollege('${c.name.replace(/'/g, "\\'")}')">
-            <div style="font-weight: 600; font-size: var(--text-sm); color: var(--gray-800);">${c.name}</div>
-            <div style="font-size: 11px; color: var(--gray-500);">${c.location || 'University'}</div>
-        </div>
-    `).join('');
     container.style.display = 'block';
 }
 
