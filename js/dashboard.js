@@ -74,23 +74,19 @@ function updateHeader(profile = null) {
 
 function renderDashboard(tasks, essays, colleges) {
     // 1. Render Today's Tasks
-    const taskCard = document.querySelector('.task-render-target')?.parentElement;
+    const taskCard = document.querySelector('.card:first-child .badge-primary')?.parentElement?.parentElement;
     if (taskCard) {
         const badge = taskCard.querySelector('.badge-primary');
-        if (badge) badge.style.display = 'none'; // User: 'that 7 tasks... kinds looks out of place'
-
         let taskContainer = taskCard.querySelector('.task-scroll-container');
 
         if (!taskContainer) {
             taskContainer = document.createElement('div');
             taskContainer.className = 'task-scroll-container';
-            taskContainer.style.cssText = 'max-height: 500px; overflow-y: auto; padding-right: 5px;';
-            const target = taskCard.querySelector('.task-render-target') || taskCard;
-            target.appendChild(taskContainer);
+            taskContainer.style.cssText = 'max-height: 400px; overflow-y: auto; padding-right: 5px;';
+            taskCard.appendChild(taskContainer);
         } else {
             taskContainer.innerHTML = '';
         }
-
 
         const priorityScore = { 'High': 3, 'Medium': 2, 'Low': 1, 'General': 0 };
         const sortedTasks = tasks
@@ -104,8 +100,12 @@ function renderDashboard(tasks, essays, colleges) {
                 return new Date(a.due_date) - new Date(b.due_date);
             });
 
-        if (sortedTasks.length === 0) {
+        badge.textContent = `${sortedTasks.length} tasks`;
 
+        const sampleTasks = taskCard.querySelectorAll('.task-card:not(.task-scroll-container .task-card)');
+        sampleTasks.forEach(t => t.remove());
+
+        if (sortedTasks.length === 0) {
             taskContainer.innerHTML = `<p style="color: var(--gray-500); text-align: center; padding: var(--space-md);">All caught up!</p>`;
         } else {
             sortedTasks.forEach(task => {
