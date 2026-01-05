@@ -16,6 +16,7 @@ import {
     getEssayDocuments,
     syncEssays
 } from './supabase-config.js';
+import config from './config.js';
 import { updateNavbarUser } from './ui.js';
 
 let currentUser = null;
