@@ -71,7 +71,13 @@
                         </div>
                         <div class="input-group">
                             <label class="input-label" for="intendedMajor">Intended Major</label>
-                            <input type="text" id="intendedMajor" class="input" placeholder="e.g., Computer Science">
+                            <div style="position: relative;">
+                                <input type="text" id="intendedMajor" class="input" placeholder="e.g., Computer Science"
+                                    autocomplete="off">
+                                <div id="majorSearchResults" class="card"
+                                    style="position: absolute; top: calc(100% + 4px); left: 0; width: 100%; z-index: 100; display: none; padding: var(--space-xs); max-height: 200px; overflow-y: auto; box-shadow: var(--shadow-lg); border: 1px solid var(--gray-200); background: var(--white); border-radius: var(--radius-lg);">
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>

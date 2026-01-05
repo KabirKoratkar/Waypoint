@@ -672,10 +672,39 @@ export {
 };
 
 async function searchCollegeCatalog(query) {
+    const abbrevMap = {
+        'hmc': 'Harvey Mudd College',
+        'mit': 'Massachusetts Institute of Technology',
+        'ucla': 'University of California, Los Angeles',
+        'berk': 'University of California, Berkeley',
+        'cal': 'University of California, Berkeley',
+        'nyu': 'New York University',
+        'jhu': 'Johns Hopkins University',
+        'cmu': 'Carnegie Mellon University',
+        'upenn': 'University of Pennsylvania',
+        'penn': 'University of Pennsylvania',
+        'asu': 'Arizona State University',
+        'usc': 'University of Southern California',
+        'gt': 'Georgia Institute of Technology',
+        'gatech': 'Georgia Institute of Technology',
+        'uva': 'University of Virginia',
+        'unc': 'University of North Carolina',
+        'ut': 'University of Texas',
+        'bu': 'Boston University'
+    };
+
+    const cleanQuery = query.toLowerCase().trim();
+    const mappedName = abbrevMap[cleanQuery];
+
+    let finalQuery = query;
+    if (mappedName) {
+        finalQuery = mappedName;
+    }
+
     const { data, error } = await supabase
         .from('college_catalog')
         .select('*')
-        .ilike('name', `%${query}%`)
+        .or(`name.ilike.%${finalQuery}%,name.ilike.%${query}%`)
         .limit(10);
 
     if (error) {

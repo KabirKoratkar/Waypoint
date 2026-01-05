@@ -53,9 +53,90 @@ async function init() {
     hideLoading();
     showStep(1);
 
-    // Setup College Search for Step 2
+    // Setup Autocomplete for both Colleges and Majors
     setupCollegeSearch();
+    setupMajorSearch();
 }
+
+function setupMajorSearch() {
+    const input = document.getElementById('intendedMajor');
+    const container = document.getElementById('majorSearchResults');
+
+    if (!input || !container) return;
+
+    const majors = [
+        { name: 'Computer Science', abbrev: ['cs', 'comp sci'] },
+        { name: 'Mechanical Engineering', abbrev: ['me', 'mech e'] },
+        { name: 'Electrical Engineering', abbrev: ['ee', 'elec e'] },
+        { name: 'Bioengineering', abbrev: ['bioe', 'bio e'] },
+        { name: 'Chemical Engineering', abbrev: ['cheme', 'chem e'] },
+        { name: 'Aerospace Engineering', abbrev: ['aero'] },
+        { name: 'Biology', abbrev: ['bio'] },
+        { name: 'Chemistry', abbrev: ['chem'] },
+        { name: 'Physics', abbrev: ['phys'] },
+        { name: 'Mathematics', abbrev: ['math'] },
+        { name: 'Economics', abbrev: ['econ'] },
+        { name: 'Psychology', abbrev: ['psych'] },
+        { name: 'Political Science', abbrev: ['poli sci', 'polsci'] },
+        { name: 'International Relations', abbrev: ['ir'] },
+        { name: 'Business Administration', abbrev: ['biz', 'business'] },
+        { name: 'Finance', abbrev: ['fin'] },
+        { name: 'Marketing', abbrev: ['mktg'] },
+        { name: 'Public Policy', abbrev: ['pub pol'] },
+        { name: 'Nursing', abbrev: [] },
+        { name: 'Architecture', abbrev: ['arch'] },
+        { name: 'Graphic Design', abbrev: ['design'] },
+        { name: 'Pre-Med', abbrev: [] },
+        { name: 'Pre-Law', abbrev: [] },
+        { name: 'English', abbrev: [] },
+        { name: 'History', abbrev: [] },
+        { name: 'Philosophy', abbrev: ['phil'] }
+    ];
+
+    input.addEventListener('input', (e) => {
+        const query = e.target.value.toLowerCase().trim();
+        if (query.length < 1) {
+            container.style.display = 'none';
+            return;
+        }
+
+        const filtered = majors.filter(m =>
+            m.name.toLowerCase().includes(query) ||
+            m.abbrev.some(a => a.includes(query))
+        ).slice(0, 8);
+
+        renderMajorDropdown(filtered, container);
+    });
+
+    document.addEventListener('click', (e) => {
+        if (!input.contains(e.target) && !container.contains(e.target)) {
+            container.style.display = 'none';
+        }
+    });
+}
+
+function renderMajorDropdown(results, container) {
+    if (results.length === 0) {
+        container.style.display = 'none';
+        return;
+    }
+
+    container.innerHTML = results.map(m => `
+        <div class="search-item" 
+             style="padding: 10px; cursor: pointer; border-bottom: 1px solid var(--gray-50); font-size: 14px;" 
+             onclick="selectMajor('${m.name}')">
+            <strong>${m.name}</strong>
+        </div>
+    `).join('');
+    container.style.display = 'block';
+}
+
+window.selectMajor = (name) => {
+    const input = document.getElementById('intendedMajor');
+    const container = document.getElementById('majorSearchResults');
+    if (input) input.value = name;
+    if (container) container.style.display = 'none';
+};
 
 function setupCollegeSearch() {
     const input = document.getElementById('collegeInput');
