@@ -204,11 +204,12 @@ function renderDeadlines(colleges) {
         } else if (diffDays <= 7) {
             card.style.background = 'linear-gradient(135deg, var(--error) 0%, #ff6b6b 100%)';
         } else if (index === 0) {
-            card.style.background = 'linear-gradient(135deg, var(--primary-blue) 0%, var(--primary-purple) 100%)';
+            card.style.background = 'var(--gradient-primary)';
         } else {
-            card.style.background = 'var(--gray-200)';
+            card.style.background = 'var(--surface-soft)';
             card.style.color = 'var(--gray-800)';
         }
+
 
         card.innerHTML = `
             <div class="deadline-days" style="${typeof count === 'string' ? 'font-size: 1.5rem;' : ''}">${count}</div>

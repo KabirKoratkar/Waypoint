@@ -294,8 +294,9 @@
 /* DASHBOARD STYLES */
 .dashboard-header {
     background: var(--gradient-primary);
-    color: var(--white);
+    color: var(--fixed-white);
     padding: var(--space-2xl);
+
     border-radius: var(--radius-xl);
     margin-bottom: var(--space-2xl);
 }
@@ -347,8 +348,9 @@
 
 .deadline-card {
     background: linear-gradient(135deg, #FF6B6B 0%, #FF8E53 100%);
-    color: var(--white);
+    color: var(--fixed-white);
     padding: var(--space-lg);
+
     border-radius: var(--radius-xl);
     text-align: center;
     margin-bottom: var(--space-md);
