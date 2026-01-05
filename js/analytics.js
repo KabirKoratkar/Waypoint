@@ -254,56 +254,49 @@ function renderActivity(activityData) {
 }
 
 function renderEssayProgress(essays) {
-    const ctx = document.getElementById('essayWordsChart').getContext('2d');
+    const list = document.getElementById('essayProgressList');
+    if (!list) return;
 
-    let labels = [];
-    let data = [];
-    let limits = [];
-
-    if (essays && essays.length > 0) {
-        essays.slice(0, 5).forEach(e => {
-            labels.push(e.title.split(' - ')[0]); // College name
-            data.push(e.word_count || 0);
-            limits.push(e.word_limit || 650);
-        });
-    } else {
-        // Mock data
-        labels = ['Common App', 'UC PIQ 1', 'Stanford Supp', 'MIT Supp', 'UCLA Supp'];
-        data = [580, 210, 150, 45, 0];
-        limits = [650, 350, 250, 250, 250];
+    if (!essays || essays.length === 0) {
+        list.innerHTML = '<p class="empty-state">No essays found. Add a college to see its requirements.</p>';
+        return;
     }
 
-    new Chart(ctx, {
-        type: 'bar',
-        data: {
-            labels: labels,
-            datasets: [
-                {
-                    label: 'Current Word Count',
-                    data: data,
-                    backgroundColor: '#5B8DEE',
-                    borderRadius: 4
-                },
-                {
-                    label: 'Word Limit',
-                    data: limits,
-                    backgroundColor: 'rgba(229, 231, 235, 0.5)',
-                    borderRadius: 4
-                }
-            ]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            scales: {
-                x: { stacked: false },
-                y: { beginAtZero: true }
-            },
-            plugins: {
-                legend: { position: 'bottom' }
-            }
+    list.innerHTML = essays.map(essay => {
+        const wordCount = essay.word_count || 0;
+        const wordLimit = essay.word_limit || 650;
+        const progress = Math.min((wordCount / wordLimit) * 100, 100);
+
+        let statusLabel = 'Not Started';
+        let statusClass = 'badge-ghost';
+
+        if (essay.is_completed) {
+            statusLabel = 'Finalized';
+            statusClass = 'badge-success';
+        } else if (wordCount > 50) {
+            statusLabel = 'Drafted';
+            statusClass = 'badge-primary';
         }
-    });
+
+        return `
+            <div style="background: var(--gray-50); padding: var(--space-md); border-radius: var(--radius-lg); border: 1px solid var(--gray-100);">
+                <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: var(--space-sm);">
+                    <div style="flex: 1;">
+                        <div style="font-weight: 700; font-size: var(--text-base); color: var(--gray-900);">${essay.title}</div>
+                        <div style="font-size: var(--text-xs); color: var(--gray-500);">${essay.colleges?.name || ''}</div>
+                    </div>
+                    <span class="badge ${statusClass}">${statusLabel}</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+                    <span style="font-size: var(--text-xs); font-weight: 600; color: var(--gray-600);">${wordCount} / ${wordLimit} words</span>
+                    <span style="font-size: var(--text-xs); color: var(--gray-400);">${Math.round(progress)}%</span>
+                </div>
+                <div class="progress-bar" style="height: 6px;">
+                    <div class="progress-fill" style="width: ${progress}%; background: ${essay.is_completed ? 'var(--success)' : 'var(--primary-blue)'};"></div>
+                </div>
+            </div>
+        `;
+    }).join('');
 }
 function calculateSmartProgress(college, allEssays, allTasks) {
     const collegeEssays = allEssays.filter(e => e.college_id === college.id);

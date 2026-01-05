@@ -132,14 +132,17 @@ async function loadEvents() {
             });
         }
 
-        // Add essays as tasks (if they have deadlines from their college)
+        // Add essays as tasks (with milestones)
         if (essays) {
             essays.forEach(essay => {
                 if (essay.colleges?.deadline) {
+                    const deadlineDate = new Date(essay.colleges.deadline + 'T00:00:00');
+
+                    // Actual Deadline
                     allEvents.push({
-                        id: `essay-${essay.id}`,
+                        id: `essay-${essay.id}-final`,
                         type: 'essay',
-                        title: essay.title,
+                        title: `FINAL: ${essay.title}`,
                         date: essay.colleges.deadline,
                         college: essay.colleges.name,
                         collegeId: essay.college_id,
@@ -150,6 +153,44 @@ async function loadEvents() {
                             completed: essay.is_completed
                         }
                     });
+
+                    // Add Milestones if not completed
+                    if (!essay.is_completed) {
+                        // Draft Milestone (14 days before)
+                        const draftDate = new Date(deadlineDate);
+                        draftDate.setDate(draftDate.getDate() - 14);
+                        const draftDateStr = draftDate.toISOString().split('T')[0];
+
+                        // Only add if it's in the future
+                        if (draftDate >= new Date()) {
+                            allEvents.push({
+                                id: `essay-${essay.id}-draft`,
+                                type: 'task',
+                                title: `First Draft: ${essay.title}`,
+                                date: draftDateStr,
+                                college: essay.colleges.name,
+                                collegeId: essay.college_id,
+                                details: { category: 'Essay Draft', priority: 'Medium' }
+                            });
+                        }
+
+                        // Final Review Milestone (7 days before)
+                        const reviewDate = new Date(deadlineDate);
+                        reviewDate.setDate(reviewDate.getDate() - 7);
+                        const reviewDateStr = reviewDate.toISOString().split('T')[0];
+
+                        if (reviewDate >= new Date()) {
+                            allEvents.push({
+                                id: `essay-${essay.id}-review`,
+                                type: 'task',
+                                title: `Final Review: ${essay.title}`,
+                                date: reviewDateStr,
+                                college: essay.colleges.name,
+                                collegeId: essay.college_id,
+                                details: { category: 'Essay Review', priority: 'High' }
+                            });
+                        }
+                    }
                 }
             });
         }
@@ -201,6 +242,21 @@ function applyFilters() {
         const matchesType = typeFilter === 'all' || event.type === typeFilter;
         return matchesCollege && matchesType;
     });
+
+    // If a specific college is selected, snap to its nearest future deadline
+    if (collegeFilter !== 'all') {
+        const collegeDeadlines = filteredEvents
+            .filter(e => e.type === 'deadline' && e.college === collegeFilter)
+            .sort((a, b) => new Date(a.date) - new Date(b.date));
+
+        if (collegeDeadlines.length > 0) {
+            const nextDeadline = new Date(collegeDeadlines[0].date + 'T00:00:00');
+            // Check if it's a valid date
+            if (!isNaN(nextDeadline.getTime())) {
+                currentDate = nextDeadline;
+            }
+        }
+    }
 
     renderCalendar();
 }

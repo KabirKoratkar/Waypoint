@@ -57,9 +57,15 @@
         <div class="essay-workspace-grid">
             <!-- Sidebar - Essay List (Left) -->
             <div class="essay-sidebar-left">
-                <div class="card" style="position: sticky; top: 100px;">
-                    <h3 style="font-size: var(--text-lg); font-weight: 700; margin-bottom: var(--space-lg);">My Essays
+                <div class="card"
+                    style="position: sticky; top: 100px; max-height: calc(100vh - 120px); overflow-y: auto;">
+                    <h3 style="font-size: var(--text-lg); font-weight: 700; margin-bottom: var(--space-md);">My Essays
                     </h3>
+
+                    <div class="search-box mb-lg">
+                        <input type="text" id="essaySearch" class="input input-sm" placeholder="Search essays..."
+                            style="font-size: 12px; height: 32px;">
+                    </div>
 
                     <div id="essayNavList">
                         <!-- Dynamic items will be injected here by essays.js -->
@@ -78,10 +84,13 @@
             <div class="essay-editor-container">
                 <div class="essay-editor-card card">
                     <!-- Toolbar -->
-                    <div class="essay-toolbar">
+                    <div class="essay-toolbar"
+                        style="position: sticky; top: -1px; z-index: 10; background: var(--white); border-bottom: 1px solid var(--gray-100); margin-bottom: var(--space-lg); padding-bottom: var(--space-md);">
                         <div style="display: flex; align-items: center; gap: var(--space-md);">
                             <div class="badge badge-primary" id="essayTypeBadge">Select Essay</div>
                             <div id="save-status" style="font-size: var(--text-xs); color: var(--gray-400);">Draft</div>
+                            <button class="btn btn-xs btn-success btn-outline" id="finalizeBtn"
+                                style="padding: 2px 8px; font-size: 10px; display: none;">✅ Finalize</button>
                         </div>
                         <div style="flex: 1;"></div>
                         <button class="btn btn-sm btn-ghost" id="shareBtn" title="Share with counselor">📤
@@ -132,6 +141,14 @@
                         <button class="btn btn-primary" id="reviewSelectionBtn" style="width: 100%;">
                             ✨ Review Selection
                         </button>
+
+                        <div class="input-group" style="margin-top: var(--space-sm);">
+                            <label class="input-label" style="font-size: 10px;">Ask AI a specific question
+                                (Optional)</label>
+                            <textarea id="aiCustomQuestion" class="input"
+                                style="font-size: 12px; min-height: 60px; padding: var(--space-sm);"
+                                placeholder="e.g. Is this too formal? Does this focus enough on my growth?"></textarea>
+                        </div>
                         <hr style="border: 0; border-top: 1px solid var(--gray-100); margin: var(--space-xs) 0;">
                         <div id="aiFeedbackContainer"
                             style="max-height: 400px; overflow-y: auto; display: flex; flex-direction: column; gap: var(--space-sm);">

@@ -22,9 +22,10 @@
     <script>
         (function () {
             const savedTheme = localStorage.getItem('theme');
-            // Dashboard & App pages default to Light Mode
-            if (savedTheme === 'dark') {
+            if (savedTheme === 'dark' || (!savedTheme && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
                 document.documentElement.setAttribute('data-theme', 'dark');
+            } else {
+                document.documentElement.setAttribute('data-theme', 'light');
             }
         })();
     </script>

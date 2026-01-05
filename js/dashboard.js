@@ -83,37 +83,68 @@ function updateHeader(profile = null) {
 
 function renderDashboard(tasks, essays, colleges) {
     // 1. Render Today's Tasks
-    const taskContainer = document.querySelector('.card:first-child .badge-primary')?.parentElement?.parentElement;
-    if (taskContainer) {
-        const badge = taskContainer.querySelector('.badge-primary');
-        const incompleteTasks = tasks.filter(t => !t.completed);
-        badge.textContent = `${incompleteTasks.length} tasks`;
+    const taskCard = document.querySelector('.card:first-child .badge-primary')?.parentElement?.parentElement;
+    if (taskCard) {
+        const badge = taskCard.querySelector('.badge-primary');
 
-        // Clear sample tasks
-        const sampleTasks = taskContainer.querySelectorAll('.task-card');
+        // Remove old task container if it exists, or create a new scrollable one
+        let taskContainer = taskCard.querySelector('.task-scroll-container');
+        if (!taskContainer) {
+            taskContainer = document.createElement('div');
+            taskContainer.className = 'task-scroll-container';
+            taskContainer.style.cssText = 'max-height: 400px; overflow-y: auto; padding-right: 5px;';
+            taskCard.appendChild(taskContainer);
+        } else {
+            taskContainer.innerHTML = '';
+        }
+
+        // Sort tasks: Priority first (High > Medium > Low), then by Due Date
+        const priorityScore = { 'High': 3, 'Medium': 2, 'Low': 1, 'General': 0 };
+        const sortedTasks = tasks
+            .filter(t => !t.completed)
+            .sort((a, b) => {
+                const pA = priorityScore[a.priority] || 0;
+                const pB = priorityScore[b.priority] || 0;
+                if (pA !== pB) return pB - pA;
+
+                if (!a.due_date) return 1;
+                if (!b.due_date) return -1;
+                return new Date(a.due_date) - new Date(b.due_date);
+            });
+
+        badge.textContent = `${sortedTasks.length} tasks`;
+
+        // Clear sample tasks that might be outside the container
+        const sampleTasks = taskCard.querySelectorAll('.task-card:not(.task-scroll-container .task-card)');
         sampleTasks.forEach(t => t.remove());
 
-        if (incompleteTasks.length === 0) {
-            const empty = document.createElement('p');
-            empty.style.color = 'var(--gray-500)';
-            empty.style.textAlign = 'center';
-            empty.style.padding = 'var(--space-md)';
-            empty.textContent = 'All caught up! Add a new task to stay on track.';
-            taskContainer.appendChild(empty);
+        if (sortedTasks.length === 0) {
+            taskContainer.innerHTML = `
+                <p style="color: var(--gray-500); text-align: center; padding: var(--space-md);">
+                    All caught up! Add a new task to stay on track.
+                </p>
+            `;
         } else {
-            incompleteTasks.slice(0, 3).forEach(task => {
+            sortedTasks.forEach(task => {
                 const card = document.createElement('div');
                 card.className = 'task-card';
                 card.style.cursor = 'pointer';
+                card.style.marginBottom = 'var(--space-sm)';
+
+                const priorityColor = task.priority === 'High' ? 'var(--error)' : (task.priority === 'Medium' ? 'var(--warning)' : 'var(--primary-blue)');
+                const priorityLabel = task.priority || 'General';
+
                 card.innerHTML = `
-                    <h3 class="task-title">${task.title}</h3>
+                    <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 4px;">
+                        <h3 class="task-title" style="margin: 0;">${task.title}</h3>
+                        <span class="badge" style="background: ${priorityColor}15; color: ${priorityColor}; border: 1px solid ${priorityColor}30; font-size: 10px; padding: 2px 6px;">${priorityLabel}</span>
+                    </div>
                     <div class="task-meta">
                         <span>${task.category || 'General'}</span>
-                        <span>⏰ ${task.due_date ? 'Due ' + new Date(task.due_date).toLocaleDateString() : 'No due date'}</span>
+                        <span>⏰ ${task.due_date ? new Date(task.due_date).toLocaleDateString() : 'No due date'}</span>
                     </div>
                 `;
 
-                // Add click listener to navigate to relevant section
                 card.onclick = () => {
                     const category = (task.category || '').toLowerCase();
                     if (category.includes('essay')) {
@@ -123,7 +154,6 @@ function renderDashboard(tasks, essays, colleges) {
                     } else if (category.includes('school') || category.includes('college')) {
                         window.location.href = 'colleges.html';
                     } else {
-                        // Default to calendar or task-related view if available
                         window.location.href = 'calendar.html';
                     }
                 };
@@ -166,8 +196,10 @@ function renderDeadlines(colleges) {
     deadlineCardsContainer.innerHTML = '';
 
     const today = new Date();
+    today.setHours(0, 0, 0, 0);
 
-    // Sort colleges by nearest deadline
+    // Sort colleges by nearest deadline (past deadlines at the bottom? or just sorted by date?)
+    // User said "sort by urgency", which usually means nearest future first.
     const sortedColleges = colleges
         .filter(c => c.deadline)
         .sort((a, b) => new Date(a.deadline) - new Date(b.deadline));
@@ -182,24 +214,49 @@ function renderDeadlines(colleges) {
         return;
     }
 
-    // Show top 2 nearest deadlines
-    sortedColleges.slice(0, 2).forEach((c, index) => {
+    // Show all deadlines
+    sortedColleges.forEach((c, index) => {
         const deadline = new Date(c.deadline);
+        deadline.setHours(0, 0, 0, 0);
+
         const diffTime = deadline - today;
         const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 
         const card = document.createElement('div');
-        card.className = 'deadline-card mb-xl';
-        if (index === 1) {
-            card.style.background = 'linear-gradient(135deg, #5B8DEE 0%, #8B7BF7 100%)';
+        card.className = 'deadline-card mb-md'; // Reduced margin since there are more cards
+
+        let label = `Days Until ${c.name} ${c.deadline_type || 'Deadline'}`;
+        let count = Math.max(0, diffDays);
+
+        if (diffDays < 0) {
+            card.style.background = 'var(--gray-400)';
+            label = `${c.name} Deadline Passed`;
+            count = 'PASSED';
+        } else if (diffDays === 0) {
+            card.style.background = 'var(--error)';
+            label = `${c.name} Deadline is TODAY!`;
+            count = 'TODAY';
         } else if (diffDays <= 7) {
             card.style.background = 'linear-gradient(135deg, var(--error) 0%, #ff6b6b 100%)';
+        } else if (index === 0) {
+            // Highlight the very next one if it's not super urgent yet
+            card.style.background = 'linear-gradient(135deg, var(--primary-blue) 0%, var(--primary-purple) 100%)';
+        } else {
+            card.style.background = 'var(--gray-200)';
+            card.style.color = 'var(--gray-800)';
         }
 
         card.innerHTML = `
-            <div class="deadline-days">${Math.max(0, diffDays)}</div>
-            <div class="deadline-label">Days Until ${c.name} ${c.deadline_type || 'Deadline'}</div>
+            <div class="deadline-days" style="${typeof count === 'string' ? 'font-size: 1.5rem;' : ''}">${count}</div>
+            <div class="deadline-label">${label}</div>
         `;
+
+        // Add click listener to go to college details
+        card.style.cursor = 'pointer';
+        card.onclick = () => {
+            window.location.href = `college-explorer.html?name=${encodeURIComponent(c.name)}`;
+        };
+
         deadlineCardsContainer.appendChild(card);
     });
 }

@@ -382,11 +382,16 @@ async function uploadDocument(userId, file, category, tags = []) {
 }
 
 async function getDocumentUrl(filePath) {
-    const { data } = supabase.storage
+    // For private buckets, we need a signed URL
+    const { data, error } = await supabase.storage
         .from('documents')
-        .getPublicUrl(filePath);
+        .createSignedUrl(filePath, 60); // 60 seconds expiry
 
-    return data.publicUrl;
+    if (error) {
+        console.error('Error creating signed URL:', error);
+        return null;
+    }
+    return data.signedUrl;
 }
 
 // Auth helpers

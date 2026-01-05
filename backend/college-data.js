@@ -165,10 +165,14 @@ const collegeDatabase = {
         lors_required: 0,
         portfolio_required: false,
         essays_required: [
-            { title: "PIQ 1", essay_type: "UC PIQ", prompt: "Personal Insight Question 1", word_limit: 350 },
-            { title: "PIQ 2", essay_type: "UC PIQ", prompt: "Personal Insight Question 2", word_limit: 350 },
-            { title: "PIQ 3", essay_type: "UC PIQ", prompt: "Personal Insight Question 3", word_limit: 350 },
-            { title: "PIQ 4", essay_type: "UC PIQ", prompt: "Personal Insight Question 4", word_limit: 350 }
+            { title: "PIQ 1: Leadership", essay_type: "UC PIQ", prompt: "Describe an example of your leadership experience in which you have positively influenced others...", word_limit: 350 },
+            { title: "PIQ 2: Creativity", essay_type: "UC PIQ", prompt: "Every person has a creative side, and it can be expressed in many ways...", word_limit: 350 },
+            { title: "PIQ 3: Greatest Talent", essay_type: "UC PIQ", prompt: "What would you say is your greatest talent or skill?", word_limit: 350 },
+            { title: "PIQ 4: Educational Opportunity", essay_type: "UC PIQ", prompt: "Describe how you have taken advantage of a significant educational opportunity...", word_limit: 350 },
+            { title: "PIQ 5: Greatest Challenge", essay_type: "UC PIQ", prompt: "Describe the most significant challenge you have faced and the steps you have taken to overcome this challenge...", word_limit: 350 },
+            { title: "PIQ 6: Academic Subject", essay_type: "UC PIQ", prompt: "Think about an academic subject that inspires you. Describe how you have furthered this interest...", word_limit: 350 },
+            { title: "PIQ 7: Community Service", essay_type: "UC PIQ", prompt: "What have you done to make your school or your community a better place?", word_limit: 350 },
+            { title: "PIQ 8: What stands out", essay_type: "UC PIQ", prompt: "Beyond what has already been shared in your application, what do you believe makes you stand out...", word_limit: 350 }
         ]
     },
     "UCLA": {
@@ -180,10 +184,14 @@ const collegeDatabase = {
         lors_required: 0,
         portfolio_required: false,
         essays_required: [
-            { title: "PIQ 1", essay_type: "UC PIQ", prompt: "Personal Insight Question 1", word_limit: 350 },
-            { title: "PIQ 2", essay_type: "UC PIQ", prompt: "Personal Insight Question 2", word_limit: 350 },
-            { title: "PIQ 3", essay_type: "UC PIQ", prompt: "Personal Insight Question 3", word_limit: 350 },
-            { title: "PIQ 4", essay_type: "UC PIQ", prompt: "Personal Insight Question 4", word_limit: 350 }
+            { title: "PIQ 1: Leadership", essay_type: "UC PIQ", prompt: "Describe an example of your leadership experience in which you have positively influenced others...", word_limit: 350 },
+            { title: "PIQ 2: Creativity", essay_type: "UC PIQ", prompt: "Every person has a creative side, and it can be expressed in many ways...", word_limit: 350 },
+            { title: "PIQ 3: Greatest Talent", essay_type: "UC PIQ", prompt: "What would you say is your greatest talent or skill?", word_limit: 350 },
+            { title: "PIQ 4: Educational Opportunity", essay_type: "UC PIQ", prompt: "Describe how you have taken advantage of a significant educational opportunity...", word_limit: 350 },
+            { title: "PIQ 5: Greatest Challenge", essay_type: "UC PIQ", prompt: "Describe the most significant challenge you have faced and the steps you have taken to overcome this challenge...", word_limit: 350 },
+            { title: "PIQ 6: Academic Subject", essay_type: "UC PIQ", prompt: "Think about an academic subject that inspires you. Describe how you have furthered this interest...", word_limit: 350 },
+            { title: "PIQ 7: Community Service", essay_type: "UC PIQ", prompt: "What have you done to make your school or your community a better place?", word_limit: 350 },
+            { title: "PIQ 8: What stands out", essay_type: "UC PIQ", prompt: "Beyond what has already been shared in your application, what do you believe makes you stand out...", word_limit: 350 }
         ]
     },
     "University of Michigan": {

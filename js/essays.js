@@ -180,6 +180,34 @@ document.addEventListener('DOMContentLoaded', async function () {
         });
     }
 
+    // Essay Search
+    const essaySearch = document.getElementById('essaySearch');
+    if (essaySearch) {
+        essaySearch.addEventListener('input', (e) => {
+            const term = e.target.value.toLowerCase();
+            const items = document.querySelectorAll('.essay-nav-item');
+            items.forEach(item => {
+                const text = item.textContent.toLowerCase();
+                item.style.display = text.includes(term) ? 'block' : 'none';
+            });
+        });
+    }
+
+    // Finalize button
+    const finalizeBtn = document.getElementById('finalizeBtn');
+    if (finalizeBtn) {
+        finalizeBtn.onclick = async () => {
+            if (!currentEssay) return;
+            const success = await updateEssay(currentEssay.id, { is_completed: true });
+            if (success) {
+                showNotification('Essay finalized!', 'success');
+                currentEssay.is_completed = true;
+                finalizeBtn.style.display = 'none';
+                await loadEssays();
+            }
+        };
+    }
+
     // Export global functions
     window.loadLinkedDocuments = loadLinkedDocuments;
     window.unlinkDocument = unlinkDocument;
@@ -191,7 +219,7 @@ async function loadComments(essayId) {
 
     const comments = await getEssayComments(essayId);
     if (comments.length === 0) {
-        commentList.innerHTML = '<p style="color: var(--gray-500); font-size: var(--text-sm);">No comments yet.</p>';
+        commentList.innerHTML = '<p class="empty-state">No comments yet.</p>';
         return;
     }
 
@@ -215,52 +243,41 @@ async function loadLinkedDocuments(essayId) {
     const list = document.getElementById('linkedDocsList');
     if (!list) return;
 
-    // 1. Get real linked documents from Supabase
     const docs = await getEssayDocuments(essayId);
-
-    // 2. Get AI-suggested sample essays based on current essay type/prompt
     const samples = getSampleEssays(currentEssay);
 
     if (docs.length === 0 && samples.length === 0) {
-        list.innerHTML = '<p style="color: var(--gray-500); font-size: var(--text-sm);">No documents linked.</p>';
+        list.innerHTML = '<p class="empty-state">No documents linked.</p>';
         return;
     }
 
     let html = '';
-
-    // Render Samples First
     if (samples.length > 0) {
-        html += `<div style="font-size: 10px; font-weight: 800; color: var(--primary-purple); text-transform: uppercase; margin-bottom: 8px; letter-spacing: 0.05em;">✨ AI Sample Essays</div>`;
+        html += `<div style="font-size: 10px; font-weight: 800; color: var(--accent-purple); text-transform: uppercase; margin-bottom: 8px; letter-spacing: 0.05em;">✨ AI Sample Essays</div>`;
         html += samples.map(sample => `
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--space-sm); padding: var(--space-xs); background: rgba(139, 123, 247, 0.05); border: 1px dashed var(--primary-purple); border-radius: var(--radius-sm);">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--space-sm); padding: var(--space-xs); background: rgba(139, 123, 247, 0.05); border: 1px dashed var(--accent-purple); border-radius: var(--radius-sm);">
                 <div style="font-size: var(--text-sm); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex: 1; font-weight: 600; color: var(--gray-700);">
                     📖 ${sample.title}
                 </div>
-                <div style="display: flex; gap: 4px;">
-                    <button class="btn btn-sm btn-ghost" onclick="window.viewSample('${sample.id}')" style="padding: 2px 4px;" title="View Sample">👁️</button>
-                </div>
+                <button class="btn btn-sm btn-ghost" onclick="window.viewSample('${sample.id}')" style="padding: 2px 4px;">👁️</button>
             </div>
         `).join('');
         html += `<hr style="border: 0; border-top: 1px solid var(--gray-100); margin: 12px 0;">`;
     }
 
-    // Render Real Docs
     if (docs.length > 0) {
         html += `<div style="font-size: 10px; font-weight: 800; color: var(--gray-400); text-transform: uppercase; margin-bottom: 8px; letter-spacing: 0.05em;">📎 Your Documents</div>`;
-        html += docs.map(doc => {
-            if (!doc) return '';
-            return `
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--space-sm); padding: var(--space-xs); background: var(--gray-50); border-radius: var(--radius-sm);">
-                    <div style="font-size: var(--text-sm); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex: 1;">
-                        📄 ${doc.name || 'Unnamed Document'}
-                    </div>
-                    <div style="display: flex; gap: 4px;">
-                        <button class="btn btn-sm btn-ghost" onclick="viewFile('${doc.file_path}')" style="padding: 2px 4px;">📂</button>
-                        <button class="btn btn-sm btn-ghost" onclick="unlinkDocument('${doc.id}')" style="padding: 2px 4px;">✕</button>
-                    </div>
+        html += docs.map(doc => `
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--space-sm); padding: var(--space-xs); background: var(--gray-50); border-radius: var(--radius-sm);">
+                <div style="font-size: var(--text-sm); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex: 1;">
+                    📄 ${doc.name || 'Unnamed Document'}
                 </div>
-            `;
-        }).join('');
+                <div style="display: flex; gap: 4px;">
+                    <button class="btn btn-sm btn-ghost" onclick="viewFile('${doc.file_path}')" style="padding: 2px 4px;">📂</button>
+                    <button class="btn btn-sm btn-ghost" onclick="unlinkDocument('${doc.id}')" style="padding: 2px 4px;">✕</button>
+                </div>
+            </div>
+        `).join('');
     }
 
     list.innerHTML = html;
@@ -268,37 +285,29 @@ async function loadLinkedDocuments(essayId) {
 
 function getSampleEssays(essay) {
     if (!essay) return [];
-
-    // Mock sample essays based on common themes
     const allSamples = [
-        { id: 's1', title: 'Why Stanford: The Tech-Social Balance', type: 'Supplement', keywords: ['Stanford', 'Why'] },
-        { id: 's2', title: 'Overcoming Failure: The Broken Violin', type: 'Common App', keywords: ['Common App', 'Personal'] },
-        { id: 's3', title: 'Community Impact: Local Coding Camp', type: 'Supplement', keywords: ['Community', 'Contribution'] },
-        { id: 's4', title: 'The Roommate Letter: Espresso & Late Nights', type: 'Supplement', keywords: ['Roommate'] },
-        { id: 's5', title: 'Modernizing Classical Music: Academic Why', type: 'Supplement', keywords: ['Academic', 'Major'] }
+        { id: 's1', title: 'Why Stanford: The Tech-Social Balance', keywords: ['Stanford', 'Why'] },
+        { id: 's2', title: 'Overcoming Failure: The Broken Violin', keywords: ['Common App', 'Personal'] },
+        { id: 's3', title: 'Community Impact: Local Coding Camp', keywords: ['Community', 'Contribution'] },
+        { id: 's4', title: 'The Roommate Letter: Espresso & Late Nights', keywords: ['Roommate'] },
+        { id: 's5', title: 'Modernizing Classical Music: Academic Why', keywords: ['Academic', 'Major'] }
     ];
-
-    // Simple matching logic
     return allSamples.filter(s => {
         const title = essay.title.toLowerCase();
         return s.keywords.some(k => title.includes(k.toLowerCase()));
     }).slice(0, 3);
 }
 
-window.viewSample = function (id) {
-    showNotification("Sample essay view coming soon! This would open a read-only modal with high-scoring examples.", "info");
-};
+window.viewSample = (id) => showNotification("Sample essay view coming soon!", "info");
 
 async function linkDocument() {
     const docs = await getUserDocuments(currentUser.id);
     if (docs.length === 0) {
-        showNotification('No documents found in vault. Upload some first!', 'warning');
+        showNotification('No documents found in vault.', 'warning');
         return;
     }
-
-    const docList = docs.map((d, i) => `${i + 1}. ${d.name} (${d.category})`).join('\n');
-    const choice = prompt(`Select a document to link by number:\n\n${docList}`);
-
+    const docList = docs.map((d, i) => `${i + 1}. ${d.name}`).join('\n');
+    const choice = prompt(`Select a document to link:\n\n${docList}`);
     if (choice && !isNaN(choice)) {
         const index = parseInt(choice) - 1;
         if (docs[index]) {
@@ -306,8 +315,6 @@ async function linkDocument() {
             if (linked) {
                 showNotification('Document linked!', 'success');
                 await loadLinkedDocuments(currentEssay.id);
-            } else {
-                showNotification('Document already linked.', 'info');
             }
         }
     }
@@ -323,8 +330,7 @@ async function unlinkDocument(docId) {
     }
 }
 
-// Ensure viewFile is available here too if needed, or import from main
-window.viewFile = async function (filePath) {
+window.viewFile = async (filePath) => {
     const { getDocumentUrl } = await import('./supabase-config.js');
     const url = await getDocumentUrl(filePath);
     if (url) window.open(url, '_blank');
@@ -342,24 +348,79 @@ async function loadEssays() {
     // Clear previous items
     navList.innerHTML = '';
 
-    // Groups essays by college
-    const grouped = essays.reduce((acc, essay) => {
-        const collegeName = essay.colleges?.name || 'General';
-        if (!acc[collegeName]) acc[collegeName] = [];
-        acc[collegeName].push(essay);
-        return acc;
-    }, {});
+    // Portals we want to group by
+    const portalGroups = {
+        'Common App': [],
+        'UC App': [],
+        'Coalition App': [],
+        'Others': []
+    };
 
-    // Render personal essays
-    Object.keys(grouped).forEach(college => {
+    // Filter for "One Common App Personal Statement"
+    // Keep only the first Common App Personal Statement we find
+    let commonAppPSAdded = false;
+
+    const uniqueEssays = essays.filter(e => {
+        if (e.essay_type === 'Personal Statement' && (e.colleges?.application_platform === 'Common App' || e.title.includes('Common App'))) {
+            if (commonAppPSAdded) return false;
+            commonAppPSAdded = true;
+            return true;
+        }
+        return true;
+    });
+
+    uniqueEssays.forEach(essay => {
+        const platform = essay.colleges?.application_platform || 'Others';
+        if (portalGroups[platform]) {
+            portalGroups[platform].push(essay);
+        } else {
+            portalGroups['Others'].push(essay);
+        }
+    });
+
+    // Render Portal Groups
+    Object.keys(portalGroups).forEach(portal => {
+        const groupEssays = portalGroups[portal];
+        if (groupEssays.length === 0) return;
+
         const section = document.createElement('div');
         section.style.marginBottom = 'var(--space-xl)';
-        section.innerHTML = `<h4 class="nav-section-title">${college}</h4>`;
+        section.innerHTML = `
+            <h4 class="nav-section-title" style="display: flex; align-items: center; gap: 8px;">
+                <span style="font-size: 14px;">${portal === 'Common App' ? '🟦' : (portal === 'UC App' ? '🐻' : '📁')}</span>
+                ${portal}
+            </h4>
+        `;
 
-        grouped[college].forEach(essay => {
-            const navItem = createNavItem(essay);
-            section.appendChild(navItem);
-        });
+        // If it's Others, maybe group by college still
+        if (portal === 'Others') {
+            const othersGrouped = groupEssays.reduce((acc, e) => {
+                const collegeName = e.colleges?.name || 'General';
+                if (!acc[collegeName]) acc[collegeName] = [];
+                acc[collegeName].push(e);
+                return acc;
+            }, {});
+
+            Object.keys(othersGrouped).forEach(college => {
+                const collegeSubTitle = document.createElement('div');
+                collegeSubTitle.style.fontSize = '10px';
+                collegeSubTitle.style.fontWeight = '700';
+                collegeSubTitle.style.color = 'var(--gray-400)';
+                collegeSubTitle.style.textTransform = 'uppercase';
+                collegeSubTitle.style.margin = 'var(--space-sm) 0 var(--space-xs) var(--space-sm)';
+                collegeSubTitle.textContent = college;
+                section.appendChild(collegeSubTitle);
+
+                othersGrouped[college].forEach(essay => {
+                    section.appendChild(createNavItem(essay));
+                });
+            });
+        } else {
+            groupEssays.forEach(essay => {
+                section.appendChild(createNavItem(essay));
+            });
+        }
+
         navList.appendChild(section);
     });
 
@@ -367,7 +428,12 @@ async function loadEssays() {
     if (sharedEssays.length > 0) {
         const sharedSection = document.createElement('div');
         sharedSection.style.marginTop = 'var(--space-2xl)';
-        sharedSection.innerHTML = `<h4 class="nav-section-title">Shared With Me</h4>`;
+        sharedSection.innerHTML = `
+            <h4 class="nav-section-title" style="display: flex; align-items: center; gap: 8px;">
+                <span style="font-size: 14px;">👥</span>
+                Shared With Me
+            </h4>
+        `;
 
         sharedEssays.forEach(item => {
             const essay = item.essays;
@@ -601,8 +667,11 @@ async function handleConceptualReview(selection) {
 
     const feedbackContainer = document.getElementById('aiFeedbackContainer');
     const editor = document.getElementById('essayEditor');
+    const customQuestion = document.getElementById('aiCustomQuestion')?.value.trim();
     const content = editor.value;
     const prompt = currentEssay.prompt || currentEssay.title;
+
+    // Show loading state... (rest of the code)
 
     // Show loading state in the container
     const loadingId = 'loading-' + Date.now();
@@ -629,11 +698,13 @@ async function handleConceptualReview(selection) {
             Essay Prompt: "${prompt}"
             Full Essay Content: "${content}"
             HIGHLIGHTED SELECTION: "${selection}"
+            ${customQuestion ? `SPECIFIC USER QUESTION: "${customQuestion}"` : ''}
             
             STRICT RULES:
             - Do NOT provide rewrites.
             - Do NOT provide better sentences.
             - Focus ONLY on conceptual growth: what's missing, what the theme is, how it connects to the prompt.
+            ${customQuestion ? '- Address the SPECIFIC USER QUESTION directly.' : ''}
             - Be concise (2-3 bullet points maximum).
             - Use a professional, counselor-like tone.
         `;

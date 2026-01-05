@@ -138,24 +138,23 @@ app.post('/api/chat', async (req, res) => {
                 role: 'system',
                 content: `You are the central "Intelligence Command Center" for ${profile?.full_name || 'this student'}'s college application process. You have ABSOLUTE access to view and manipulate their entire application ecosystem.
                 
-                MISSION: Proactively manage their profile, schedule, and essays to ensure a top-tier application outcome.
-
+                MISSION: Proactively manage their profile, schedule, and essays. YOU ARE AN ELITE ADMISSIONS COACH.
+                
                 ${profileContext}
                 ${appStateContext}
 
                 YOUR POWERS:
-                1. PROFILE CONTROL: Use 'updateProfile' to refine their major, location, or graduation year as their strategy evolves.
-                2. SCHEDULE MANAGEMENT: Use 'modifyTask' to create, update, complete, or delete tasks. You are their time-manager.
-                3. ESSAY DRAFTING: Use 'updateEssay' to save content or mark essays as completed.
-                4. COLLEGE STRATEGY: Use 'updateCollege' to change categorization (Reach/Target/Safety) or 'addCollege' to expand their list.
-                5. DATA RESEARCH: Use 'researchCollege' to get SAT/GPA stats.
-                6. PLAN GENERATION: Use 'getAppStatus' to see everything at once if you need a refresh.
+                1. PROFILE CONTROL: Use 'updateProfile' to refine their strategy.
+                2. SCHEDULE MANAGEMENT: Use 'modifyTask' to manage their time.
+                3. ESSAY ACCESS: Use 'getEssay' to read their drafts. If they ask about a specific essay, GO READ IT first.
+                4. ESSAY WRITING: Use 'updateEssay' to save content.
+                5. COLLEGE STRATEGY: Use 'updateCollege' or 'addCollege'.
+                6. DATA RESEARCH: Use 'researchCollege' for stats.
 
-                When users ask "What should I do today?", scan their tasks and colleges and provide a high-level strategic update. 
-                When they mention a change in their interests (e.g., "I think I want to do CS now"), update their profile instantly.
-                When they brainstorm, you can save those ideas directly to their essays.
-
-                Be elite, professional, and proactive. You don't just answer questions—you manage the process.`
+                Proactive Behavior:
+                - If they say "Check my Harvard essay", call 'getEssay' with the appropriate ID from the context.
+                - If they change their major, call 'updateProfile'.
+                - If they are behind schedule, suggest task modifications.`
             },
             ...conversationHistory.map(msg => ({
                 role: msg.role,
@@ -356,6 +355,17 @@ app.post('/api/chat', async (req, res) => {
                 }
             },
             {
+                name: 'getEssay',
+                description: 'Get the full content and details of a specific essay.',
+                parameters: {
+                    type: 'object',
+                    properties: {
+                        essayId: { type: 'string', description: 'The ID of the essay to fetch' }
+                    },
+                    required: ['essayId']
+                }
+            },
+            {
                 name: 'listDocuments',
                 description: 'List all documents in the user\'s vault.',
                 parameters: { type: 'object', properties: {} }
@@ -419,6 +429,9 @@ app.post('/api/chat', async (req, res) => {
                     break;
                 case 'listDocuments':
                     functionResult = await handleListDocuments(userId);
+                    break;
+                case 'getEssay':
+                    functionResult = await handleGetEssay(userId, functionArgs.essayId);
                     break;
                 default:
                     functionResult = { error: 'Unknown function' };
@@ -1363,6 +1376,27 @@ async function researchAndCatalogCollege(collegeName) {
         console.error('AI Research Error:', error);
         return null;
     }
+}
+async function handleGetEssay(userId, essayId) {
+    const { data, error } = await supabase
+        .from('essays')
+        .select('*')
+        .eq('id', essayId)
+        .eq('user_id', userId)
+        .single();
+
+    if (error) return { success: false, error: error.message };
+    return { success: true, essay: data };
+}
+
+async function handleListDocuments(userId) {
+    const { data, error } = await supabase
+        .from('documents')
+        .select('id, name, category, file_type, uploaded_at')
+        .eq('user_id', userId);
+
+    if (error) return { success: false, error: error.message };
+    return { success: true, documents: data };
 }
 
 // Start server

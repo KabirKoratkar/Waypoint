@@ -214,6 +214,13 @@ async function loadAndRenderColleges() {
                 <td>${essays.filter(e => e.college_id === c.id).length} essays</td>
                 <td><span class="badge ${getTestPolicyClass(c.test_policy)}">${c.test_policy || 'Unknown'}</span></td>
                 <td>${c.lors_required || 0}</td>
+                <td>
+                    <select class="input-sm" onchange="updateType('${c.id}', this.value)" style="padding: 2px 4px; font-size: 11px; border-radius: 4px; border: 1px solid var(--gray-200);">
+                        <option value="Reach" ${c.type === 'Reach' ? 'selected' : ''}>🚀 Reach</option>
+                        <option value="Target" ${c.type === 'Target' ? 'selected' : ''}>🎯 Target</option>
+                        <option value="Safety" ${c.type === 'Safety' ? 'selected' : ''}>🛡️ Safety</option>
+                    </select>
+                </td>
                 <td>${c.deadline ? new Date(c.deadline).toLocaleDateString() : 'TBD'}</td>
                 <td>
                     <div style="display: flex; flex-direction: column; gap: 4px; min-width: 120px;">
@@ -233,6 +240,21 @@ async function loadAndRenderColleges() {
         `;
     }).join('');
 }
+
+async function updateType(id, type) {
+    try {
+        const { updateCollege } = await import('./supabase-config.js');
+        const success = await updateCollege(id, { type });
+        if (success) {
+            showNotification('College type updated!', 'success');
+            // Refresh to update summary counts
+            await loadAndRenderColleges();
+        }
+    } catch (e) {
+        showNotification('Error updating type: ' + e.message, 'error');
+    }
+}
+window.updateType = updateType;
 
 async function fetchCollegesData(userId) {
     const [colleges, tasks, essays] = await Promise.all([
@@ -283,7 +305,7 @@ function updateSummary(collegesList) {
     const cards = document.querySelectorAll('.grid-4 .card div:first-child');
     if (cards.length >= 4) {
         cards[0].textContent = total;
-        cards[1].textContent = reach || colleges.filter(c => c.name.includes('Stanford') || c.name.includes('MIT')).length; // Fallback heuristic
+        cards[1].textContent = reach;
         cards[2].textContent = target;
         cards[3].textContent = safety;
     }

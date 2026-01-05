@@ -152,10 +152,12 @@
 
             <!-- Essay word counts -->
             <div class="card">
-                <h3 style="font-size: var(--text-xl); font-weight: 700; margin-bottom: var(--space-xl);">Essay Progress
-                    (Word Count)</h3>
-                <div class="chart-container">
-                    <canvas id="essayWordsChart"></canvas>
+                <h3 style="font-size: var(--text-xl); font-weight: 700; margin-bottom: var(--space-xl);">Essay Status &
+                    Word Counts</h3>
+                <div id="essayProgressList"
+                    style="display: flex; flex-direction: column; gap: var(--space-md); max-height: 300px; overflow-y: auto; padding-right: var(--space-xs);">
+                    <!-- Injected by JS -->
+                    <p class="empty-state">No essays found.</p>
                 </div>
             </div>
         </div>

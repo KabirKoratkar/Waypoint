@@ -624,7 +624,7 @@
 }
 
 .modal-overlay {
-    position: absolute;
+    position: fixed;
     top: 0;
     left: 0;
     right: 0;
@@ -632,6 +632,10 @@
     background: rgba(0, 0, 0, 0.5);
     backdrop-filter: blur(4px);
     -webkit-backdrop-filter: blur(4px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
 }
 
 .modal-content {
@@ -641,8 +645,8 @@
     box-shadow: var(--shadow-2xl);
     max-width: 500px;
     width: 90%;
-    max-height: 80vh;
-    overflow: hidden;
+    max-height: 90vh;
+    overflow-y: auto;
     animation: modalSlideIn 0.3s ease-out;
 }
 
