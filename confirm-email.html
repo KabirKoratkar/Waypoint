@@ -83,6 +83,17 @@
 
             const loginRedirectBtn = document.getElementById('loginRedirectBtn');
 
+            // 1. Explicit Cross-Tab Signaling (BroadcastChannel)
+            // This is the most reliable way to talk between tabs instantly
+            const authChannel = new BroadcastChannel('auth_verification');
+            authChannel.onmessage = (event) => {
+                console.log('Received broadcast message:', event.data);
+                if (event.data.type === 'VERIFICATION_SUCCESS') {
+                    console.log('Verification signal received from other tab!');
+                    handleSuccess();
+                }
+            };
+
             if (email) {
                 emailDisplay.textContent = email;
             }
@@ -92,6 +103,8 @@
             const handleSuccess = () => {
                 if (verified) return;
                 verified = true;
+
+                console.log('Verification Success: Transitioning UI...');
 
                 // Update Status Area
                 const statusArea = document.getElementById('statusArea');
@@ -112,7 +125,9 @@
                     loginRedirectBtn.classList.remove('btn-secondary');
                     loginRedirectBtn.classList.add('btn-primary');
                     loginRedirectBtn.innerHTML = 'Continue to Onboarding →';
-                    loginRedirectBtn.onclick = () => window.location.assign('onboarding.html');
+                    loginRedirectBtn.onclick = () => {
+                        window.location.assign('onboarding.html');
+                    };
                 }
 
                 if (window.showNotification) showNotification('Email verified! Redirecting...', 'success');
@@ -122,54 +137,50 @@
                 }, 2000);
             };
 
-            // Listen for auth state changes (Native Supabase sync)
+            // 2. Auth State Change Listener (Native)
             const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-                console.log('Auth event:', event);
+                console.log('Supabase Auth event:', event);
                 if (session?.user?.email_confirmed_at || event === 'SIGNED_IN') {
-                    console.log('Verification detected via auth change');
                     handleSuccess();
                 }
             });
 
-            // Cross-tab fallback: Listen for storage changes directly
-            // This is often more reliable than onAuthStateChange for cross-tab session syncing
+            // 3. Storage Event Fallback
             window.addEventListener('storage', async (event) => {
                 if (event.key && event.key.includes('supabase.auth.token')) {
-                    console.log('Supabase storage change detected, checking session...');
-                    const isConfirmed = await checkStatus();
-                    if (isConfirmed) clearInterval(intervalId);
+                    checkStatus();
                 }
             });
 
-            // Poll for verification status as a fallback
+            // 4. Manual Polling (Safety Net)
             const checkStatus = async () => {
                 if (verified) return true;
 
                 try {
-                    // Try to get fresh user data
-                    const { data: { user }, error } = await supabase.auth.getUser();
+                    // Force a server check by using getUser() instead of getSession()
+                    const { data: { user } } = await supabase.auth.getUser();
 
                     if (user && user.email_confirmed_at) {
-                        console.log('Verification detected via polling');
                         handleSuccess();
                         return true;
                     }
                 } catch (err) {
-                    // Silently fail polling
+                    // Silently ignore polling errors
                 }
                 return false;
             };
 
-            // Start polling every 3 seconds
+            // Fast polling every 2 seconds
             const intervalId = setInterval(async () => {
                 const isConfirmed = await checkStatus();
                 if (isConfirmed) {
                     clearInterval(intervalId);
                     subscription.unsubscribe();
+                    authChannel.close();
                 }
-            }, 3000);
+            }, 2000);
 
-            // Initial check
+            // Initial immediate check
             checkStatus();
 
             if (resendBtn) {

@@ -65,13 +65,26 @@
     <script type="module">
         import { supabase } from './js/supabase-config.js';
 
+        // Create a broadcast channel to notify the original tab
+        const authChannel = new BroadcastChannel('auth_verification');
+
         // When this page loads, Supabase will automatically pick up the 
         // access_token from the URL hash and save it to storage.
         document.addEventListener('DOMContentLoaded', async () => {
             console.log('Verifying session...');
+
+            // Wait a moment for Supabase to parse the hash
+            await new Promise(r => setTimeout(r, 500));
+
             const { data, error } = await supabase.auth.getSession();
             if (data.session) {
-                console.log('Session secured! Tab can be safely closed.');
+                console.log('Session secured! Notifying other tabs...');
+
+                // Explicitly notify the original tab
+                authChannel.postMessage({
+                    type: 'VERIFICATION_SUCCESS',
+                    userEmail: data.session.user.email
+                });
             }
         });
     </script>
