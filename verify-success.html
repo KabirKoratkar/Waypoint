@@ -65,26 +65,25 @@
     <script type="module">
         import { supabase } from './js/supabase-config.js';
 
-        // Create a broadcast channel to notify the original tab
+        // Create a broadcast channel as backup
         const authChannel = new BroadcastChannel('auth_verification');
 
-        // When this page loads, Supabase will automatically pick up the 
-        // access_token from the URL hash and save it to storage.
         document.addEventListener('DOMContentLoaded', async () => {
             console.log('Verifying session...');
 
-            // Wait a moment for Supabase to parse the hash
-            await new Promise(r => setTimeout(r, 500));
+            // 1. Wait for Supabase to parse URL hash
+            await new Promise(r => setTimeout(r, 1000));
 
             const { data, error } = await supabase.auth.getSession();
-            if (data.session) {
-                console.log('Session secured! Notifying other tabs...');
 
-                // Explicitly notify the original tab
-                authChannel.postMessage({
-                    type: 'VERIFICATION_SUCCESS',
-                    userEmail: data.session.user.email
-                });
+            // 2. Set an explicit signal in localStorage that works across ALL tabs
+            // This is the most reliable way to sync tabs on the same domain
+            if (data.session) {
+                console.log('Session secured! Signaling original tab...');
+                localStorage.setItem('verification_signal', Date.now().toString());
+
+                // Also send via channel as secondary
+                authChannel.postMessage({ type: 'VERIFICATION_SUCCESS' });
             }
         });
     </script>
