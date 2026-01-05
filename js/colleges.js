@@ -89,7 +89,7 @@ function renderSearchResults(results, container) {
         `;
     } else {
         let html = results.map(c => `
-            <div style="display: flex; justify-content: space-between; align-items: center; padding: var(--space-sm) var(--space-md); border-bottom: 1px solid var(--gray-100); cursor: pointer;" class="search-item" onclick="if(!event.target.closest('button')) window.location.href='college-explorer.html?name=${encodeURIComponent(c.name)}'">
+            <div style="display: flex; justify-content: space-between; align-items: center; padding: var(--space-sm) var(--space-md); border-bottom: 1px solid var(--border); cursor: pointer;" class="search-item" onclick="if(!event.target.closest('button')) window.location.href='college-explorer.html?name=${encodeURIComponent(c.name)}'">
                 <div style="flex: 1;">
                     <div style="font-weight: 600; color: var(--gray-800); font-size: var(--text-sm);">${c.name}</div>
                     <div style="font-size: 11px; color: var(--gray-500);">${c.application_platform || 'Common App'} • ${c.deadline_type || 'RD'}</div>
@@ -99,8 +99,8 @@ function renderSearchResults(results, container) {
         `).join('');
 
         html += `
-            <div style="padding: 10px; background: var(--gray-50); text-align: center;">
-                <button onclick="addFromSearch('${query.replace(/'/g, "\\'")}')" style="background: none; border: none; color: var(--gray-400); font-size: 11px; cursor: pointer; text-decoration: underline;">
+            <div style="padding: 10px; background: var(--surface-soft); text-align: center;">
+                <button onclick="addFromSearch('${query.replace(/'/g, "\\'")}')" style="background: none; border: none; color: var(--gray-500); font-size: 11px; cursor: pointer; text-decoration: underline;">
                     Don't see it? Research "${query}"
                 </button>
             </div>
@@ -215,7 +215,7 @@ async function loadAndRenderColleges() {
                 <td><span class="badge ${getTestPolicyClass(c.test_policy)}">${c.test_policy || 'Unknown'}</span></td>
                 <td>${c.lors_required || 0}</td>
                 <td>
-                    <select class="input-sm" onchange="updateType('${c.id}', this.value)" style="padding: 2px 4px; font-size: 11px; border-radius: 4px; border: 1px solid var(--gray-200);">
+                    <select class="input-sm" onchange="updateType('${c.id}', this.value)" style="padding: 2px 4px; font-size: 11px; border-radius: 4px; border: 1px solid var(--border); background: var(--surface); color: var(--gray-800);">
                         <option value="Reach" ${c.type === 'Reach' ? 'selected' : ''}>🚀 Reach</option>
                         <option value="Target" ${c.type === 'Target' ? 'selected' : ''}>🎯 Target</option>
                         <option value="Safety" ${c.type === 'Safety' ? 'selected' : ''}>🛡️ Safety</option>
@@ -228,7 +228,7 @@ async function loadAndRenderColleges() {
                             <span>${progress}%</span>
                             <span>${progress === 100 ? 'Ready' : 'In Progress'}</span>
                         </div>
-                        <div style="width: 100%; height: 6px; background: var(--gray-100); border-radius: 3px; overflow: hidden;">
+                        <div style="width: 100%; height: 6px; background: var(--surface-soft); border: 1px solid var(--border); border-radius: 3px; overflow: hidden;">
                             <div style="width: ${progress}%; height: 100%; background: ${progressColor}; transition: width 0.3s ease;"></div>
                         </div>
                     </div>

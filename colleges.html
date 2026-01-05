@@ -66,7 +66,7 @@
                     <input type="text" id="collegeSearchInput" class="input" placeholder="Jump to college..."
                         style="padding-left: 42px; height: 48px; border-radius: var(--radius-full); font-size: var(--text-sm);">
                     <div id="searchResults" class="card"
-                        style="position: absolute; top: calc(100% + 8px); left: 0; width: 100%; z-index: 100; display: none; padding: var(--space-sm); max-height: 350px; overflow-y: auto; box-shadow: var(--shadow-xl); border: 1px solid var(--gray-200); border-radius: var(--radius-xl);">
+                        style="position: absolute; top: calc(100% + 8px); left: 0; width: 100%; z-index: 100; display: none; padding: var(--space-sm); max-height: 350px; overflow-y: auto; box-shadow: var(--shadow-xl); border: 1px solid var(--border); border-radius: var(--radius-xl); background: var(--surface);">
                     </div>
                 </div>
                 <button class="btn btn-primary" id="addCollegeBtn" onclick="openAddCollegeModal()"
@@ -125,7 +125,8 @@
     </div>
 
     <footer class="footer"
-        style="padding: var(--space-xl) 0; margin-top: var(--space-2xl); border-top: 1px solid var(--gray-200);">
+        style="padding: var(--space-xl) 0; margin-top: var(--space-2xl); border-top: 1px solid var(--border);">
+
         <div class="container text-center">
             <p style="color: var(--gray-500); font-size: var(--text-sm);">&copy; 2026 CollegeApps.ai. All rights
                 reserved.</p>
@@ -147,7 +148,7 @@
                         <input type="text" id="modalSearchInput" class="input"
                             placeholder="e.g. Stanford, UCLA, Harvard..." autocomplete="off">
                         <div id="modalSearchResults"
-                            style="position: absolute; top: 100%; left: 0; width: 100%; z-index: 10; display: none; background: var(--white); border-radius: var(--radius-lg); border: 1px solid var(--gray-200); box-shadow: var(--shadow-lg); max-height: 250px; overflow-y: auto; margin-top: 4px;">
+                            style="position: absolute; top: 100%; left: 0; width: 100%; z-index: 10; display: none; background: var(--surface); border-radius: var(--radius-lg); border: 1px solid var(--border); box-shadow: var(--shadow-lg); max-height: 250px; overflow-y: auto; margin-top: 4px;">
                         </div>
                     </div>
                     <p style="font-size: var(--text-xs); color: var(--gray-500); margin-top: var(--space-xs);">Select a
@@ -202,11 +203,13 @@
             flex-direction: column;
             align-items: center;
             padding: var(--space-md);
-            border: 2px solid var(--gray-200);
+            border: 2px solid var(--border);
             border-radius: var(--radius-lg);
+            background: var(--surface);
             transition: all var(--transition-base);
             text-align: center;
             gap: 4px;
+            color: var(--gray-800);
         }
 
         .category-content strong {
@@ -214,18 +217,20 @@
         }
 
         .category-content:hover {
-            border-color: var(--gray-400);
+            border-color: var(--primary-blue);
+            background: var(--surface-soft);
         }
 
         .modal-search-item {
             padding: var(--space-sm) var(--space-md);
             cursor: pointer;
             transition: background 0.2s;
-            border-bottom: 1px solid var(--gray-50);
+            border-bottom: 1px solid var(--border);
+            color: var(--gray-800);
         }
 
         .modal-search-item:hover {
-            background: var(--gray-50);
+            background: var(--surface-soft);
         }
 
         .modal-search-item:last-child {
