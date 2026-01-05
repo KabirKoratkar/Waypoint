@@ -488,34 +488,38 @@ async function saveCurrentEssay() {
 }
 
 function showSavingIndicator(saving, message = 'Saving...') {
+    const statusIndicators = [
+        document.getElementById('save-status'),
+        document.getElementById('save-status-indicator')
+    ];
+
+    statusIndicators.forEach(indicator => {
+        if (indicator) {
+            indicator.textContent = message;
+            indicator.style.color = saving ? 'var(--primary-blue)' : 'var(--gray-400)';
+            if (saving) {
+                indicator.style.fontWeight = '600';
+            } else {
+                indicator.style.fontWeight = '400';
+                setTimeout(() => {
+                    if (indicator.textContent === message) {
+                        indicator.textContent = 'All changes saved';
+                    }
+                }, 3000);
+            }
+        }
+    });
+
+    // Also update the floating one if it exists or for legacy compatibility
     let indicator = document.getElementById('save-indicator');
-
-    if (!indicator) {
-        indicator = document.createElement('div');
-        indicator.id = 'save-indicator';
-        indicator.style.cssText = `
-            position: fixed;
-            top: 80px;
-            right: 20px;
-            padding: 0.5rem 1rem;
-            background: #5B8DEE;
-            color: white;
-            border-radius: 8px;
-            font-size: 0.875rem;
-            font-weight: 600;
-            z-index: 1000;
-            transition: opacity 0.3s;
-        `;
-        document.body.appendChild(indicator);
-    }
-
-    indicator.textContent = message;
-    indicator.style.opacity = saving ? '1' : '0.7';
-
-    if (!saving) {
-        setTimeout(() => {
-            indicator.style.opacity = '0';
-        }, 2000);
+    if (indicator) {
+        indicator.textContent = message;
+        indicator.style.opacity = saving ? '1' : '0.7';
+        if (!saving) {
+            setTimeout(() => {
+                indicator.style.opacity = '0';
+            }, 2000);
+        }
     }
 }
 

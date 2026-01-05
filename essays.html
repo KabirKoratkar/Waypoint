@@ -107,66 +107,63 @@
 
                 <textarea class="essay-textarea" id="essayEditor"
                     placeholder="Start writing your masterpiece..."></textarea>
-            </div>
 
-            <!-- Word Count Footer -->
-            <div class="essay-footer">
-                <div class="stats-group">
-                    <span><strong>Words:</strong> <span id="wordCount">0</span></span>
-                    <span><strong>Chars:</strong> <span id="charCount">0</span></span>
-                </div>
-                <div id="save-status" style="font-size: var(--text-xs); color: var(--gray-400);">All changes
-                    saved</div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Right Sidebar - Activity & Feedback (Right) -->
-    <div class="essay-sidebar-right">
-        <!-- AI Conceptual Review -->
-        <div class="card mb-lg">
-            <h3 class="sidebar-title">🤖 AI Conceptual Review</h3>
-            <div id="aiReviewPanel" style="display: flex; flex-direction: column; gap: var(--space-md);">
-                <div id="selectionHint"
-                    style="font-size: var(--text-xs); color: var(--gray-500); padding: var(--space-sm); background: var(--gray-50); border-radius: var(--radius-sm); border-left: 3px solid var(--primary-blue);">
-                    Highlight any text in your essay and click below for deep conceptual feedback.
-                </div>
-                <button class="btn btn-primary" id="reviewSelectionBtn" style="width: 100%;">
-                    ✨ Review Selection
-                </button>
-                <hr style="border: 0; border-top: 1px solid var(--gray-100); margin: var(--space-xs) 0;">
-                <div id="aiFeedbackContainer"
-                    style="max-height: 400px; overflow-y: auto; display: flex; flex-direction: column; gap: var(--space-sm);">
-                    <p class="empty-state">No feedback generated yet.</p>
+                <!-- Word Count Footer -->
+                <div class="essay-footer"
+                    style="margin-top: var(--space-md); border-top: 1px solid var(--gray-100); padding-top: var(--space-md);">
+                    <div class="stats-group">
+                        <span><strong>Words:</strong> <span id="wordCount">0</span></span>
+                        <span><strong>Chars:</strong> <span id="charCount">0</span></span>
+                    </div>
                 </div>
             </div>
-        </div>
 
-        <!-- Collaborative Comments -->
-        <div class="card mb-lg">
-            <h3 class="sidebar-title">💬 Feedback</h3>
-            <div id="commentList" class="comment-list">
-                <p class="empty-state">No comments yet.</p>
-            </div>
+            <!-- Right Sidebar - Activity & Feedback (Right) -->
+            <div class="essay-sidebar-right">
+                <!-- AI Conceptual Review -->
+                <div class="card mb-lg">
+                    <h3 class="sidebar-title">🤖 AI Conceptual Review</h3>
+                    <div id="aiReviewPanel" style="display: flex; flex-direction: column; gap: var(--space-md);">
+                        <div id="selectionHint"
+                            style="font-size: var(--text-xs); color: var(--gray-500); padding: var(--space-sm); background: var(--gray-50); border-radius: var(--radius-sm); border-left: 3px solid var(--primary-blue);">
+                            Highlight any text in your essay and click below for deep conceptual feedback.
+                        </div>
+                        <button class="btn btn-primary" id="reviewSelectionBtn" style="width: 100%;">
+                            ✨ Review Selection
+                        </button>
+                        <hr style="border: 0; border-top: 1px solid var(--gray-100); margin: var(--space-xs) 0;">
+                        <div id="aiFeedbackContainer"
+                            style="max-height: 400px; overflow-y: auto; display: flex; flex-direction: column; gap: var(--space-sm);">
+                            <p class="empty-state">No feedback generated yet.</p>
+                        </div>
+                    </div>
+                </div>
 
-            <div class="comment-input-group">
-                <input type="text" class="input input-sm" id="commentInput" placeholder="Add a note...">
-                <button class="btn btn-sm btn-primary" id="addCommentBtn">Post</button>
+                <!-- Collaborative Comments -->
+                <div class="card mb-lg">
+                    <h3 class="sidebar-title">💬 Feedback</h3>
+                    <div id="commentList" class="comment-list">
+                        <p class="empty-state">No comments yet.</p>
+                    </div>
+
+                    <div class="comment-input-group">
+                        <input type="text" class="input input-sm" id="commentInput" placeholder="Add a note...">
+                        <button class="btn btn-sm btn-primary" id="addCommentBtn">Post</button>
+                    </div>
+                </div>
+
+                <!-- Linked Documents -->
+                <div class="card">
+                    <div class="sidebar-header-flex">
+                        <h3 class="sidebar-title">📎 Sources</h3>
+                        <button class="btn btn-xs btn-ghost" id="linkDocBtn">Link +</button>
+                    </div>
+                    <div id="linkedDocsList" class="linked-docs-list">
+                        <p class="empty-state">No documents linked.</p>
+                    </div>
+                </div>
             </div>
         </div>
-
-        <!-- Linked Documents -->
-        <div class="card">
-            <div class="sidebar-header-flex">
-                <h3 class="sidebar-title">📎 Sources</h3>
-                <button class="btn btn-xs btn-ghost" id="linkDocBtn">Link +</button>
-            </div>
-            <div id="linkedDocsList" class="linked-docs-list">
-                <p class="empty-state">No documents linked.</p>
-            </div>
-        </div>
-    </div>
-    </div>
     </div>
 
 
