@@ -1,6 +1,7 @@
 {
   "Stanford University": {
     "name": "Stanford University",
+    "location": "Stanford, CA",
     "application_platform": "Common App",
     "deadline": "2025-01-05",
     "deadline_type": "RD",
@@ -36,6 +37,7 @@
   },
   "Harvard University": {
     "name": "Harvard University",
+    "location": "Cambridge, MA",
     "application_platform": "Common App",
     "deadline": "2025-01-01",
     "deadline_type": "RD",
@@ -71,6 +73,7 @@
   },
   "Yale University": {
     "name": "Yale University",
+    "location": "New Haven, CT",
     "application_platform": "Common App",
     "deadline": "2025-01-02",
     "deadline_type": "RD",
@@ -129,6 +132,7 @@
   },
   "MIT": {
     "name": "Massachusetts Institute of Technology",
+    "location": "Cambridge, MA",
     "application_platform": "MIT Application",
     "deadline": "2025-01-01",
     "deadline_type": "RD",
@@ -787,6 +791,36 @@
         "title": "Purdue Why Purdue",
         "essay_type": "Supplement",
         "prompt": "How will opportunities at Purdue support your interests, both in and out of the classroom?",
+        "word_limit": 100
+      }
+    ]
+  },
+  "Harvey Mudd College": {
+    "name": "Harvey Mudd College",
+    "location": "Claremont, CA",
+    "application_platform": "Common App",
+    "deadline": "2025-01-05",
+    "deadline_type": "RD",
+    "test_policy": "Test Optional",
+    "lors_required": 2,
+    "portfolio_required": false,
+    "essays_required": [
+      {
+        "title": "Common App Personal Statement",
+        "essay_type": "Common App",
+        "prompt": "Common App Prompt",
+        "word_limit": 650
+      },
+      {
+        "title": "What Influence Has Shaped You",
+        "essay_type": "Supplement",
+        "prompt": "Describe a person, place, thing, or experience that has helped shape your intellectual curiosity.",
+        "word_limit": 500
+      },
+      {
+        "title": "Why Harvey Mudd",
+        "essay_type": "Supplement",
+        "prompt": "Why are you interested in Harvey Mudd College?",
         "word_limit": 100
       }
     ]

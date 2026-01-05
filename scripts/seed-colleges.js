@@ -26,6 +26,7 @@ async function seed() {
             .from('college_catalog')
             .upsert({
                 name: college.name,
+                location: college.location,
                 application_platform: college.application_platform,
                 deadline_date: college.deadline,
                 deadline_type: college.deadline_type,

@@ -1,4 +1,4 @@
-import { getCurrentUser, upsertProfile, addCollege as supabaseAddCollege, getUserProfile } from './supabase-config.js';
+import { getCurrentUser, upsertProfile, addCollege as supabaseAddCollege, getUserProfile, searchCollegeCatalog } from './supabase-config.js';
 import config from './config.js';
 
 let currentStep = 1;
@@ -19,7 +19,6 @@ async function init() {
     currentUser = await getCurrentUser();
 
     // If no user found immediately, wait a moment and try one more time
-    // (Handles race conditions from cross-tab verification redirects)
     if (!currentUser) {
         console.log('No session found, waiting briefly...');
         await new Promise(resolve => setTimeout(resolve, 1500));
@@ -53,7 +52,58 @@ async function init() {
 
     hideLoading();
     showStep(1);
+
+    // Setup College Search for Step 2
+    setupCollegeSearch();
 }
+
+function setupCollegeSearch() {
+    const input = document.getElementById('collegeInput');
+    const container = document.getElementById('onboardingSearchResults');
+
+    if (!input || !container) return;
+
+    input.addEventListener('input', async (e) => {
+        const query = e.target.value.trim();
+        if (query.length < 2) {
+            container.style.display = 'none';
+            return;
+        }
+
+        const results = await searchCollegeCatalog(query);
+        renderSearchDropdown(results, container);
+    });
+
+    document.addEventListener('click', (e) => {
+        if (!input.contains(e.target) && !container.contains(e.target)) {
+            container.style.display = 'none';
+        }
+    });
+}
+
+function renderSearchDropdown(results, container) {
+    if (results.length === 0) {
+        container.innerHTML = '<div style="padding: 10px; color: var(--gray-500); font-size: 13px;">No colleges found. Type to add manually.</div>';
+    } else {
+        container.innerHTML = results.map(c => `
+            <div class="search-item" 
+                 style="padding: 10px; cursor: pointer; border-bottom: 1px solid var(--gray-50);" 
+                 onclick="selectOnboardingCollege('${c.name.replace(/'/g, "\\'")}')">
+                <div style="font-weight: 700; font-size: 14px; color: var(--gray-800);">${c.name}</div>
+                <div style="font-size: 11px; color: var(--gray-500);">${c.location || 'University'}</div>
+            </div>
+        `).join('');
+    }
+    container.style.display = 'block';
+}
+
+window.selectOnboardingCollege = (name) => {
+    const input = document.getElementById('collegeInput');
+    const container = document.getElementById('onboardingSearchResults');
+    if (input) input.value = name;
+    if (container) container.style.display = 'none';
+    addCollegeToList();
+};
 
 function showStep(step) {
     // Hide all steps

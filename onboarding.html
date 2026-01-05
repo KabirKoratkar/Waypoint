@@ -85,9 +85,15 @@
 
                         <div id="collegeList" style="margin-bottom: var(--space-md);"></div>
 
-                        <div style="display: flex; gap: var(--space-sm);">
-                            <input type="text" id="collegeInput" class="input" placeholder="Enter college name...">
-                            <button type="button" class="btn btn-secondary" onclick="addCollege()">Add</button>
+                        <div style="position: relative;">
+                            <div style="display: flex; gap: var(--space-sm);">
+                                <input type="text" id="collegeInput" class="input" placeholder="Enter college name..."
+                                    autocomplete="off">
+                                <button type="button" class="btn btn-secondary" onclick="addCollege()">Add</button>
+                            </div>
+                            <div id="onboardingSearchResults" class="card"
+                                style="position: absolute; top: calc(100% + 4px); left: 0; width: 100%; z-index: 100; display: none; padding: var(--space-xs); max-height: 250px; overflow-y: auto; box-shadow: var(--shadow-lg); border: 1px solid var(--gray-200); background: var(--white); border-radius: var(--radius-lg);">
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -237,6 +243,10 @@
 
         .remove-college:hover {
             color: var(--error);
+        }
+
+        .search-item:hover {
+            background: var(--gray-100) !important;
         }
     </style>
 
