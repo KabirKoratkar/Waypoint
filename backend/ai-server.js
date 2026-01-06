@@ -56,6 +56,8 @@ app.use(cors({
         'http://127.0.0.1:5500',
         'http://localhost:8000',
         'https://waypoint-app.vercel.app',
+        'https://waypointedu.org',
+        'https://www.waypointedu.org',
         /\.vercel\.app$/  // Allow any Vercel deployment
     ],
     credentials: true

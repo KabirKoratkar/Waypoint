@@ -109,7 +109,7 @@ The AI Counselor is not just a chatbot; it is integrated directly into the appli
 
 ## 🌐 Deployment Links
 
-- **Frontend**: [waypoint-app.vercel.app](https://waypoint-app.vercel.app)
+- **Frontend**: [waypointedu.org](https://waypointedu.org)
 - **Backend API**: `https://waypoint-api-production.up.railway.app`
 - **GitHub**: [github.com/KabirKoratkar/waypoint](https://github.com/KabirKoratkar/waypoint)
 

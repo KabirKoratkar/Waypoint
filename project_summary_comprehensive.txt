@@ -9,7 +9,7 @@ Waypoint is a unified "command center" for high school students to manage their 
 - **Backend (AI Server)**: Node.js with Express, integrated with OpenAI API for counselor logic.
 - **Database & Auth**: Supabase (PostgreSQL) for all persistent data and user authentication.
 - **UI/UX**: Custom design system using Inter (body) and Outfit (headings) fonts, Apple-style spacing, and modern gradients.
-- **Deployment**: Configured for Vercel (Frontend) and Railway (Backend).
+- **Deployment**: Configured for Vercel (Frontend: waypointedu.org) and Railway (Backend).
 
 ## 3. Major Accomplishments & Features
 
