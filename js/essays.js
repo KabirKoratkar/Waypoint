@@ -283,6 +283,14 @@ document.addEventListener('DOMContentLoaded', async function () {
         };
     }
 
+    // AI Review Module Button
+    const aiReviewModuleBtn = document.getElementById('aiReviewModuleBtn');
+    if (aiReviewModuleBtn) {
+        aiReviewModuleBtn.onclick = async () => {
+            await handleConceptualReview(null, true);
+        };
+    }
+
     // Activity Form Submit
     const activityForm = document.getElementById('activityForm');
     if (activityForm) {
@@ -328,6 +336,8 @@ async function switchView(view) {
     const editorContainer = document.getElementById('essayEditorContainer');
     const moduleContainer = document.getElementById('moduleContainer');
     const navItems = document.querySelectorAll('.essay-nav-item');
+    const sampleCard = document.getElementById('sampleEssaysCard');
+    const strategyCard = document.getElementById('strategySourcesCard');
 
     // Remove active class from all
     navItems.forEach(i => i.classList.remove('active'));
@@ -342,6 +352,9 @@ async function switchView(view) {
         moduleContainer.style.display = 'block';
         moduleContainer.dataset.activeModule = view;
 
+        if (sampleCard) sampleCard.style.display = 'none';
+        if (strategyCard) strategyCard.style.display = 'none';
+
         const activeNav = document.getElementById(`nav-${view}`);
         if (activeNav) activeNav.classList.add('active');
 
@@ -353,6 +366,8 @@ async function switchView(view) {
         // Essay view
         editorContainer.style.display = 'block';
         moduleContainer.style.display = 'none';
+        if (sampleCard) sampleCard.style.display = 'block';
+        if (strategyCard) strategyCard.style.display = 'block';
     }
 }
 
@@ -860,17 +875,36 @@ function updateCounts() {
     }
 }
 
-async function handleConceptualReview(selection) {
-    if (!currentEssay) return;
+async function handleConceptualReview(selection, isModule = false) {
+    const moduleContainer = document.getElementById('moduleContainer');
+    const activeModule = moduleContainer?.dataset.activeModule;
+
+    if (!currentEssay && !isModule) return;
 
     const feedbackContainer = document.getElementById('aiFeedbackContainer');
     const editor = document.getElementById('essayEditor');
     const customQuestionField = document.getElementById('aiCustomQuestion');
     const customQuestion = customQuestionField?.value.trim();
-    const content = editor.value;
-    const promptTitle = currentEssay.prompt || currentEssay.title;
 
-    if (!selection && !customQuestion) {
+    let content = '';
+    let promptTitle = '';
+
+    if (isModule && activeModule) {
+        if (activeModule === 'activities') {
+            const activities = await getActivities(currentUser.id);
+            content = activities.map(a => `- ${a.title} at ${a.organization}: ${a.description} (${a.hours_per_week}h/w, ${a.weeks_per_year}w/y during ${a.years_active.join(', ')})`).join('\n');
+            promptTitle = "Activity List Analysis";
+        } else {
+            const awards = await getAwards(currentUser.id);
+            content = awards.map(a => `- ${a.title} (${a.level}): Received in ${a.years_received.join(', ')}`).join('\n');
+            promptTitle = "Awards & Honors Analysis";
+        }
+    } else {
+        content = editor.value;
+        promptTitle = currentEssay.prompt || currentEssay.title;
+    }
+
+    if (!selection && !customQuestion && !isModule) {
         showNotification('Highlight text or ask a question first!', 'info');
         return;
     }
@@ -897,22 +931,41 @@ async function handleConceptualReview(selection) {
     if (customQuestionField) customQuestionField.value = '';
 
     try {
-        const aiMessage = `
-            Task: Provide high-level ADMISSIONS COUNSELING and STRATEGIC feedback.
-            
-            Essay Category/Prompt: "${promptTitle}"
-            Full Essay Content: "${content}"
-            ${selection ? `HIGHLIGHTED SELECTION FOR FOCUS: "${selection}"` : 'No specific text highlighted.'}
-            ${customQuestion ? `SPECIFIC STUDENT QUESTION: "${customQuestion}"` : ''}
-            
-            STRICT ADMISSIONS COACH RULES:
-            1. NEVER provide text that can be copied/pasted directly into the essay. 
-            2. NEVER rewrite sentences or provide "better" versions.
-            3. Focus on: Narrative impact, thematic consistency, and whether the student is addressing the prompt effectively.
-            4. If a specific question is asked, answer it as an expert counselor would, focusing on advice and perspective.
-            5. Keep the response concise and encouraging. 
-            6. Use a tone that feels like a mentor giving high-level guidance.
-        `;
+        let aiMessage = '';
+        if (isModule) {
+            aiMessage = `
+                Task: Provide EXPERT ADMISSIONS COUNSELING for this ${activeModule === 'activities' ? 'ACTIVITY LIST' : 'AWARDS LIST'}.
+                
+                Content:
+                "${content}"
+                
+                ${customQuestion ? `STUDENT QUESTION: "${customQuestion}"` : ''}
+                
+                CRITICAL INSTRUCTIONS:
+                1. Review the descriptions for IMPACT. Are they quantified? (e.g., "Led 50 students" vs "Led students").
+                2. Check for ACTION VERBS.
+                3. Check for REPETITION. Are multiple activities showing the same thing?
+                4. Strategic Advice: How does this list represent the student's "brand" or "identity"?
+                5. Keep feedback high-level and strategic. DO NOT rewrite the descriptions for them.
+            `;
+        } else {
+            aiMessage = `
+                Task: Provide high-level ADMISSIONS COUNSELING and STRATEGIC feedback.
+                
+                Essay Category/Prompt: "${promptTitle}"
+                Full Essay Content: "${content}"
+                ${selection ? `HIGHLIGHTED SELECTION FOR FOCUS: "${selection}"` : 'No specific text highlighted.'}
+                ${customQuestion ? `SPECIFIC STUDENT QUESTION: "${customQuestion}"` : ''}
+                
+                STRICT ADMISSIONS COACH RULES:
+                1. NEVER provide text that can be copied/pasted directly into the essay. 
+                2. NEVER rewrite sentences or provide "better" versions.
+                3. Focus on: Narrative impact, thematic consistency, and whether the student is addressing the prompt effectively.
+                4. If a specific question is asked, answer it as an expert counselor would, focusing on advice and perspective.
+                5. Keep the response concise and encouraging. 
+                6. Use a tone that feels like a mentor giving high-level guidance.
+            `;
+        }
 
         const response = await fetch(`${config.apiUrl}/api/chat`, {
             method: 'POST',

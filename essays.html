@@ -132,10 +132,16 @@
                             style="display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--space-xl);">
                             <h2 id="moduleTitle" style="font-size: var(--text-3xl); font-weight: 800;">Activity List
                             </h2>
-                            <button class="btn btn-primary" id="addModuleItemBtn"
-                                style="border-radius: var(--radius-full); gap: 8px;">
-                                <span>+</span> Add New
-                            </button>
+                            <div style="display: flex; gap: var(--space-md);">
+                                <button class="btn btn-outline btn-primary" id="aiReviewModuleBtn"
+                                    style="border-radius: var(--radius-full); gap: 8px;">
+                                    <span>✨</span> AI Counselor Review
+                                </button>
+                                <button class="btn btn-primary" id="addModuleItemBtn"
+                                    style="border-radius: var(--radius-full); gap: 8px;">
+                                    <span>+</span> Add New
+                                </button>
+                            </div>
                         </div>
                         <div id="moduleItemsList" style="display: flex; flex-direction: column; gap: var(--space-lg);">
                             <!-- Dynamic items will be injected here -->
@@ -266,7 +272,7 @@
                 </div>
 
                 <!-- Premium Sample Essays -->
-                <div class="card mb-lg"
+                <div id="sampleEssaysCard" class="card mb-lg"
                     style="background: var(--gradient-subtle); border-color: rgba(91, 141, 238, 0.2);">
                     <div class="sidebar-header-flex">
                         <h3 class="sidebar-title" style="color: var(--primary-blue);">✨ Sample Essays</h3>
@@ -279,7 +285,7 @@
                 </div>
 
                 <!-- Linked Documents -->
-                <div class="card">
+                <div id="strategySourcesCard" class="card">
                     <div class="sidebar-header-flex">
                         <h3 class="sidebar-title">📎 Strategy Sources</h3>
                         <button class="btn btn-xs btn-ghost" id="linkDocBtn">Link +</button>
