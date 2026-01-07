@@ -6,9 +6,9 @@ const config = {
     // Detect if we're on a production domain
     get isProduction() {
         const prodDomains = [
-            'waypoint-app.vercel.app',
             'waypointedu.org',
             'www.waypointedu.org',
+            'waypoint-app.vercel.app',
             'waypoint-ai.vercel.app'
         ];
         // If we are on a production domain or a vercel preview, it's production
@@ -24,7 +24,7 @@ const config = {
 
         // Priority 2: Production URL
         if (this.isProduction) {
-            return 'https://waypoint-api-production.up.railway.app';
+            return 'https://collegeapps-ai-production-28c4.up.railway.app';
         }
 
         // Priority 3: Localhost (Default for development/file protocol)
