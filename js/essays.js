@@ -170,14 +170,23 @@ document.addEventListener('DOMContentLoaded', async function () {
     if (reviewBtn) {
         reviewBtn.addEventListener('click', async () => {
             const editor = document.getElementById('essayEditor');
-            const selection = editor.value.substring(editor.selectionStart, editor.selectionEnd).trim();
+            const editorContainer = document.getElementById('essayEditorContainer');
+            const moduleContainer = document.getElementById('moduleContainer');
 
-            if (!selection) {
-                showNotification('Please highlight some text in your essay first!', 'warning');
-                return;
+            let selection = '';
+            let isModuleReview = false;
+
+            if (editorContainer.style.display !== 'none') {
+                // Essay View
+                selection = editor.value.substring(editor.selectionStart, editor.selectionEnd).trim();
+                // If nothing is selected, we'll review the whole thing (handled in handleConceptualReview)
+            } else {
+                // Module View
+                isModuleReview = true;
+                selection = window.getSelection().toString().trim();
             }
 
-            await handleConceptualReview(selection);
+            await handleConceptualReview(selection, isModuleReview);
         });
     }
 
@@ -882,12 +891,12 @@ async function handleConceptualReview(selection, isModule = false) {
     if (!currentEssay && !isModule) return;
 
     const feedbackContainer = document.getElementById('aiFeedbackContainer');
-    const editor = document.getElementById('essayEditor');
     const customQuestionField = document.getElementById('aiCustomQuestion');
     const customQuestion = customQuestionField?.value.trim();
 
     let content = '';
     let promptTitle = '';
+    let reviewType = selection ? 'Section Focus' : 'Full Overview';
 
     if (isModule && activeModule) {
         if (activeModule === 'activities') {
@@ -900,16 +909,16 @@ async function handleConceptualReview(selection, isModule = false) {
             promptTitle = "Awards & Honors Analysis";
         }
     } else {
+        const editor = document.getElementById('essayEditor');
         content = editor.value;
         promptTitle = currentEssay.prompt || currentEssay.title;
     }
 
-    if (!selection && !customQuestion && !isModule) {
-        showNotification('Highlight text or ask a question first!', 'info');
-        return;
+    if (!selection && !customQuestion) {
+        selection = null;
     }
 
-    // Show loading state in the container
+    // Show loading state
     const loadingId = 'loading-' + Date.now();
     const loadingHtml = `
         <div id="${loadingId}" class="card" style="padding: var(--space-md); background: var(--gray-50); border: 1px dashed var(--accent-purple); margin-bottom: var(--space-sm);">
@@ -920,50 +929,49 @@ async function handleConceptualReview(selection, isModule = false) {
         </div>
     `;
 
-    // Remove empty state if present
     const emptyState = feedbackContainer.querySelector('.empty-state');
     if (emptyState) emptyState.remove();
 
     feedbackContainer.insertAdjacentHTML('afterbegin', loadingHtml);
     feedbackContainer.scrollTop = 0;
 
-    // Clear question field for next use
     if (customQuestionField) customQuestionField.value = '';
 
     try {
         let aiMessage = '';
         if (isModule) {
             aiMessage = `
+                Review Type: ${reviewType}
                 Task: Provide EXPERT ADMISSIONS COUNSELING for this ${activeModule === 'activities' ? 'ACTIVITY LIST' : 'AWARDS LIST'}.
                 
                 Content:
                 "${content}"
                 
+                ${selection ? `SPECIFIC FOCUS (Highlighted text): "${selection}"` : ''}
                 ${customQuestion ? `STUDENT QUESTION: "${customQuestion}"` : ''}
                 
-                CRITICAL INSTRUCTIONS:
-                1. Review the descriptions for IMPACT. Are they quantified? (e.g., "Led 50 students" vs "Led students").
-                2. Check for ACTION VERBS.
-                3. Check for REPETITION. Are multiple activities showing the same thing?
-                4. Strategic Advice: How does this list represent the student's "brand" or "identity"?
-                5. Keep feedback high-level and strategic. DO NOT rewrite the descriptions for them.
+                CRITICAL COACHING RULES:
+                1. Review for IMPACT and QUANTIFIED RESULTS.
+                2. Check for strong ACTION VERBS.
+                3. Strategic Advice: How does this represent the student's unique brand?
+                ${!selection ? 'Provide a comprehensive overview of the entire list.' : 'Focus specifically on the highlighted part while considering the whole context.'}
+                4. NEVER rewrite content for the student. Focus on advice.
             `;
         } else {
             aiMessage = `
-                Task: Provide high-level ADMISSIONS COUNSELING and STRATEGIC feedback.
+                Review Type: ${reviewType}
+                Task: Provide STRATEGIC ADMISSIONS COUNSELING.
                 
                 Essay Category/Prompt: "${promptTitle}"
                 Full Essay Content: "${content}"
                 ${selection ? `HIGHLIGHTED SELECTION FOR FOCUS: "${selection}"` : 'No specific text highlighted.'}
                 ${customQuestion ? `SPECIFIC STUDENT QUESTION: "${customQuestion}"` : ''}
                 
-                STRICT ADMISSIONS COACH RULES:
-                1. NEVER provide text that can be copied/pasted directly into the essay. 
-                2. NEVER rewrite sentences or provide "better" versions.
-                3. Focus on: Narrative impact, thematic consistency, and whether the student is addressing the prompt effectively.
-                4. If a specific question is asked, answer it as an expert counselor would, focusing on advice and perspective.
-                5. Keep the response concise and encouraging. 
-                6. Use a tone that feels like a mentor giving high-level guidance.
+                STRICT RULES:
+                1. NEVER provide text for copy-pasting. 
+                2. NEVER rewrite sentences.
+                3. Focus on narrative impact and thematic consistency.
+                ${!selection ? 'Provide a comprehensive overview of the entire essay.' : 'Focus your advice specifically on the highlighted section.'}
             `;
         }
 
@@ -973,16 +981,14 @@ async function handleConceptualReview(selection, isModule = false) {
             body: JSON.stringify({
                 message: aiMessage,
                 userId: currentUser.id,
-                conversationHistory: [] // Keep results independent for the sidebar history
+                conversationHistory: []
             })
         });
 
         if (!response.ok) throw new Error('AI Server error');
-
         const data = await response.json();
         const feedback = data.response;
 
-        // Replace loading with real feedback
         const loadingEl = document.getElementById(loadingId);
         if (loadingEl) {
             loadingEl.innerHTML = `
@@ -1051,24 +1057,33 @@ function renderActivities(activities) {
     }
 
     list.innerHTML = activities.map(act => `
-        <div class="card" style="padding: var(--space-xl); border: 1px solid var(--gray-100); position: relative;">
+        <div class="card module-item-card" data-id="${act.id}" style="padding: var(--space-xl); border: 1px solid var(--gray-100); position: relative; cursor: pointer; transition: all 0.2s;">
             <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: var(--space-sm);">
                 <div>
                     <h3 style="font-size: var(--text-lg); font-weight: 700; color: var(--gray-900);">${act.title}</h3>
                     <p style="font-size: var(--text-sm); color: var(--gray-500);">${act.organization || ''}</p>
                 </div>
                 <div style="display: flex; gap: var(--space-sm);">
-                    <button class="btn btn-xs btn-ghost" onclick="editActivity('${act.id}')">✏️</button>
-                    <button class="btn btn-xs btn-ghost" onclick="removeActivity('${act.id}')">🗑️</button>
+                    <button class="btn btn-xs btn-ghost" onclick="event.stopPropagation(); editActivity('${act.id}')">✏️</button>
+                    <button class="btn btn-xs btn-ghost" onclick="event.stopPropagation(); removeActivity('${act.id}')">🗑️</button>
                 </div>
             </div>
-            <p style="font-size: var(--text-sm); line-height: 1.5; color: var(--gray-700); margin-bottom: var(--space-md);">${act.description || ''}</p>
+            <p class="description-text" style="font-size: var(--text-sm); line-height: 1.5; color: var(--gray-700); margin-bottom: var(--space-md);">${act.description || ''}</p>
             <div style="display: flex; gap: var(--space-md); align-items: center;">
                 <div class="badge badge-primary">${act.years_active ? act.years_active.map(y => y + 'th').join(', ') : ''}</div>
                 <span style="font-size: var(--text-xs); color: var(--gray-400);">${act.hours_per_week || 0} hrs/wk · ${act.weeks_per_year || 0} wks/yr</span>
             </div>
         </div>
     `).join('');
+
+    // Add selection logic
+    list.querySelectorAll('.module-item-card').forEach(card => {
+        card.addEventListener('click', function () {
+            list.querySelectorAll('.module-item-card').forEach(c => c.classList.remove('focused-for-ai'));
+            this.classList.add('focused-for-ai');
+            showNotification('Card focused for AI review. Highlight text or click "Counselor Selection" in sidebar.', 'info');
+        });
+    });
 }
 
 function renderAwards(awards) {
@@ -1079,7 +1094,7 @@ function renderAwards(awards) {
     }
 
     list.innerHTML = awards.map(reward => `
-        <div class="card" style="padding: var(--space-xl); border: 1px solid var(--gray-100); position: relative;">
+        <div class="card module-item-card" data-id="${reward.id}" style="padding: var(--space-xl); border: 1px solid var(--gray-100); position: relative; cursor: pointer; transition: all 0.2s;">
             <div style="display: flex; justify-content: space-between; align-items: flex-start;">
                 <div>
                     <h3 style="font-size: var(--text-lg); font-weight: 700; color: var(--gray-900);">${reward.title}</h3>
@@ -1089,12 +1104,21 @@ function renderAwards(awards) {
                     </div>
                 </div>
                 <div style="display: flex; gap: var(--space-sm);">
-                    <button class="btn btn-xs btn-ghost" onclick="editAward('${reward.id}')">✏️</button>
-                    <button class="btn btn-xs btn-ghost" onclick="removeAward('${reward.id}')">🗑️</button>
+                    <button class="btn btn-xs btn-ghost" onclick="event.stopPropagation(); editAward('${reward.id}')">✏️</button>
+                    <button class="btn btn-xs btn-ghost" onclick="event.stopPropagation(); removeAward('${reward.id}')">🗑️</button>
                 </div>
             </div>
         </div>
     `).join('');
+
+    // Add selection logic
+    list.querySelectorAll('.module-item-card').forEach(card => {
+        card.addEventListener('click', function () {
+            list.querySelectorAll('.module-item-card').forEach(c => c.classList.remove('focused-for-ai'));
+            this.classList.add('focused-for-ai');
+            showNotification('Award focused for AI review.', 'info');
+        });
+    });
 }
 
 // Activity Handlers

@@ -133,10 +133,6 @@
                             <h2 id="moduleTitle" style="font-size: var(--text-3xl); font-weight: 800;">Activity List
                             </h2>
                             <div style="display: flex; gap: var(--space-md);">
-                                <button class="btn btn-outline btn-primary" id="aiReviewModuleBtn"
-                                    style="border-radius: var(--radius-full); gap: 8px;">
-                                    <span>✨</span> AI Counselor Review
-                                </button>
                                 <button class="btn btn-primary" id="addModuleItemBtn"
                                     style="border-radius: var(--radius-full); gap: 8px;">
                                     <span>+</span> Add New
@@ -149,6 +145,19 @@
                     </div>
                 </div>
             </div>
+
+            <style>
+                .focused-for-ai {
+                    border-color: var(--accent-purple) !important;
+                    box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.1) !important;
+                    background: rgba(139, 92, 246, 0.02) !important;
+                }
+
+                ::selection {
+                    background: rgba(139, 92, 246, 0.2);
+                    color: inherit;
+                }
+            </style>
 
             <!-- Main Editor Container (Essays) -->
             <div id="essayEditorContainer">
