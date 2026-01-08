@@ -175,6 +175,18 @@ body {
     line-height: 1.6;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+    transition: background-color var(--transition-base), color var(--transition-base);
+}
+
+/* Global transition for layout elements to "move" smoothly */
+.container,
+.card,
+.grid,
+.flex,
+.navbar,
+.hero,
+section {
+    transition: all var(--transition-base);
 }
 
 /* TYPOGRAPHY */
@@ -395,16 +407,47 @@ a:hover {
 }
 
 /* RESPONSIVE */
+@media (max-width: 1200px) {
+    :root {
+        --text-6xl: 3.5rem;
+        --text-5xl: 2.75rem;
+    }
+}
+
+@media (max-width: 1024px) {
+    :root {
+        --text-6xl: 3rem;
+        --text-5xl: 2.25rem;
+        --text-4xl: 1.875rem;
+    }
+
+    .grid-4 {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
 @media (max-width: 768px) {
     :root {
-        --text-5xl: 2.5rem;
-        --text-4xl: 2rem;
-        --text-3xl: 1.75rem;
+        --text-6xl: 2.5rem;
+        --text-5xl: 2rem;
+        --text-4xl: 1.75rem;
+        --text-3xl: 1.5rem;
     }
 
     .grid-2,
     .grid-3,
     .grid-4 {
         grid-template-columns: 1fr;
+    }
+
+    .container {
+        padding: 0 var(--space-md);
+    }
+}
+
+@media (max-width: 480px) {
+    :root {
+        --text-2xl: 1.25rem;
+        --text-xl: 1.125rem;
     }
 }
