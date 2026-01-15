@@ -53,41 +53,75 @@
     </nav>
 
     <!-- Hero Section -->
-    <section class="hero" style="text-align: left; padding: var(--space-4xl) 0;">
-        <div class="container hero-grid"
-            style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-4xl); align-items: center;">
+    <section class="hero-premium">
+        <div class="hero-background-modern" id="heroBg"></div>
+        <div class="container hero-premium-grid">
             <div class="hero-content reveal-left">
-                <h1 class="hero-title" style="text-align: left; margin-left: 0;">Your College Application Command Center
+                <div class="hero-badge reveal delay-100">🚀 Join 2,000+ Students for 2026</div>
+                <h1 class="hero-premium-title">Your College Application <span class="text-gradient">Command
+                        Center</span>
                 </h1>
-                <p class="hero-subtitle" style="text-align: left; margin-left: 0;">One place for deadlines, essays,
-                    tasks, documents, and AI guidance. Stop juggling
-                    portals—start focusing on what matters.</p>
-                <div class="hero-cta" style="justify-content: flex-start;">
-                    <a href="signup.html" class="btn btn-primary btn-lg">Start Your Application Plan</a>
-                    <a href="#features" class="btn btn-secondary btn-lg">See How It Works</a>
+                <p class="hero-premium-subtitle">One place for deadlines, essays, tasks, documents, and AI guidance.
+                    Stop
+                    juggling portals—start focusing on what matters.</p>
+                <div class="hero-premium-cta">
+                    <a href="signup.html" class="btn btn-primary btn-lg btn-glow">Start Your Application Plan</a>
+                    <a href="#features" class="btn btn-glass btn-lg">See How It Works</a>
+                </div>
+
+                <div class="hero-trust reveal delay-300">
+                    <div class="trust-avatars">
+                        <div class="testimonial-avatar"
+                            style="width: 32px; height: 32px; font-size: 10px; margin-left: 0;">SR</div>
+                        <div class="testimonial-avatar"
+                            style="width: 32px; height: 32px; font-size: 10px; background: var(--accent-purple);">JL
+                        </div>
+                        <div class="testimonial-avatar"
+                            style="width: 32px; height: 32px; font-size: 10px; background: var(--success);">MK</div>
+                        <div class="trust-more">+800</div>
+                    </div>
+                    <p>Trusted by students from 200+ top high schools</p>
                 </div>
             </div>
-            <div class="hero-image reveal-right">
+
+            <div class="hero-premium-visual reveal-right">
                 <div class="map-container hero-map" id="interactiveMap"
-                    style="height: 320px; width: 100%; border: none; background: transparent; box-shadow: none; backdrop-filter: none;">
+                    style="height: 400px; width: 100%; border: none; background: transparent; box-shadow: none; backdrop-filter: none; position: relative;">
                     <div class="cursor-reveal" id="cursorReveal"></div>
                     <div class="map-path"></div>
+
+                    <!-- Floating Elements for "Interest" -->
+                    <div class="floating-card ai-card reveal delay-300">
+                        <div class="card-icon">🤖</div>
+                        <div class="card-label">AI COUNSELOR</div>
+                        <div class="card-text">"Your Stanford essay draft looks strong, but let's highlight your
+                            leadership more..."</div>
+                        <div class="card-loader"></div>
+                    </div>
+
+                    <div class="floating-card progress-card reveal delay-500">
+                        <div class="card-icon">📈</div>
+                        <div class="card-label">OVERALL PROGRESS</div>
+                        <div class="progress-mini">
+                            <div class="progress-mini-fill" style="width: 75%;"></div>
+                        </div>
+                        <div class="card-subtext">75% Complete</div>
+                    </div>
 
                     <!-- Point 1 -->
                     <div class="map-wrapper wrapper-1">
                         <div class="map-point"></div>
-                        <div class="map-content" style="bottom: 40px;">
+                        <div class="map-content">
                             <h4 style="color: var(--primary-blue); font-weight: 800;">1. Discovery</h4>
                             <p style="margin: 0; font-size: 11px;">Search thousands of colleges and find your perfect
-                                match.
-                            </p>
+                                match.</p>
                         </div>
                     </div>
 
                     <!-- Point 2 -->
                     <div class="map-wrapper wrapper-2">
                         <div class="map-point"></div>
-                        <div class="map-content" style="bottom: 40px;">
+                        <div class="map-content">
                             <h4 style="color: var(--primary-blue); font-weight: 800;">2. Strategy</h4>
                             <p style="margin: 0; font-size: 11px;">Generate a custom tactical plan for your goals.</p>
                         </div>
@@ -96,7 +130,7 @@
                     <!-- Point 3 -->
                     <div class="map-wrapper wrapper-3">
                         <div class="map-point"></div>
-                        <div class="map-content" style="bottom: 40px;">
+                        <div class="map-content">
                             <h4 style="color: var(--primary-blue); font-weight: 800;">3. Narration</h4>
                             <p style="margin: 0; font-size: 11px;">Draft compelling essays with conceptual AI feedback.
                             </p>
@@ -106,7 +140,7 @@
                     <!-- Point 4 -->
                     <div class="map-wrapper wrapper-4">
                         <div class="map-point"></div>
-                        <div class="map-content" style="bottom: 40px;">
+                        <div class="map-content">
                             <h4 style="color: var(--primary-blue); font-weight: 800;">4. Execution</h4>
                             <p style="margin: 0; font-size: 11px;">Track every deadline and task with precision.</p>
                         </div>
@@ -115,7 +149,7 @@
                     <!-- Point 5 -->
                     <div class="map-wrapper wrapper-5">
                         <div class="map-point"></div>
-                        <div class="map-content" style="bottom: 40px;">
+                        <div class="map-content">
                             <h4 style="color: var(--primary-blue); font-weight: 800;">5. Acceptance</h4>
                             <p style="margin: 0; font-size: 11px;">Submit with confidence and get accepted.</p>
                         </div>
@@ -124,6 +158,7 @@
             </div>
         </div>
     </section>
+
 
 
     <script>

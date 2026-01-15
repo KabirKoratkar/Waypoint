@@ -61,6 +61,16 @@ document.addEventListener('DOMContentLoaded', function () {
 
     // Scroll Reveal Animation
     initScrollReveal();
+
+    // Hero Background Parallax
+    const heroBg = document.getElementById('heroBg');
+    if (heroBg) {
+        window.addEventListener('mousemove', (e) => {
+            const x = (e.clientX / window.innerWidth - 0.5) * 20;
+            const y = (e.clientY / window.innerHeight - 0.5) * 20;
+            heroBg.style.transform = `translate(${x}px, ${y}px)`;
+        });
+    }
 });
 
 function initScrollReveal() {
