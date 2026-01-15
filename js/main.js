@@ -85,10 +85,19 @@ function initHeroMapInteraction() {
 
     if (!map || !drawingPath) return;
 
-    // Initial Path Measurement
-    const pathLength = 2000; // Static estimate for 400x600 curve
-    drawingPath.style.strokeDasharray = pathLength;
-    drawingPath.style.strokeDashoffset = pathLength;
+    // Accurate Path Measurement
+    const totalPathLength = drawingPath.getTotalLength();
+    drawingPath.style.strokeDasharray = totalPathLength;
+    drawingPath.style.strokeDashoffset = totalPathLength;
+
+    // Cache path points for performance (every 2px)
+    const pathPoints = [];
+    for (let i = 0; i <= totalPathLength; i += 2) {
+        pathPoints.push({
+            length: i,
+            y: drawingPath.getPointAtLength(i).y
+        });
+    }
 
     // Drawing Animation on Load
     setTimeout(() => {
@@ -101,21 +110,34 @@ function initHeroMapInteraction() {
         const rect = map.getBoundingClientRect();
         const x = e.clientX - rect.left;
         const y = e.clientY - rect.top;
-        const scrollFactor = Math.min(Math.max(y / rect.height, 0), 1);
 
         // Update Cursor Reveal
         const reveal = document.getElementById('cursorReveal');
         if (reveal) {
             reveal.style.left = `${x}px`;
             reveal.style.top = `${y}px`;
+            reveal.style.opacity = '1';
+        }
+
+        // Find the path length that corresponds to this Y coordinate
+        // This makes the line color follow the cursor 1:1 vertically
+        let targetLength = 0;
+        let minDiff = Infinity;
+
+        // Optimization: Binary search would be faster but this is fine for ~300-1000 points
+        for (const pt of pathPoints) {
+            const diff = Math.abs(pt.y - y);
+            if (diff < minDiff) {
+                minDiff = diff;
+                targetLength = pt.length;
+            }
         }
 
         // Remove transitions for immediate tracking
         drawingPath.style.transition = 'none';
 
-        // Color the line as we drag
-        // Note: 0 is fully drawn, pathLength is empty
-        const offset = pathLength * (1 - scrollFactor);
+        // Color the line: 0 is full, totalPathLength is empty
+        const offset = totalPathLength - targetLength;
         drawingPath.style.strokeDashoffset = offset;
     });
 
@@ -123,6 +145,9 @@ function initHeroMapInteraction() {
     map.addEventListener('mouseleave', () => {
         drawingPath.style.transition = 'stroke-dashoffset 1.5s cubic-bezier(0.19, 1, 0.22, 1)';
         drawingPath.style.strokeDashoffset = '0';
+
+        const reveal = document.getElementById('cursorReveal');
+        if (reveal) reveal.style.opacity = '0';
     });
 }
 
