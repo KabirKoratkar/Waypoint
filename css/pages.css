@@ -1513,90 +1513,65 @@
 .map-container:hover .cursor-reveal {
     opacity: 1;
 }
-/* ===================================
-   HACKATHON-READY PREMIUM STYLES
-   =================================== */
 
-.hero-premium {
-    position: relative;
-    padding: var(--space-4xl) 0;
-    overflow: hidden;
-    background: var(--surface-soft);
-    min-height: 80vh;
-    display: flex;
-    align-items: center;
+/* SWIRLY SVG ANIMATIONS */
+.map-swirly-svg {
+    filter: drop-shadow(0 0 10px rgba(91, 141, 238, 0.1));
 }
 
-.hero-background-modern {
+.animated-path {
+    stroke-dasharray: 2000;
+    stroke-dashoffset: 2000;
+    transition: stroke-dashoffset 3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.animated-path.animate {
+    stroke-dashoffset: 0;
+}
+
+.map-wrapper {
     position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: radial-gradient(circle at 70% 30%, rgba(91, 141, 238, 0.15) 0%, transparent 50%),
-                radial-gradient(circle at 20% 70%, rgba(139, 123, 247, 0.15) 0%, transparent 50%);
-    z-index: 0;
-    transition: transform 0.2s ease-out;
+    transform: translate(-50%, -50%);
+    z-index: 2;
 }
 
-.hero-premium-grid {
-    display: grid;
-    grid-template-columns: 1.2fr 0.8fr;
-    gap: var(--space-4xl);
-    align-items: center;
-    position: relative;
-    z-index: 1;
+.map-point {
+    width: 24px;
+    height: 24px;
+    background: var(--white);
+    border: 4px solid var(--primary-blue);
+    border-radius: 50%;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    box-shadow: 0 0 15px rgba(91, 141, 238, 0.3);
 }
 
-.hero-badge {
-    display: inline-block;
-    padding: 0.5rem 1rem;
-    background: rgba(91, 141, 238, 0.1);
-    color: var(--primary-blue);
-    border-radius: var(--radius-full);
-    font-size: var(--text-sm);
-    font-weight: 700;
-    margin-bottom: var(--space-lg);
-    border: 1px solid rgba(91, 141, 238, 0.2);
+.map-point:hover {
+    transform: scale(1.5);
+    background: var(--primary-blue);
+    box-shadow: 0 0 25px rgba(91, 141, 238, 0.5);
 }
 
-.hero-premium-title {
-    font-size: clamp(2.5rem, 5vw, 4.5rem);
-    font-weight: 800;
-    line-height: 1.1;
-    margin-bottom: var(--space-lg);
-    color: var(--gray-900);
+.map-content {
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%) translateY(20px);
+    width: 200px;
+    background: var(--surface);
+    padding: var(--space-md);
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--border);
+    box-shadow: var(--shadow-lg);
+    opacity: 0;
+    pointer-events: none;
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    text-align: center;
+    z-index: 10;
 }
 
-.text-gradient {
-    background: var(--gradient-primary);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-}
-
-.hero-premium-subtitle {
-    font-size: var(--text-xl);
-    color: var(--gray-600);
-    margin-bottom: var(--space-2xl);
-    max-width: 600px;
-}
-
-.hero-premium-cta {
-    display: flex;
-    gap: var(--space-md);
-    margin-bottom: var(--space-3xl);
-}
-
-.btn-glow {
-    box-shadow: 0 0 20px rgba(91, 141, 238, 0.4);
-}
-
-.btn-glass {
-    background: rgba(255, 255, 255, 0.6);
-    backdrop-filter: blur(10px);
-    border: 1px solid rgba(255, 255, 255, 0.3);
-    color: var(--gray-800);
+.map-wrapper:hover .map-content {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
 }
 
 .hero-trust {
@@ -1610,7 +1585,8 @@
     align-items: center;
 }
 
-.trust-avatars img, .trust-more {
+.trust-avatars img,
+.trust-more {
     width: 40px;
     height: 40px;
     border-radius: 50%;
@@ -1656,7 +1632,7 @@
 
 .hero-logo-floating {
     width: 100%;
-    filter: drop-shadow(0 30px 60px rgba(0,0,0,0.15));
+    filter: drop-shadow(0 30px 60px rgba(0, 0, 0, 0.15));
     animation: float 6s ease-in-out infinite;
 }
 
@@ -1849,19 +1825,41 @@
 
 /* Animations */
 @keyframes float {
-    0%, 100% { transform: translateY(0); }
-    50% { transform: translateY(-20px); }
+
+    0%,
+    100% {
+        transform: translateY(0);
+    }
+
+    50% {
+        transform: translateY(-20px);
+    }
 }
 
 @keyframes float-alternate {
-    0%, 100% { transform: translate(0, 0); }
-    33% { transform: translate(10px, -15px); }
-    66% { transform: translate(-10px, 10px); }
+
+    0%,
+    100% {
+        transform: translate(0, 0);
+    }
+
+    33% {
+        transform: translate(10px, -15px);
+    }
+
+    66% {
+        transform: translate(-10px, 10px);
+    }
 }
 
 @keyframes loading-slide {
-    0% { transform: translateX(-100%); }
-    100% { transform: translateX(400%); }
+    0% {
+        transform: translateX(-100%);
+    }
+
+    100% {
+        transform: translateX(400%);
+    }
 }
 
 /* Reveal Animation Utility */
@@ -1870,9 +1868,17 @@
     transition: all 0.8s cubic-bezier(0.19, 1, 0.22, 1);
 }
 
-[data-reveal="up"] { transform: translateY(40px); }
-[data-reveal="left"] { transform: translateX(-40px); }
-[data-reveal="right"] { transform: translateX(40px); }
+[data-reveal="up"] {
+    transform: translateY(40px);
+}
+
+[data-reveal="left"] {
+    transform: translateX(-40px);
+}
+
+[data-reveal="right"] {
+    transform: translateX(40px);
+}
 
 [data-reveal].active {
     opacity: 1;
@@ -1901,9 +1907,20 @@
     border-radius: 50%;
 }
 
-.ring-1 { width: 33%; height: 33%; }
-.ring-2 { width: 66%; height: 66%; }
-.ring-3 { width: 100%; height: 100%; }
+.ring-1 {
+    width: 33%;
+    height: 33%;
+}
+
+.ring-2 {
+    width: 66%;
+    height: 66%;
+}
+
+.ring-3 {
+    width: 100%;
+    height: 100%;
+}
 
 .radar-scan {
     position: absolute;
@@ -1918,8 +1935,13 @@
 }
 
 @keyframes radar-sweep {
-    from { transform: rotate(0deg); }
-    to { transform: rotate(360deg); }
+    from {
+        transform: rotate(0deg);
+    }
+
+    to {
+        transform: rotate(360deg);
+    }
 }
 
 .radar-point {
@@ -1932,7 +1954,7 @@
     cursor: pointer;
     z-index: 2;
     transition: all 0.3s ease;
-    box-shadow: 0 0 10px rgba(0,0,0,0.2);
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
 }
 
 .radar-point:hover {
@@ -1996,4 +2018,3 @@
     background: var(--gray-200);
     border-radius: var(--radius-full);
 }
-
