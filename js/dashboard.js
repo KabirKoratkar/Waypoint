@@ -93,7 +93,12 @@ function renderDashboard(tasks, essays, colleges) {
         if (badge) badge.textContent = `${sortedTasks.length} tasks`;
 
         if (sortedTasks.length === 0) {
-            taskContainer.innerHTML = `<p style="color: var(--gray-500); text-align: center; padding: var(--space-md);">All caught up!</p>`;
+            taskContainer.innerHTML = `
+                <div style="height: 180px; display: flex; flex-direction: column; align-items: center; justify-content: center; color: var(--gray-500);">
+                    <div style="font-size: 32px; margin-bottom: 12px;">✅</div>
+                    <p style="font-weight: 600;">All caught up!</p>
+                </div>
+            `;
         } else {
             sortedTasks.forEach(task => {
                 const card = document.createElement('div');
