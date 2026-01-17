@@ -178,6 +178,65 @@ app.post('/api/chat/claude', async (req, res) => {
     }
 });
 
+app.post('/api/colleges/add', async (req, res) => {
+    try {
+        const { userId, collegeName, type } = req.body;
+        if (!userId || !collegeName) return res.status(400).json({ error: 'userId and collegeName are required' });
+        const result = await handleAddCollege(userId, collegeName, type);
+        res.json(result);
+    } catch (error) {
+        res.status(500).json({ error: 'Internal server error' });
+    }
+});
+
+app.post('/api/essays/sync', async (req, res) => {
+    try {
+        const { userId } = req.body;
+        if (!userId) return res.status(400).json({ error: 'userId is required' });
+
+        const { data: colleges } = await supabase.from('colleges').select('*').eq('user_id', userId);
+        if (!colleges) return res.json({ success: true, count: 0 });
+
+        let totalCreated = 0;
+        for (const college of colleges) {
+            const result = await handleCreateEssays(userId, college.name);
+            if (result.success) totalCreated += (result.count || 0);
+        }
+
+        res.json({ success: true, count: totalCreated });
+    } catch (error) {
+        res.status(500).json({ error: 'Internal server error' });
+    }
+});
+
+app.post('/api/colleges/research-deep', researchLimiter, async (req, res) => {
+    try {
+        const { userId, collegeName } = req.body;
+        if (!collegeName) return res.status(400).json({ error: 'collegeName is required' });
+
+        console.log(`[DEEP RESEARCH] Generating Intelligence Report for ${collegeName}`);
+
+        const completion = await openai.chat.completions.create({
+            model: 'gpt-4o',
+            messages: [{
+                role: 'system',
+                content: `You are an Admissions Intelligence Analyst. Generate a deep "Intelligence Report" for ${collegeName}. 
+                Include: 
+                - "Insider Sentiment": What they really look for beyond stats.
+                - "Strategic Angle": How this user should position themselves.
+                - "Red Flags": Common mistakes.
+                Format as JSON: { "report": "markdown formatted report content" }`
+            }],
+            response_format: { type: "json_object" }
+        });
+
+        const report = JSON.parse(completion.choices[0].message.content).report;
+        res.json({ success: true, report });
+    } catch (error) {
+        res.status(500).json({ error: 'Internal server error' });
+    }
+});
+
 /**
  * Handle Main AI Chat (GPT-4o)
  */
@@ -340,7 +399,10 @@ async function handleAddCollege(userId, collegeName, type) {
         .eq('name', collegeData.name)
         .maybeSingle();
 
-    if (existing) return { success: true, message: 'Already in list' };
+    if (existing) {
+        await handleCreateEssays(userId, collegeData.name); // Ensure essays are synced
+        return { success: true, message: 'Already in list' };
+    }
 
     const { data, error } = await supabase
         .from('colleges')
@@ -354,7 +416,59 @@ async function handleAddCollege(userId, collegeName, type) {
         .select()
         .single();
 
+    if (data) {
+        await handleCreateEssays(userId, collegeData.name);
+    }
+
     return { success: true, collegeId: data?.id };
+}
+
+async function handleCreateEssays(userId, collegeName) {
+    try {
+        const { data: collegeEntry } = await supabase
+            .from('colleges')
+            .select('id, name')
+            .eq('user_id', userId)
+            .eq('name', collegeName)
+            .single();
+
+        if (!collegeEntry) return { success: false, error: 'College not found in user list' };
+
+        const research = await handleResearchCollege(collegeName);
+        const catalogEntry = research.college;
+
+        if (!catalogEntry || !catalogEntry.essays) return { success: true, count: 0 };
+
+        let count = 0;
+        for (const essay of catalogEntry.essays) {
+            const { data: existing } = await supabase
+                .from('essays')
+                .select('id')
+                .eq('user_id', userId)
+                .eq('college_id', collegeEntry.id)
+                .eq('title', `${collegeEntry.name} - ${essay.title}`)
+                .maybeSingle();
+
+            if (!existing) {
+                await supabase.from('essays').insert({
+                    user_id: userId,
+                    college_id: collegeEntry.id,
+                    title: `${collegeEntry.name} - ${essay.title}`,
+                    prompt: essay.prompt,
+                    word_limit: essay.word_limit,
+                    essay_type: essay.essay_type || 'Supplemental',
+                    status: 'Not Started',
+                    content: ''
+                });
+                count++;
+            }
+        }
+
+        return { success: true, count };
+    } catch (e) {
+        console.error('Error creating essays:', e);
+        return { success: false, error: e.message };
+    }
 }
 
 async function saveConversation(userId, userMessage, aiResponse, metadata = {}) {
