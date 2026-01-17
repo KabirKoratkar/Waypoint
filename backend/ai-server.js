@@ -96,7 +96,7 @@ const researchLimiter = rateLimit({
 });
 
 // Health Check
-app.get('/api/health', (req, res) => res.json({ status: 'ok', infrastructure: 'AWS Cloud Native' }));
+app.get('/api/health', (req, res) => res.json({ status: 'ok', version: 'v2.0-CLAUDE-SYNC', infrastructure: 'AWS Cloud Native' }));
 
 // Middleware (Order is important for Stripe Webhook)
 app.use(cors({
