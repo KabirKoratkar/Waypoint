@@ -2130,7 +2130,7 @@ async function handleYutoriResearch(query) {
 
 
 // Start server
-app.listen(PORT, () => {
-    console.log(`🤖 AI Server running on http://localhost:${PORT}`);
+app.listen(PORT, '0.0.0.0', () => {
+    console.log(`🤖 AI Server running on http://0.0.0.0:${PORT}`);
     console.log(`📚 Reference catalog: ${fs.existsSync(LOCAL_CATALOG_PATH) ? 'JSON + AWS' : 'AWS Only'}`);
 });
