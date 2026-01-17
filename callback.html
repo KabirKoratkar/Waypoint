@@ -18,30 +18,54 @@
 
 <body>
     <div style="text-align: center;">
-        <h2>Authenticating...</h2>
-        <p>Please wait while we sync your session.</p>
+        <h2 id="status">Authenticating...</h2>
+        <p id="detail">Please wait while we sync your session.</p>
     </div>
     <script>
+        // Standardized Auth0 redirect handler
         const webAuth = new auth0.WebAuth({
-            domain: 'YOUR_AUTH0_DOMAIN',
-            clientID: 'YOUR_AUTH0_CLIENT_ID'
+            domain: 'dev-n13i1lem6bavwrux.us.auth0.com',
+            clientID: 'Qa6ucqRUQu3xZfQvZ30DI0xkWQfq54Ul'
         });
+
+        const statusEl = document.getElementById('status');
+        const detailEl = document.getElementById('detail');
 
         webAuth.parseHash(function (err, authResult) {
             if (authResult && authResult.accessToken && authResult.idToken) {
-                // Set the time that the access token will expire at
+                statusEl.textContent = 'Identity Verified!';
+                detailEl.textContent = 'Syncing your Waypoint intelligence profile...';
+
                 const expiresAt = JSON.stringify((authResult.expiresIn * 1000) + new Date().getTime());
                 localStorage.setItem('access_token', authResult.accessToken);
                 localStorage.setItem('id_token', authResult.idToken);
                 localStorage.setItem('expires_at', expiresAt);
 
-                // Redirect to dashboard
+                // Convert Auth0 Identity -> Waypoint Session
+                const userInfo = authResult.idTokenPayload || {};
+                const mockUser = {
+                    id: 'auth0-' + (userInfo.sub || Date.now()),
+                    email: userInfo.email || 'user@organization.com',
+                    full_name: userInfo.name || userInfo.nickname || 'Waypoint User',
+                    created_at: new Date().toISOString(),
+                    is_premium: true
+                };
+
+                localStorage.setItem('dev_user', JSON.stringify(mockUser));
+
                 window.location.hash = '';
-                window.location.assign('dashboard.html');
+                setTimeout(() => {
+                    window.location.assign('dashboard.html');
+                }, 800);
             } else if (err) {
-                console.log(err);
-                alert('Error: ' + err.errorDescription);
-                window.location.assign('login.html');
+                console.error('Auth0 Hash Error:', err);
+                statusEl.textContent = 'Authentication Halted';
+                statusEl.style.color = '#ef4444';
+                detailEl.innerHTML = `Error: <strong>${err.errorDescription || err.error}</strong><br><br>Redirecting...`;
+
+                setTimeout(() => {
+                    window.location.assign('login.html');
+                }, 3000);
             }
         });
     </script>
