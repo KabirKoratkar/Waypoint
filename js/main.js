@@ -92,6 +92,14 @@ document.addEventListener('DOMContentLoaded', function () {
 
     // Check if user is logged in for landing page CTA update
     if (currentPage === 'index.html' || currentPage === '' || currentPage === '/') {
+        // 1. Check for OAuth Redirect (Critical Fix for Supabase OAuth defaulting to Site URL)
+        if (window.location.hash && window.location.hash.includes('access_token')) {
+            console.log('🔄 Detected OAuth Hash on Landing Page. Redirecting to Dashboard...');
+            window.location.replace('dashboard.html' + window.location.hash);
+            return;
+        }
+
+        // 2. Update Nav if user is just visiting
         updateLandingNav();
     }
 
