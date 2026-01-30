@@ -6,10 +6,17 @@ import dotenv from 'dotenv';
 dotenv.config();
 
 const router = express.Router();
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
+
+let stripe;
+if (process.env.STRIPE_SECRET_KEY) {
+    stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
+} else {
+    console.warn('⚠️ STRIPE_SECRET_KEY missing - Payments disabled');
+}
+
 const supabase = createClient(
-    process.env.SUPABASE_URL,
-    process.env.SUPABASE_SERVICE_KEY
+    process.env.SUPABASE_URL || 'https://placeholder.supabase.co',
+    process.env.SUPABASE_SERVICE_KEY || 'placeholder'
 );
 
 // Price ID for the Pro Plan (should be in .env)
@@ -27,6 +34,8 @@ router.post('/create-checkout-session', async (req, res) => {
         if (!userId || !email) {
             return res.status(400).json({ error: 'User ID and Email are required' });
         }
+
+        if (!stripe) return res.status(503).json({ error: 'Payment service unavailable (missing configuration)' });
 
         // Create Checkout Session
         const session = await stripe.checkout.sessions.create({
