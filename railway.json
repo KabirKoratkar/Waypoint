@@ -3,7 +3,7 @@
         "builder": "NIXPACKS"
     },
     "deploy": {
-        "startCommand": "npm start",
+        "startCommand": "node backend/ai-server.js",
         "healthcheckPath": "/"
     }
 }

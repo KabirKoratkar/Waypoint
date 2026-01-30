@@ -1,3 +1,4 @@
+console.log('🚀 Starting AI Server execution...');
 // AI Server for Waypoint
 // Handles AI chat, college research, and application management
 
