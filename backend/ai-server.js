@@ -13,13 +13,13 @@ import { fileURLToPath } from 'url';
 import rateLimit from 'express-rate-limit';
 import NodeCache from 'node-cache';
 import { Resend } from 'resend';
-import paymentsRouter from './payments.js';
 import Anthropic from '@anthropic-ai/sdk';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const LOCAL_CATALOG_PATH = path.join(__dirname, 'college_catalog.json');
 
-dotenv.config();
+// Load .env from the backend directory explicitly
+dotenv.config({ path: path.join(__dirname, '.env') });
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -101,6 +101,7 @@ app.use((req, res, next) => {
     }
 });
 
+const { default: paymentsRouter } = await import('./payments.js');
 app.use('/api/payments', paymentsRouter);
 app.use('/api/', globalLimiter);
 
