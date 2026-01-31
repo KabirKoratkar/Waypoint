@@ -716,7 +716,7 @@
 /* ESSAY WORKSPACE REFINED 3-COLUMN LAYOUT */
 .essay-workspace-grid {
     display: grid;
-    grid-template-columns: 240px 1fr 320px;
+    grid-template-columns: 240px 1fr 300px;
     gap: var(--space-xl);
     align-items: start;
     min-height: calc(100vh - 200px);
@@ -735,34 +735,55 @@
         gap: var(--space-lg);
     }
 
+    /* Move AI Counselor below editor on medium screens */
     .essay-sidebar-right {
-        display: none;
+        grid-column: 2;
+        grid-row: 2;
+        position: static;
+        margin-top: var(--space-xl);
+        max-height: none;
     }
 }
 
 @media (max-width: 992px) {
     .essay-workspace-grid {
         grid-template-columns: 1fr;
+        display: flex;
+        flex-direction: column;
     }
 
     .essay-sidebar-left {
+        width: 100%;
         position: static;
-        margin-bottom: var(--space-xl);
+        margin-bottom: var(--space-lg);
+    }
+
+    .essay-sidebar-right {
+        width: 100%;
+        position: static;
+        margin-top: var(--space-lg);
+    }
+
+    .essay-editor-card {
+        min-height: 500px;
     }
 }
 
-/* Make sidebars sticky */
-.essay-sidebar-left,
-.essay-sidebar-right {
-    position: sticky;
-    top: 100px;
-}
+/* Make sidebars sticky only on desktop */
+@media (min-width: 1201px) {
 
-.essay-sidebar-right {
-    max-height: calc(100vh - 120px);
-    overflow-y: auto;
-    padding-right: 4px;
-    z-index: 5;
+    .essay-sidebar-left,
+    .essay-sidebar-right {
+        position: sticky;
+        top: 100px;
+    }
+
+    .essay-sidebar-right {
+        max-height: calc(100vh - 120px);
+        overflow-y: auto;
+        padding-right: 4px;
+        z-index: 5;
+    }
 }
 
 .essay-sidebar-right::-webkit-scrollbar {
@@ -2235,10 +2256,11 @@
 .tab-pane.active {
     display: block;
 }
+
 /* SMART SYNC BUTTON */
 .btn-smart-sync {
     height: 48px;
-    background: rgba(139, 123, 247, 0.1); 
+    background: rgba(139, 123, 247, 0.1);
     border: 1px solid var(--primary-purple);
     color: var(--primary-purple);
     display: flex;
