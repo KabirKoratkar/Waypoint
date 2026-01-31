@@ -164,14 +164,15 @@ async function performAddCollege(collegeName, type = 'Target') {
         showNotification(`Adding ${collegeName}...`, 'info');
         console.log(`Adding college: ${collegeName} (${type})`);
 
-        const newCollege = await addCollege(currentUser.id, collegeName, type);
+        const response = await addCollege(currentUser.id, collegeName, type);
 
-        if (newCollege) {
-            console.log('College added successfully:', newCollege);
+        // Handle both standard API response { success: true, college: {...} } and direct DB response { id: ... }
+        if (response && (response.success || response.id)) {
+            console.log('College added successfully:', response);
             showNotification(`${collegeName} added successfully!`, 'success');
             await loadAndRenderColleges();
         } else {
-            throw new Error('Failed to add college - no response from server');
+            throw new Error(response?.error || 'Failed to add college - no response from server');
         }
     } catch (error) {
         console.error('Error adding college:', error);
