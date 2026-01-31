@@ -2235,3 +2235,37 @@
 .tab-pane.active {
     display: block;
 }
+/* SMART SYNC BUTTON */
+.btn-smart-sync {
+    height: 48px;
+    background: rgba(139, 123, 247, 0.1); 
+    border: 1px solid var(--primary-purple);
+    color: var(--primary-purple);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    white-space: nowrap;
+    padding: 0 20px;
+    border-radius: var(--radius-lg);
+}
+
+.btn-smart-sync:hover {
+    background: var(--primary-purple);
+    color: var(--white);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(139, 123, 247, 0.3);
+}
+
+[data-theme="dark"] .btn-smart-sync {
+    background: rgba(139, 123, 247, 0.15);
+    border-color: var(--primary-purple);
+    color: #a78bfa;
+}
+
+[data-theme="dark"] .btn-smart-sync:hover {
+    background: var(--primary-purple);
+    color: var(--white);
+}
