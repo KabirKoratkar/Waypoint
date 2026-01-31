@@ -90,7 +90,7 @@ function renderSearchResults(results, container) {
         `;
     } else {
         let html = results.map(c => `
-            <div style="display: flex; justify-content: space-between; align-items: center; padding: var(--space-sm) var(--space-md); border-bottom: 1px solid var(--border); cursor: pointer;" class="search-item" onclick="if(!event.target.closest('button')) window.location.href='college-explorer.html?name=${encodeURIComponent(c.name)}'">
+            <div style="display: flex; justify-content: space-between; align-items: center; padding: var(--space-sm) var(--space-md); border-bottom: 1px solid var(--border); cursor: pointer;" class="search-item" onclick="if(!event.target.closest('button')) window.location.href='resources.html?topic=${encodeURIComponent(c.name)}'">
                 <div style="flex: 1;">
                     <div style="font-weight: 600; color: var(--gray-800); font-size: var(--text-sm);">${c.name}</div>
                     <div style="font-size: 11px; color: var(--gray-500);">${c.application_platform || 'Common App'} • ${c.deadline_type || 'RD'}</div>
@@ -205,7 +205,7 @@ async function loadAndRenderColleges() {
                 <td style="padding: 16px;">
                     <div style="display: flex; flex-direction: column; gap: 4px;">
                         <div style="display: flex; align-items: center; gap: 8px;">
-                            <a href="college-explorer.html?name=${encodeURIComponent(c.name)}" style="color: inherit; text-decoration: none;"><strong>${c.name}</strong></a>
+                            <a href="resources.html?topic=${encodeURIComponent(c.name)}" style="color: inherit; text-decoration: none;"><strong>${c.name}</strong></a>
                             <div style="display: flex; gap: 4px;">
                                 <button class="btn btn-icon btn-icon-sm btn-ghost" onclick="getAIStrategy('${c.name.replace(/'/g, "\\'")}')" title="Admission Strategy">✨</button>
                                 <button class="btn btn-icon btn-icon-sm btn-ghost" onclick="deepResearch('${c.name.replace(/'/g, "\\'")}')" title="Intelligence Report">🕵️</button>

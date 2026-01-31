@@ -335,6 +335,13 @@
             document.getElementById('topicInput').addEventListener('keypress', (e) => {
                 if (e.key === 'Enter') searchTopic(e.target.value);
             });
+
+            // Check URL params for auto-search
+            const urlParams = new URLSearchParams(window.location.search);
+            const topicParam = urlParams.get('topic');
+            if (topicParam) {
+                searchTopic(topicParam);
+            }
         });
 
         async function searchTopic(topic) {
