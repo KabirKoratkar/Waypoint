@@ -803,8 +803,28 @@ async function handleResearchCollege(collegeName) {
             model: 'gpt-4o',
             messages: [{
                 role: 'system',
-                content: `Provide accurate 2024-2025 admissions data for ${collegeName} in JSON. 
-                Include description, location, median_sat, acceptance_rate, application_platform, and essays required (array of title, prompt, word_limit).`
+                content: `Provide accurate 2024-2025 admissions data for "${collegeName}" in JSON.
+                
+                CRITICAL RULE: Resolve nicknames/abbreviations to the FULL OFFICIAL UNIVERSITY NAME in the 'name' field.
+                Examples: 
+                - "UConn" -> "University of Connecticut"
+                - "Cal" or "Berk" -> "University of California, Berkeley"
+                - "UPenn" -> "University of Pennsylvania"
+                - "BU" -> "Boston University"
+                - "WashU" -> "Washington University in St. Louis"
+
+                Return structure:
+                {
+                    "name": "Full Official Name",
+                    "description": "...",
+                    "location": "City, State",
+                    "median_sat": 1500,
+                    "acceptance_rate": "5.4%",
+                    "application_platform": "Common App",
+                    "essays": [
+                        { "title": "...", "prompt": "...", "word_limit": 250, "essay_type": "Supplemental" }
+                    ]
+                }`
             }],
             response_format: { type: "json_object" }
         });
