@@ -59,7 +59,10 @@ const OFFICIAL_DIRECTIONS = {
     }
 };
 
-document.addEventListener('DOMContentLoaded', async function () {
+// Initialize the application
+async function init() {
+    console.log("Essay Workspace Initializing...");
+
     // Get current user
     currentUser = await getCurrentUser();
 
@@ -353,7 +356,10 @@ document.addEventListener('DOMContentLoaded', async function () {
         if (cancelBtn) cancelBtn.onclick = () => modal.classList.remove('active');
     });
 
-});
+}
+
+// Start immediately
+init().catch(console.error);
 
 // --- State Management ---
 
