@@ -85,8 +85,15 @@
                         </div>
                     </div>
 
-                    <h3 style="font-size: var(--text-lg); font-weight: 700; margin-bottom: var(--space-md);">My Essays
+                    <h3 style="font-size: var(--text-lg); font-weight: 700; margin-bottom: var(--space-xs);">My Essays
                     </h3>
+                    <div style="font-size: 11px; color: var(--gray-500); margin-bottom: var(--space-md);">All your
+                        essays live here. Click one to edit it in the workspace.</div>
+
+                    <div style="display: flex; gap: 8px; margin-bottom: var(--space-lg);">
+                        <button class="btn btn-sm btn-outline" id="newEssayBtn"
+                            style="flex: 1; border-style: dashed; justify-content: center;">+ New Essay</button>
+                    </div>
 
                     <div class="search-box mb-lg">
                         <input type="text" id="essaySearch" class="input input-sm" placeholder="Search essays..."
@@ -193,8 +200,13 @@
                                 OFFICIAL PROMPT</h4>
                         </div>
                         <div id="currentPrompt"
-                            style="font-weight: 600; font-size: 1.1rem; color: var(--gray-800); line-height: 1.6; font-family: var(--font-primary);">
-                            Select an essay from the sidebar to begin.
+                            style="font-weight: 500; font-size: 1.1rem; color: var(--gray-800); line-height: 1.6; font-family: var(--font-primary);">
+                            <h2
+                                style="font-size: 1.5rem; font-weight: 700; margin-bottom: 0.5rem; color: var(--gray-900);">
+                                Your Essay Workspace</h2>
+                            <p style="color: var(--gray-600); font-size: 0.95rem; margin: 0;">Write, edit, and refine
+                                all your college essays here.<br>Select an essay from the sidebar or create a new one to
+                                start drafting.</p>
                         </div>
 
                         <!-- Official Guidance Slot -->
@@ -212,7 +224,7 @@
 
 
                     <textarea class="essay-textarea" id="essayEditor"
-                        placeholder="Start writing your masterpiece..."></textarea>
+                        placeholder="Start drafting your essay here. Don't worry about perfection — you can refine it later."></textarea>
 
                     <!-- Word Count Footer -->
                     <div class="essay-footer"
@@ -232,20 +244,35 @@
                     <h3 class="sidebar-title">🤖 Mini AI Counselor</h3>
                     <div id="aiReviewPanel" style="display: flex; flex-direction: column; gap: var(--space-md);">
                         <div id="selectionHint"
-                            style="font-size: var(--text-xs); color: var(--gray-500); padding: var(--space-sm); background: var(--gray-50); border-radius: var(--radius-sm); border-left: 3px solid var(--accent-purple);">
-                            Ask questions about your essay or application strategy. Highlight text to focus the AI
-                            on a
-                            specific section.
+                            style="font-size: var(--text-xs); color: var(--gray-600); padding: var(--space-sm); line-height: 1.5;">
+                            Ask questions about your essay, structure, or application strategy. Highlight specific text
+                            if you want feedback on a certain section.
                         </div>
 
                         <div class="input-group" style="margin-top: var(--space-xs); margin-bottom: 0;">
                             <textarea id="aiCustomQuestion" class="input"
                                 style="font-size: var(--text-sm); min-height: 80px; padding: var(--space-md); border-color: var(--gray-200); background: var(--white);"
-                                placeholder="Ask the counselor... (e.g. 'How can I make this opening more personal?' or 'Does this fit my CS major?')"></textarea>
+                                placeholder="Ask the counselor..."></textarea>
+                        </div>
+
+                        <!-- Example Prompts -->
+                        <div style="display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: var(--space-sm);">
+                            <span class="badge badge-outline"
+                                style="font-size: 10px; cursor: pointer; color: var(--gray-500);">Help improve
+                                intro</span>
+                            <span class="badge badge-outline"
+                                style="font-size: 10px; cursor: pointer; color: var(--gray-500);">Does this answer
+                                prompt?</span>
+                            <span class="badge badge-outline"
+                                style="font-size: 10px; cursor: pointer; color: var(--gray-500);">What to add
+                                next?</span>
+                            <span class="badge badge-outline"
+                                style="font-size: 10px; cursor: pointer; color: var(--gray-500);">Is tone too
+                                formal?</span>
                         </div>
 
                         <button class="btn btn-primary" id="reviewSelectionBtn" style="width: 100%; gap: 8px;">
-                            🚀 Ask Counselor
+                            Get Feedback 🚀
                         </button>
 
                         <div style="font-size: 10px; color: var(--gray-400); text-align: center; font-style: italic;">

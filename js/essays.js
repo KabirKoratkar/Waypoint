@@ -25,7 +25,8 @@ import {
     updateAward,
     deleteActivity,
     deleteAward,
-    isPremiumUser
+    isPremiumUser,
+    createEssay
 } from './supabase-config.js';
 import config from './config.js';
 import { updateNavbarUser } from './ui.js';
@@ -215,6 +216,45 @@ document.addEventListener('DOMContentLoaded', async function () {
             items.forEach(item => {
                 const text = item.textContent.toLowerCase();
                 item.style.display = text.includes(term) ? 'block' : 'none';
+            });
+        });
+    }
+
+    // New Essay Button
+    const newEssayBtn = document.getElementById('newEssayBtn');
+    if (newEssayBtn) {
+        newEssayBtn.onclick = async () => {
+            const title = prompt("Enter a title for your new essay:");
+            if (title && title.trim()) {
+                showNotification('Creating essay...', 'info');
+                const newEssay = await createEssay({
+                    user_id: currentUser.id,
+                    title: title.trim(),
+                    essay_type: 'Personal Statement',
+                    content: ''
+                });
+
+                if (newEssay) {
+                    showNotification('Essay created!', 'success');
+                    await loadEssays();
+                    // Select the new essay
+                    const newItem = document.querySelector(`.essay-nav-item[data-essay-id="${newEssay.id}"]`);
+                    if (newItem) newItem.click();
+                } else {
+                    showNotification('Failed to create essay.', 'error');
+                }
+            }
+        };
+    }
+
+    // AI Example Prompts
+    const promptBadges = document.querySelectorAll('#aiReviewPanel .badge-outline');
+    const questionBox = document.getElementById('aiCustomQuestion');
+    if (promptBadges && questionBox) {
+        promptBadges.forEach(badge => {
+            badge.addEventListener('click', () => {
+                questionBox.value = badge.textContent;
+                questionBox.focus();
             });
         });
     }
