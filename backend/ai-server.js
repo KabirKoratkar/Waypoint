@@ -853,11 +853,16 @@ async function handleAddCollege(userId, collegeName, type) {
         .select()
         .single();
 
+    if (error) {
+        console.error('Error adding college to DB:', error);
+        return { success: false, error: error.message };
+    }
+
     if (data) {
         await handleCreateEssays(userId, collegeData.name);
     }
 
-    return { success: true, collegeId: data?.id };
+    return { success: true, collegeId: data?.id, college: data };
 }
 
 async function handleCreateEssays(userId, collegeName) {
