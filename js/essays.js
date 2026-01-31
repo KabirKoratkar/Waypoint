@@ -74,15 +74,7 @@ async function init() {
     const profile = await getUserProfile(currentUser.id);
     updateNavbarUser(currentUser, profile);
 
-    // Sync missing essays for existing colleges
-    if (window.showNotification) window.showNotification('Checking for missing essays...', 'info');
-    await syncEssays(currentUser.id);
-
-    // Load essays
-    await loadEssays();
-
-    // Load essays
-    await loadEssays();
+    // --- UI EVENT BINDINGS (Run immediately) ---
 
     // Share button
     const shareBtn = document.getElementById('shareBtn');
@@ -147,8 +139,6 @@ async function init() {
             updateCounts();
             scheduleAutosave();
         });
-
-        // Initialize counts
         updateCounts();
     }
 
@@ -159,7 +149,6 @@ async function init() {
             showNotification('Google Drive integration coming soon! For now, please copy and paste your draft.', 'info');
         });
     }
-
 
     // Essay navigation (Static items)
     document.querySelectorAll('.essay-nav-item').forEach(item => {
@@ -190,7 +179,6 @@ async function init() {
             if (editorContainer.style.display !== 'none') {
                 // Essay View
                 selection = editor.value.substring(editor.selectionStart, editor.selectionEnd).trim();
-                // If nothing is selected, we'll review the whole thing (handled in handleConceptualReview)
             } else {
                 // Module View
                 isModuleReview = true;
@@ -207,8 +195,6 @@ async function init() {
             await saveCurrentEssay();
         }
     });
-
-    // Essay Search
 
     // Essay Search
     const essaySearch = document.getElementById('essaySearch');
@@ -240,7 +226,6 @@ async function init() {
                 if (newEssay) {
                     showNotification('Essay created!', 'success');
                     await loadEssays();
-                    // Select the new essay
                     const newItem = document.querySelector(`.essay-nav-item[data-essay-id="${newEssay.id}"]`);
                     if (newItem) newItem.click();
                 } else {
@@ -277,9 +262,6 @@ async function init() {
         };
     }
 
-    // Export global functions
-    window.switchView = switchView;
-
     // Sample Modal Close
     const closeSampleModal = document.getElementById('closeSampleModal');
     if (closeSampleModal) {
@@ -287,8 +269,6 @@ async function init() {
             document.getElementById('sampleModal').classList.remove('active');
         };
     }
-
-    // --- Activity & Award Handlers ---
 
     // Sidebar Navigation
     document.querySelectorAll('[data-module]').forEach(item => {
@@ -355,6 +335,18 @@ async function init() {
         if (closeBtn) closeBtn.onclick = () => modal.classList.remove('active');
         if (cancelBtn) cancelBtn.onclick = () => modal.classList.remove('active');
     });
+
+    // Export global functions
+    window.switchView = switchView;
+
+    // --- DATA LOADING (Run after UI is ready) ---
+
+    // Sync missing essays for existing colleges
+    if (window.showNotification) window.showNotification('Checking for missing essays...', 'info');
+    await syncEssays(currentUser.id);
+
+    // Load essays
+    await loadEssays();
 
 }
 
