@@ -56,7 +56,7 @@ const apiCache = new NodeCache({ stdTTL: 14400, checkperiod: 3600 });
 // Rate Limiting
 const globalLimiter = rateLimit({
     windowMs: 15 * 60 * 1000,
-    max: 100,
+    max: 500, // Increased for scenarios like coffee shops with shared IPs
     message: { error: 'Too many requests, please slow down.' }
 });
 
@@ -76,11 +76,11 @@ app.use((req, res, next) => {
 });
 
 app.use('/api/payments', paymentsRouter);
-app.use('/api/', globalLimiter);
-
-// Health Check
+// Health Checks (Defined before limiter to avoid false negatives)
 app.get('/api/health', (req, res) => res.json({ status: 'ok', version: 'v3.0', infrastructure: 'Supabase Native' }));
 app.get('/health', (req, res) => res.json({ status: 'ok', message: 'AI server is running' }));
+
+app.use('/api/', globalLimiter);
 
 // Feedback and Tickets
 app.post('/api/feedback', async (req, res) => {
