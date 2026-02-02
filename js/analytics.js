@@ -11,6 +11,18 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     try {
         const user = await getCurrentUser();
+
+        // Apply theme-aware colors to Chart.js
+        const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+        const textColor = isDark ? '#E2E8F0' : '#475569';
+        const gridColor = isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.05)';
+
+        if (typeof Chart !== 'undefined') {
+            Chart.defaults.color = textColor;
+            Chart.defaults.borderColor = gridColor;
+            Chart.defaults.font.family = "'Inter', sans-serif";
+        }
+
         let colleges = [];
         let essays = [];
         let tasks = [];
@@ -46,10 +58,10 @@ document.addEventListener('DOMContentLoaded', async () => {
 });
 
 function updateSummaryStats(colleges, essays, tasks) {
-    const completionCard = document.querySelector('.stats-summary .card:nth-child(1) div:last-child');
-    const daysCard = document.querySelector('.stats-summary .card:nth-child(2) div:last-child');
-    const essaysCard = document.querySelector('.stats-summary .card:nth-child(3) div:last-child');
-    const tasksCard = document.querySelector('.stats-summary .card:nth-child(4) div:last-child');
+    const completionCard = document.getElementById('overall-completion');
+    const daysCard = document.getElementById('days-remaining');
+    const essaysCard = document.getElementById('essays-drafted');
+    const tasksCard = document.getElementById('tasks-done');
 
     if (completionCard) {
         const totalProgress = colleges.reduce((acc, c) => {
