@@ -273,201 +273,7 @@ app.post('/api/colleges/research-deep', researchLimiter, async (req, res) => {
     }
 });
 
-/**
- * Handle Main AI Chat (GPT-4o)
- */
-app.post('/api/chat', async (req, res) => {
-    try {
-        const { message, userId, conversationHistory = [] } = req.body;
-        if (!message || !userId) return res.status(400).json({ error: 'Message and userId are required' });
-
-        const { data: profile } = await supabase.from('profiles').select('*').eq('id', userId).single();
-        const { data: colleges } = await supabase.from('colleges').select('*').eq('user_id', userId);
-
-        const profileContext = profile ? `Student: ${profile.full_name}, Major: ${profile.intended_major}, GPA: ${profile.unweighted_gpa}` : '';
-        const appStateContext = `Colleges: ${colleges?.map(c => c.name).join(', ') || 'None'}`;
-
-        const messages = [
-            {
-                role: 'system',
-                content: `You are the Admissions Intelligence Command Center for ${profileContext}.
-                Manage their application ecosystem using tools. Be concise.
-                
-                ${appStateContext}`
-            },
-            ...conversationHistory.map(msg => ({ role: msg.role, content: msg.content })),
-            { role: 'user', content: message }
-        ];
-
-        const functions = [
-            {
-                name: "researchCollege",
-                description: "Get detailed statistics/requirements for a college",
-                parameters: {
-                    type: "object",
-                    properties: { collegeName: { type: "string" } },
-                    required: ["collegeName"]
-                }
-            },
-            {
-                name: "addCollege",
-                description: "Add a college to the user's list",
-                parameters: {
-                    type: "object",
-                    properties: {
-                        collegeName: { type: "string" },
-                        type: { type: "string", enum: ["Reach", "Target", "Safety"] }
-                    },
-                    required: ["collegeName"]
-                }
-            }
-        ];
-
-        console.log(`[CLAUDE] Processing request for ${userId} with Claude 3.5 Sonnet.`);
-
-        const response = await anthropic.messages.create({
-            model: "claude-3-5-sonnet-20241022",
-            max_tokens: 2048,
-            system: systemPrompt,
-            messages: messages,
-            tools: tools,
-            tool_choice: { type: "auto" }
-        });
-
-        console.log(`[CLAUDE] Raw Response Type: ${response.type}`);
-        console.log(`[CLAUDE] Content Blocks: ${response.content.length}`);
-
-        let toolCalledInThisTurn = false;
-        let toolResults = [];
-        let finalText = "";
-
-        // Handle content blocks (Process tools and collect results)
-        for (const block of response.content) {
-            if (block.type === 'text') {
-                finalText += block.text;
-            } else if (block.type === 'tool_use') {
-                toolCalledInThisTurn = true;
-                functionCalled = block.name;
-                const toolArgs = block.input;
-                console.log(`[CLAUDE] Executed tool: ${functionCalled}`);
-
-                try {
-                    switch (functionCalled) {
-                        case 'researchLive':
-                            functionResult = await handleYutoriResearch(toolArgs.query);
-                            break;
-                        case 'addCollege':
-                            functionResult = await handleAddCollege(userId, toolArgs.collegeName, toolArgs.type);
-                            break;
-                        case 'createEssays':
-                            functionResult = await handleCreateEssays(userId, toolArgs.collegeName);
-                            break;
-                        case 'modifyTask':
-                            functionResult = await handleModifyTask(userId, toolArgs.action, toolArgs.taskId, toolArgs.taskData);
-                            break;
-                        case 'updateProfile':
-                            functionResult = await handleUpdateProfile(userId, toolArgs);
-                            break;
-                        case 'updateCollege':
-                            functionResult = await handleUpdateCollege(userId, toolArgs.collegeId, toolArgs);
-                            break;
-                        case 'getEssay':
-                            functionResult = await handleGetEssay(userId, toolArgs.essayId);
-                            break;
-                        case 'updateEssay':
-                            functionResult = await handleUpdateEssayContent(userId, toolArgs.essayId, toolArgs.content, toolArgs.isCompleted);
-                            break;
-                        case 'researchCollege':
-                            functionResult = await handleResearchCollege(toolArgs.collegeName);
-                            break;
-                        case 'createTasks':
-                            functionResult = await handleCreateTasks(userId, toolArgs.tasks);
-                            break;
-                        case 'getAppStatus':
-                            functionResult = await handleGetAppStatus(userId);
-                            break;
-                        case 'brainstormEssay':
-                            functionResult = handleBrainstormEssay(toolArgs.prompt, toolArgs.context);
-                            break;
-                        case 'reviewEssay':
-                            functionResult = handleReviewEssay(toolArgs.essayContent, toolArgs.focusArea);
-                            break;
-                        case 'listDocuments':
-                            functionResult = await handleListDocuments(userId);
-                            break;
-                        default:
-                            functionResult = { error: 'Unknown tool' };
-                    }
-                } catch (err) {
-                    console.error(`[CLAUDE] Tool Error (${functionCalled}):`, err);
-                    functionResult = { success: false, error: err.message };
-                }
-
-                toolResults.push({
-                    type: "tool_result",
-                    tool_use_id: block.id,
-                    content: JSON.stringify(functionResult)
-                });
-            }
-        }
-
-        // FEEDBACK LOOP: If tools were used, feed results back to Claude for a final personalized response
-        if (toolCalledInThisTurn) {
-            console.log(`[CLAUDE] Feeding tool results back for final contextual response...`);
-
-            // Add the assistant's previous message (containing tool_use blocks)
-            messages.push({
-                role: "assistant",
-                content: response.content
-            });
-
-            // Add the tool results
-            messages.push({
-                role: "user",
-                content: toolResults
-            });
-
-            const finalResponse = await anthropic.messages.create({
-                model: "claude-3-5-sonnet-20241022",
-                max_tokens: 2048,
-                system: systemPrompt,
-                messages: messages
-            });
-
-            aiResponse = finalResponse.content.filter(b => b.type === 'text').map(b => b.text).join(' ');
-        } else {
-            aiResponse = finalText;
-        }
-
-        // Fallback for empty responses
-        if (!aiResponse) {
-            if (functionCalled) {
-                aiResponse = `I've processed the ${functionCalled} command for you. Is there anything else I can assist with?`;
-            } else {
-                aiResponse = "I'm sorry, I couldn't generate a response. Could you try rephrasing your question?";
-            }
-        }
-
-        // Save to conversation history if requested
-        if (saveToHistory) {
-            await saveConversation(userId, message, aiResponse, functionCalled ? {
-                model: 'claude-3.5-sonnet',
-                tool: functionCalled,
-                result: functionResult
-            } : { model: 'claude-3.5-sonnet' });
-        }
-
-        res.json({
-            response: aiResponse,
-            functionCalled,
-            functionResult
-        });
-
-    } catch (error) {
-        console.error('Claude Chat Error:', error);
-        res.status(500).json({ error: 'Internal server error', details: error.message });
-    }
-});
+// [Deleted legacy Claude endpoint]
 
 // ElevenLabs Text-to-Speech Endpoint
 app.post('/api/tts', async (req, res) => {
@@ -519,8 +325,8 @@ app.post('/api/chat', async (req, res) => {
             return res.status(400).json({ error: 'Message and userId are required' });
         }
 
-        // Fetch user profile for personalization
-        const { data: profile } = await awsDataClient
+        // Fetch user profile for personalization using SUPABASE
+        const { data: profile } = await supabase
             .from('profiles')
             .select('*')
             .eq('id', userId)
@@ -533,12 +339,12 @@ app.post('/api/chat', async (req, res) => {
              Academic Stats: GPA: ${profile.unweighted_gpa || 'N/A'} (UW) / ${profile.weighted_gpa || 'N/A'} (W). SAT: ${profile.sat_score || 'N/A'}. ACT: ${profile.act_score || 'N/A'}.
              Location: ${profile.location || 'Unknown'}` : '';
 
-        // Fetch user app state for deep context
-        const { data: colleges } = await awsDataClient.from('colleges').select('*').eq('user_id', userId);
-        const { data: tasks } = await awsDataClient.from('tasks').select('*').eq('user_id', userId).eq('completed', false);
-        const { data: essays } = await awsDataClient.from('essays').select('id, title, college_id, word_count, is_completed').eq('user_id', userId);
-        const { data: activities } = await awsDataClient.from('activities').select('*').eq('user_id', userId).order('position', { ascending: true });
-        const { data: awards } = await awsDataClient.from('awards').select('*').eq('user_id', userId).order('position', { ascending: true });
+        // Fetch user app state for deep context using SUPABASE
+        const { data: colleges } = await supabase.from('colleges').select('*').eq('user_id', userId);
+        const { data: tasks } = await supabase.from('tasks').select('*').eq('user_id', userId).eq('completed', false);
+        const { data: essays } = await supabase.from('essays').select('id, title, college_id, word_count, is_completed').eq('user_id', userId);
+        const { data: activities } = await supabase.from('activities').select('*').eq('user_id', userId).order('position', { ascending: true });
+        const { data: awards } = await supabase.from('awards').select('*').eq('user_id', userId).order('position', { ascending: true });
 
         const appStateContext = `
             CURRENT COLLEGE LIST: ${colleges?.map(c => `${c.name} (${c.type})`).join(', ') || 'None'}
@@ -570,6 +376,7 @@ app.post('/api/chat', async (req, res) => {
                 4. ESSAY WRITING: Use 'updateEssay' to save content.
                 5. COLLEGE STRATEGY: Use 'updateCollege' or 'addCollege'.
                 6. DATA RESEARCH: Use 'researchCollege' for stats.
+                7. LIVE SCOUT: Use 'researchLive' for ANY real-time web info.
 
                 Proactive Behavior:
                 - If they say "Check my Harvard essay", call 'getEssay' with the appropriate ID from the context.
@@ -829,12 +636,60 @@ app.post('/api/chat', async (req, res) => {
         if (responseMessage.function_call) {
             const { name: functionName, arguments: functionArgsRaw } = responseMessage.function_call;
             const functionArgs = JSON.parse(functionArgsRaw);
-            let result;
+            let result = { error: 'Not implemented' };
 
-            if (functionName === 'researchCollege') {
-                result = await handleResearchCollege(functionArgs.collegeName);
-            } else if (functionName === 'addCollege') {
-                result = await handleAddCollege(userId, functionArgs.collegeName, functionArgs.type);
+            console.log(`[AI-SERVER] Executing function: ${functionName}`);
+
+            try {
+                switch (functionName) {
+                    case 'researchCollege':
+                        result = await handleResearchCollege(functionArgs.collegeName);
+                        break;
+                    case 'addCollege':
+                        result = await handleAddCollege(userId, functionArgs.collegeName, functionArgs.type);
+                        break;
+                    case 'createEssays':
+                        result = await handleCreateEssays(userId, functionArgs.collegeName);
+                        break;
+                    case 'modifyTask':
+                        result = await handleModifyTask(userId, functionArgs.action, functionArgs.taskId, functionArgs.taskData);
+                        break;
+                    case 'updateProfile':
+                        result = await handleUpdateProfile(userId, functionArgs);
+                        break;
+                    case 'updateCollege':
+                        result = await handleUpdateCollege(userId, functionArgs.collegeId, functionArgs);
+                        break;
+                    case 'getEssay':
+                        result = await handleGetEssay(userId, functionArgs.essayId);
+                        break;
+                    case 'updateEssay':
+                        result = await handleUpdateEssayContent(userId, functionArgs.essayId, functionArgs.content, functionArgs.isCompleted);
+                        break;
+                    case 'createTasks':
+                        result = await handleCreateTasks(userId, functionArgs.tasks);
+                        break;
+                    case 'getAppStatus':
+                        result = await handleGetAppStatus(userId);
+                        break;
+                    case 'brainstormEssay':
+                        result = await handleBrainstormEssay(functionArgs.prompt, functionArgs.context);
+                        break;
+                    case 'reviewEssay':
+                        result = await handleReviewEssay(functionArgs.essayContent, functionArgs.focusArea);
+                        break;
+                    case 'listDocuments':
+                        result = await handleListDocuments(userId);
+                        break;
+                    case 'researchLive':
+                        result = await handleYutoriResearch(functionArgs.query);
+                        break;
+                    default:
+                        console.log('Unknown function called:', functionName);
+                }
+            } catch (err) {
+                console.error(`Error executing ${functionName}:`, err);
+                result = { success: false, error: err.message };
             }
 
             const secondCompletion = await openai.chat.completions.create({
@@ -1045,3 +900,105 @@ async function saveConversation(userId, userMessage, aiResponse, metadata = {}) 
 app.listen(PORT, '0.0.0.0', () => {
     console.log(`🤖 AI Server running on http://0.0.0.0:${PORT}`);
 });
+
+// --- Additional Helper Functions for Agentic Capabilities ---
+
+async function handleUpdateProfile(userId, updates) {
+    const { data, error } = await supabase.from('profiles').update(updates).eq('id', userId).select();
+    if (error) return { success: false, error: error.message };
+    return { success: true, profile: data };
+}
+
+async function handleCreateTasks(userId, tasks) {
+    const toInsert = tasks.map(t => ({ user_id: userId, ...t, completed: false, status: 'Todo' }));
+    const { data, error } = await supabase.from('tasks').insert(toInsert).select();
+    if (error) return { success: false, error: error.message };
+    return { success: true, count: data.length };
+}
+
+async function handleModifyTask(userId, action, taskId, taskData) {
+    if (action === 'create') return handleCreateTasks(userId, [taskData]);
+    if (action === 'delete') {
+        const { error } = await supabase.from('tasks').delete().eq('id', taskId).eq('user_id', userId);
+        return { success: !error };
+    }
+    if (action === 'complete') {
+        const { error } = await supabase.from('tasks').update({ completed: true }).eq('id', taskId).eq('user_id', userId);
+        return { success: !error };
+    }
+    if (action === 'update') {
+        const { error } = await supabase.from('tasks').update(taskData).eq('id', taskId).eq('user_id', userId);
+        return { success: !error };
+    }
+    return { success: false, error: 'Invalid action' };
+}
+
+async function handleUpdateCollege(userId, collegeId, updates) {
+    const { error } = await supabase.from('colleges').update(updates).eq('id', collegeId).eq('user_id', userId);
+    if (error) return { success: false, error: error.message };
+    return { success: true };
+}
+
+async function handleGetEssay(userId, essayId) {
+    const { data, error } = await supabase.from('essays').select('*').eq('id', essayId).eq('user_id', userId).single();
+    if (error) return { success: false, error: error.message };
+    return { success: true, essay: data };
+}
+
+async function handleUpdateEssayContent(userId, essayId, content, isCompleted) {
+    const updates = { content };
+    if (content) {
+        updates.word_count = content.split(/\s+/).filter(w => w.length > 0).length;
+    }
+    if (isCompleted !== undefined) updates.is_completed = isCompleted;
+
+    const { data, error } = await supabase.from('essays').update(updates).eq('id', essayId).eq('user_id', userId).select();
+    return { success: !error, essay: data };
+}
+
+async function handleGetAppStatus(userId) {
+    const { data: colleges } = await supabase.from('colleges').select('*').eq('user_id', userId);
+    const { data: tasks } = await supabase.from('tasks').select('*').eq('user_id', userId);
+    const { data: essays } = await supabase.from('essays').select('*').eq('user_id', userId);
+    return { colleges, tasks, essays };
+}
+
+async function handleListDocuments(userId) {
+    const { data } = await supabase.from('documents').select('*').eq('user_id', userId);
+    return { documents: data || [] };
+}
+
+async function handleYutoriResearch(query) {
+    console.log(`[YUTORI] Scouting for: ${query}`);
+    // Simulate web browsing using LLM knowledge for hackathon stability
+    const completion = await openai.chat.completions.create({
+        model: 'gpt-4o',
+        messages: [
+            { role: 'system', content: 'You are Yutori, a real-time web scout. Synthesize a grounded, realistic answer for the query as if you just browsed the web. Return pure text summary.' },
+            { role: 'user', content: query }
+        ]
+    });
+    return { success: true, data: completion.choices[0].message.content, source: 'Yutori Scout (Simulated)' };
+}
+
+async function handleBrainstormEssay(prompt, context) {
+    const completion = await openai.chat.completions.create({
+        model: 'gpt-4o',
+        messages: [
+            { role: 'system', content: 'You are an expert essay coach. Provide 3 creative, distinct angles for the student\'s essay.' },
+            { role: 'user', content: `Prompt: ${prompt}\nContext: ${context}` }
+        ]
+    });
+    return { success: true, ideas: completion.choices[0].message.content };
+}
+
+async function handleReviewEssay(content, focusArea) {
+    const completion = await openai.chat.completions.create({
+        model: 'gpt-4o',
+        messages: [
+            { role: 'system', content: `Review this essay focusing on: ${focusArea}. Be critical but encouraging.` },
+            { role: 'user', content }
+        ]
+    });
+    return { success: true, feedback: completion.choices[0].message.content };
+}
