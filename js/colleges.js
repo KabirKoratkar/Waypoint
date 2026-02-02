@@ -101,7 +101,7 @@ function renderSearchResults(results, container) {
 
         html += `
             <div style="padding: 10px; background: var(--surface-soft); text-align: center;">
-                <button onclick="addFromSearch('${query.replace(/'/g, "\\'")}')" style="background: none; border: none; color: var(--gray-500); font-size: 11px; cursor: pointer; text-decoration: underline;">
+                <button onclick="window.location.href='resources.html?topic=${encodeURIComponent(query)}'" style="background: none; border: none; color: var(--gray-500); font-size: 11px; cursor: pointer; text-decoration: underline;">
                     Don't see it? Research "${query}"
                 </button>
             </div>
