@@ -1,6 +1,14 @@
 // AI Server for Waypoint
 // Handles AI chat, college research, and application management
 
+process.on('uncaughtException', (err) => {
+    console.error('🔥 UNCAUGHT EXCEPTION:', err);
+});
+
+process.on('unhandledRejection', (reason, promise) => {
+    console.error('🔥 UNHANDLED REJECTION at:', promise, 'reason:', reason);
+});
+
 import express from 'express';
 import cors from 'cors';
 import OpenAI from 'openai';
@@ -22,6 +30,22 @@ dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 3001;
+
+// PRE-FLIGHT DIAGNOSTICS
+console.log('--- Waypoint Backend Startup ---');
+console.log('Environment:', process.env.NODE_ENV || 'development');
+console.log('Port Configuration:', PORT);
+
+// Validate Required Env Vars (Prevent Crashes)
+const requiredVars = ['PORT', 'SUPABASE_URL', 'SUPABASE_SERVICE_KEY', 'OPENAI_API_KEY'];
+requiredVars.forEach(v => {
+    if (!process.env[v]) {
+        console.warn(`⚠️  Warning: Missing environment variable ${v}`);
+    } else {
+        console.log(`✅ ${v} is configured`);
+    }
+});
+
 
 // Initialize OpenAI
 const openai = new OpenAI({
@@ -77,6 +101,7 @@ app.use((req, res, next) => {
 
 app.use('/api/payments', paymentsRouter);
 // Health Checks (Defined before limiter to avoid false negatives)
+app.get('/', (req, res) => res.json({ status: 'ok', service: 'waypoint-ai', timestamp: new Date().toISOString() }));
 app.get('/api/health', (req, res) => res.json({ status: 'ok', version: 'v3.0', infrastructure: 'Supabase Native' }));
 app.get('/health', (req, res) => res.json({ status: 'ok', message: 'AI server is running' }));
 
@@ -971,7 +996,8 @@ async function saveConversation(userId, userMessage, aiResponse, metadata = {}) 
 }
 
 app.listen(PORT, '0.0.0.0', () => {
-    console.log(`🤖 AI Server running on http://0.0.0.0:${PORT}`);
+    console.log(`🚀 AI Server listening on 0.0.0.0:${PORT}`);
+    console.log(`Healthcheck path: /health`);
 });
 
 // --- Additional Helper Functions for Agentic Capabilities ---

@@ -6,7 +6,20 @@ import dotenv from 'dotenv';
 dotenv.config();
 
 const router = express.Router();
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
+
+// Initialize Stripe carefully to prevent startup crash if key is missing
+let stripe = null;
+if (process.env.STRIPE_SECRET_KEY) {
+    try {
+        stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
+        console.log('✅ Stripe initialized');
+    } catch (e) {
+        console.error('❌ Stripe failed to initialize:', e.message);
+    }
+} else {
+    console.warn('⚠️ STRIPE_SECRET_KEY is missing');
+}
+
 const supabase = createClient(
     process.env.SUPABASE_URL,
     process.env.SUPABASE_SERVICE_KEY
