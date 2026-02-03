@@ -1107,7 +1107,7 @@ async function handleCreateEssays(userId, collegeName) {
                     prompt: 'Choose one of the seven Common App prompts...',
                     word_limit: 650,
                     essay_type: 'Personal Statement',
-                    status: 'Not Started',
+                    is_completed: false,
                     content: ''
                 });
                 if (psError) console.error(`[ESSAY-SYNC] PS Error for ${userId}:`, psError);
@@ -1139,7 +1139,7 @@ async function handleCreateEssays(userId, collegeName) {
                             prompt: `UC Personal Insight Question #${i}`,
                             word_limit: 350,
                             essay_type: 'UC PIQ',
-                            status: 'Not Started',
+                            is_completed: false,
                             content: ''
                         });
                         if (ucError) console.error(`[ESSAY-SYNC] UC Error #${i} for ${userId}:`, ucError);
@@ -1168,7 +1168,7 @@ async function handleCreateEssays(userId, collegeName) {
                         prompt: essay.prompt,
                         word_limit: essay.word_limit,
                         essay_type: essay.essay_type || 'Supplemental',
-                        status: 'Not Started',
+                        is_completed: false,
                         content: ''
                     });
                     if (insError) console.error(`[ESSAY-SYNC] Failed to insert essay for ${collegeEntry.name}:`, insError);
