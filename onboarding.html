@@ -130,8 +130,8 @@
                         <p style="font-size: var(--text-sm); color: var(--gray-600); margin-bottom: var(--space-md);">
                             Select all that apply</p>
 
-                        <div style="display: flex; flex-direction: column; gap: var(--space-md);">
-                            <label
+                        <div id="deadlineOptions" style="display: flex; flex-direction: column; gap: var(--space-md);">
+                            <label class="deadline-label" data-type="ED"
                                 style="display: flex; align-items: center; gap: var(--space-sm); padding: var(--space-md); background: var(--gray-50); border-radius: var(--radius-lg); cursor: pointer;">
                                 <input type="checkbox" name="deadline" value="ED">
                                 <div>
@@ -141,7 +141,7 @@
                                 </div>
                             </label>
 
-                            <label
+                            <label class="deadline-label" data-type="EA"
                                 style="display: flex; align-items: center; gap: var(--space-sm); padding: var(--space-md); background: var(--gray-50); border-radius: var(--radius-lg); cursor: pointer;">
                                 <input type="checkbox" name="deadline" value="EA">
                                 <div>
@@ -151,7 +151,7 @@
                                 </div>
                             </label>
 
-                            <label
+                            <label class="deadline-label" data-type="UC"
                                 style="display: flex; align-items: center; gap: var(--space-sm); padding: var(--space-md); background: var(--gray-50); border-radius: var(--radius-lg); cursor: pointer;">
                                 <input type="checkbox" name="deadline" value="UC">
                                 <div>
@@ -161,7 +161,17 @@
                                 </div>
                             </label>
 
-                            <label
+                            <label class="deadline-label" data-type="CA"
+                                style="display: flex; align-items: center; gap: var(--space-sm); padding: var(--space-md); background: var(--gray-50); border-radius: var(--radius-lg); cursor: pointer;">
+                                <input type="checkbox" name="deadline" value="CA">
+                                <div>
+                                    <strong>Common App Essays</strong>
+                                    <p style="font-size: var(--text-sm); color: var(--gray-600); margin: 0;">Main
+                                        Personal Statement</p>
+                                </div>
+                            </label>
+
+                            <label class="deadline-label" data-type="RD"
                                 style="display: flex; align-items: center; gap: var(--space-sm); padding: var(--space-md); background: var(--gray-50); border-radius: var(--radius-lg); cursor: pointer;">
                                 <input type="checkbox" name="deadline" value="RD">
                                 <div>

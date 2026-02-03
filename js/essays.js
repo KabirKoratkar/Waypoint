@@ -25,7 +25,8 @@ import {
     updateAward,
     deleteActivity,
     deleteAward,
-    isPremiumUser
+    isPremiumUser,
+    getUserColleges
 } from './supabase-config.js';
 import config from './config.js';
 import { updateNavbarUser } from './ui.js';
@@ -537,8 +538,11 @@ window.viewFile = async (filePath) => {
 async function loadEssays() {
     if (!currentUser) return;
 
-    const essays = await getUserEssays(currentUser.id);
-    const sharedEssays = await getSharedEssays(currentUser.email);
+    const [essays, sharedEssays, userColleges] = await Promise.all([
+        getUserEssays(currentUser.id),
+        getSharedEssays(currentUser.email),
+        getUserColleges(currentUser.id)
+    ]);
 
     const navList = document.getElementById('essayNavList');
     if (!navList) return;
@@ -567,7 +571,10 @@ async function loadEssays() {
     });
 
     // 1. Render Main Application Components (PS, PIQs)
-    if (globalEssays.length > 0) {
+    // Only show if the user has at least one college added (nitpick fix)
+    const hasColleges = (userColleges && userColleges.length > 0) || essays.some(e => e.college_id);
+
+    if (globalEssays.length > 0 && hasColleges) {
         const mainSection = document.createElement('div');
         mainSection.style.marginBottom = 'var(--space-xl)';
         mainSection.innerHTML = `<h4 class="nav-section-title">Main Application</h4>`;

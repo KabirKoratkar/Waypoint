@@ -283,7 +283,7 @@ app.get('/api/app-status/:userId', async (req, res) => {
         const [colleges, tasks, essays, activities, awards] = await Promise.all([
             supabase.from('colleges').select('*').eq('user_id', userId),
             supabase.from('tasks').select('*').eq('user_id', userId),
-            supabase.from('essays').select('*').eq('user_id', userId),
+            supabase.from('essays').select('*, colleges(name, application_platform)').eq('user_id', userId),
             supabase.from('activities').select('*').eq('user_id', userId),
             supabase.from('awards').select('*').eq('user_id', userId)
         ]);

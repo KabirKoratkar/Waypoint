@@ -459,7 +459,12 @@ async function addCollegeToList(name) {
 
 function loadWorkspace() {
     if (!currentCollege) return;
-    const college = userColleges.find(c => c.name.toLowerCase() === currentCollege.name.toLowerCase());
+    // Robust Matching: Try exact name, then catalog name, then slug match
+    const college = userColleges.find(c =>
+        c.name.toLowerCase() === currentCollege.name.toLowerCase() ||
+        c.name.toLowerCase().includes(currentCollege.name.toLowerCase()) ||
+        currentCollege.name.toLowerCase().includes(c.name.toLowerCase())
+    );
     if (!college) return;
 
     const collegeEssays = userEssays.filter(e => e.college_id === college.id);

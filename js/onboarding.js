@@ -228,9 +228,57 @@ function showStep(step) {
     const nextBtn = document.getElementById('nextBtn');
     const finishBtn = document.getElementById('finishBtn');
 
+    if (step === 3) {
+        updateDeadlineOptions();
+    }
+
     if (backBtn) backBtn.style.display = step > 1 ? 'block' : 'none';
     if (nextBtn) nextBtn.style.display = step < totalSteps ? 'block' : 'none';
     if (finishBtn) finishBtn.style.display = step === totalSteps ? 'block' : 'none';
+}
+
+function updateDeadlineOptions() {
+    const labels = document.querySelectorAll('.deadline-label');
+    const hasColleges = selectedColleges.length > 0;
+    const hasUC = selectedColleges.some(c => c.toLowerCase().includes('university of california') || c.toLowerCase().includes('uc '));
+    // Most schools are Common App, so we check if there are any schools at all for CA
+    const hasCommonApp = hasColleges && !selectedColleges.every(c => c.toLowerCase().includes('university of california') || c.toLowerCase().includes('uc '));
+
+    labels.forEach(label => {
+        const type = label.dataset.type;
+        if (type === 'UC') {
+            label.style.display = hasUC ? 'flex' : 'none';
+        } else if (type === 'CA') {
+            label.style.display = hasCommonApp ? 'flex' : 'none';
+        } else {
+            // ED, EA, RD are usually relevant if any college is selected
+            label.style.display = hasColleges ? 'flex' : 'none';
+        }
+    });
+
+    const deadlineOptions = document.getElementById('deadlineOptions');
+    const placeholder = document.getElementById('noCollegesPlaceholder');
+
+    if (!hasColleges) {
+        if (!placeholder) {
+            const p = document.createElement('div');
+            p.id = 'noCollegesPlaceholder';
+            p.style.padding = 'var(--space-xl)';
+            p.style.textAlign = 'center';
+            p.style.background = 'var(--gray-50)';
+            p.style.borderRadius = 'var(--radius-lg)';
+            p.style.border = '1px dashed var(--gray-300)';
+            p.innerHTML = `
+                <div style="font-size: 2rem; margin-bottom: var(--space-sm);">📋</div>
+                <p style="color: var(--gray-600); font-size: var(--text-sm); margin: 0;">Add some colleges in the previous step to see relevant deadline and essay options.</p>
+            `;
+            deadlineOptions.parentNode.insertBefore(p, deadlineOptions);
+        }
+        deadlineOptions.style.display = 'none';
+    } else {
+        if (placeholder) placeholder.remove();
+        deadlineOptions.style.display = 'flex';
+    }
 }
 
 function nextStep() {
