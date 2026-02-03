@@ -274,6 +274,36 @@ app.post('/api/onboarding/plan', async (req, res) => {
     }
 });
 
+// GET APPLICATION STATUS (Proxy for Auth0/Dev users)
+app.get('/api/app-status/:userId', async (req, res) => {
+    try {
+        const { userId } = req.params;
+        console.log(`📡 Fetching app status for user: ${userId}`);
+
+        const [colleges, tasks, essays, activities, awards] = await Promise.all([
+            supabase.from('colleges').select('*').eq('user_id', userId),
+            supabase.from('tasks').select('*').eq('user_id', userId),
+            supabase.from('essays').select('*').eq('user_id', userId),
+            supabase.from('activities').select('*').eq('user_id', userId),
+            supabase.from('awards').select('*').eq('user_id', userId)
+        ]);
+
+        res.json({
+            success: true,
+            data: {
+                colleges: colleges.data || [],
+                tasks: tasks.data || [],
+                essays: essays.data || [],
+                activities: activities.data || [],
+                awards: awards.data || []
+            }
+        });
+    } catch (error) {
+        console.error('App Status Error:', error);
+        res.status(500).json({ error: 'Failed to fetch app status' });
+    }
+});
+
 app.post('/api/essays/sync', async (req, res) => {
     try {
         const { userId } = req.body;
