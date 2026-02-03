@@ -990,8 +990,7 @@ async function handleResearchCollege(collegeName, forceResearch = false) {
         // Catalog it
         const { data: savedData, error: upsertError } = await supabase.from('college_catalog').upsert({
             name: data.name || collegeName,
-            ...data,
-            last_updated: new Date().toISOString()
+            ...data
         }, { onConflict: 'name' }).select().single();
 
         if (upsertError) console.error('Upsert error:', upsertError);
