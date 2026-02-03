@@ -908,9 +908,9 @@ app.post('/api/chat', async (req, res) => {
 });
 
 // Helper Functions
-async function handleResearchCollege(collegeName) {
+async function handleResearchCollege(collegeName, forceResearch = false) {
     try {
-        console.log(`Searching catalog for: ${collegeName}`);
+        console.log(`Searching catalog for: ${collegeName} (Force: ${forceResearch})`);
 
         // Try precise match first
         let { data: college } = await supabase
@@ -932,18 +932,46 @@ async function handleResearchCollege(collegeName) {
             }
         }
 
-        if (college && college.description) {
+        // If we found it and it has essays, and we aren't forcing, return it
+        if (!forceResearch && college && college.essays && college.essays.length > 0) {
             return { success: true, college };
         }
 
-        // Use AI if not in DB
-        console.log(`Researching ${collegeName} via AI...`);
+        // Use AI if not in DB or forced/empty
+        console.log(`Researching ${collegeName} via AI (Deep Research)...`);
         const completion = await openai.chat.completions.create({
             model: 'gpt-4o',
             messages: [{
                 role: 'system',
-                content: `Provide accurate 2024-2025 admissions data for ${collegeName} in JSON. 
-                Include description, location, median_sat, acceptance_rate, application_platform, and essays required (array of title, prompt, word_limit).`
+                content: `You are a world-class college admissions researcher. 
+                Provide accurate, comprehensive 2024-2025 admissions data for ${collegeName}.
+                
+                CRITICAL INSTRUCTION FOR ESSAYS:
+                - Find EVERY supplemental essay required for 2024-2025.
+                - Most top schools (like Stanford, Harvard, etc.) have 3-5+ short questions or long essays.
+                - For Stanford specifically, include the "Roommate" essay, "What is meaningful to you", and "Letter to your future roommate".
+                - Include the specific prompts and word limits (usually 50, 100, or 250 words).
+                
+                Return a JSON object:
+                {
+                  "name": "Full College Name",
+                  "description": "...",
+                  "location": "...",
+                  "website": "...",
+                  "application_platform": "Common App" | "Coalition App" | "UC App",
+                  "acceptance_rate": 0.0,
+                  "median_sat": 0,
+                  "median_act": 0,
+                  "avg_gpa": 0.0,
+                  "enrollment": 0,
+                  "cost_of_attendance": 0,
+                  "deadline_date": "YYYY-MM-DD",
+                  "deadline_type": "RD" | "ED" | "EA",
+                  "lors_required": 0,
+                  "essays": [
+                    { "title": "...", "prompt": "...", "word_limit": 0, "essay_type": "Supplemental" }
+                  ]
+                }`
             }],
             response_format: { type: "json_object" }
         });
@@ -951,13 +979,15 @@ async function handleResearchCollege(collegeName) {
         const data = JSON.parse(completion.choices[0].message.content);
 
         // Catalog it
-        await supabase.from('college_catalog').upsert({
+        const { data: savedData, error: upsertError } = await supabase.from('college_catalog').upsert({
             name: data.name || collegeName,
             ...data,
             last_updated: new Date().toISOString()
-        }, { onConflict: 'name' });
+        }, { onConflict: 'name' }).select().single();
 
-        return { success: true, college: data };
+        if (upsertError) console.error('Upsert error:', upsertError);
+
+        return { success: true, college: savedData || data };
     } catch (e) {
         console.error('Research error:', e);
         return { success: false, error: e.message };
@@ -965,8 +995,16 @@ async function handleResearchCollege(collegeName) {
 }
 
 async function handleAddCollege(userId, collegeName, type) {
-    const research = await handleResearchCollege(collegeName);
-    const collegeData = research.college || { name: collegeName };
+    // Every new college gets a forced check if it's currently empty or slim
+    const research = await handleResearchCollege(collegeName, false);
+    let collegeData = research.college || { name: collegeName };
+
+    // Precautionary: if it has 0 essays, FORCE a re-research to be sure
+    if (!collegeData.essays || collegeData.essays.length === 0) {
+        console.log(`[PRECAUTIONARY] ${collegeName} has 0 essays. Forcing a deep research...`);
+        const deepResearch = await handleResearchCollege(collegeName, true);
+        if (deepResearch.success) collegeData = deepResearch.college;
+    }
 
     const { data: existing } = await supabase
         .from('colleges')
@@ -1010,13 +1048,76 @@ async function handleCreateEssays(userId, collegeName) {
 
         if (!collegeEntry) return { success: false, error: 'College not found in user list' };
 
-        const research = await handleResearchCollege(collegeName);
-        const catalogEntry = research.college;
+        // Use the same precautionary logic here: if empty, force research
+        let research = await handleResearchCollege(collegeName, false);
+        let catalogEntry = research.college;
+
+        if (!catalogEntry || !catalogEntry.essays || catalogEntry.essays.length === 0) {
+            console.log(`[ESSAY-SYNC] ${collegeName} has 0 essays in catalog. Forcing deep research...`);
+            research = await handleResearchCollege(collegeName, true);
+            catalogEntry = research.college;
+        }
 
         if (!catalogEntry) return { success: true, count: 0 };
 
         let count = 0;
-        // 1. Create Essays
+        // 1. Create Global Essays (Personal Statement / PIQs)
+        if (catalogEntry.application_platform === 'Common App') {
+            const { data: hasPS } = await supabase
+                .from('essays')
+                .select('id')
+                .eq('user_id', userId)
+                .eq('essay_type', 'Personal Statement')
+                .maybeSingle();
+
+            if (!hasPS) {
+                await supabase.from('essays').insert({
+                    user_id: userId,
+                    title: 'Common App Personal Statement',
+                    prompt: 'Choose one of the seven Common App prompts...',
+                    word_limit: 650,
+                    essay_type: 'Personal Statement',
+                    status: 'Not Started',
+                    content: ''
+                });
+                count++;
+            }
+        }
+
+        if (catalogEntry.application_platform === 'UC App') {
+            const { data: ucPIQs } = await supabase
+                .from('essays')
+                .select('id')
+                .eq('user_id', userId)
+                .eq('essay_type', 'UC PIQ');
+
+            if (!ucPIQs || ucPIQs.length < 4) {
+                // Ensure all 8 options exist so they can choose 4
+                for (let i = 1; i <= 8; i++) {
+                    const { data: existingPIQ } = await supabase
+                        .from('essays')
+                        .select('id')
+                        .eq('user_id', userId)
+                        .eq('title', `UC PIQ #${i}`)
+                        .maybeSingle();
+
+                    if (!existingPIQ) {
+                        await supabase.from('essays').insert({
+                            user_id: userId,
+                            title: `UC PIQ #${i}`,
+                            prompt: `UC Personal Insight Question #${i}`,
+                            word_limit: 350,
+                            essay_type: 'UC PIQ',
+                            status: 'Not Started',
+                            content: ''
+                        });
+                        count++;
+                    }
+                }
+            }
+        }
+
+        // 2. Create Supplemental Essays
         if (catalogEntry.essays) {
             for (const essay of catalogEntry.essays) {
                 const { data: existing } = await supabase
