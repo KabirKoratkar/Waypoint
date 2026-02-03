@@ -3,7 +3,7 @@
  * Handles global UI updates like the navbar user badge.
  */
 
-import { signOut } from './supabase-config.js';
+import { signOut, getTrialInfo } from './supabase-config.js';
 
 export function updateNavbarUser(user, profile = null) {
     const userBadge = document.getElementById('user-badge');
@@ -22,6 +22,11 @@ export function updateNavbarUser(user, profile = null) {
             statusBadge = ' <span class="badge badge-beta" style="background: var(--accent-purple); color: white; font-size: 10px; padding: 2px 6px; border-radius: 10px; margin-left: 5px;">BETA</span>';
         } else if (profile.is_premium) {
             statusBadge = ' <span class="badge badge-premium" style="background: var(--warning); color: var(--gray-800); font-size: 10px; padding: 2px 6px; border-radius: 10px; margin-left: 5px;">PRO</span>';
+        } else {
+            const { inTrial } = getTrialInfo(profile);
+            if (inTrial) {
+                statusBadge = ' <span class="badge badge-trial" style="background: var(--primary-blue); color: white; font-size: 10px; padding: 2px 6px; border-radius: 10px; margin-left: 5px;">TRIAL</span>';
+            }
         }
     }
 

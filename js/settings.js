@@ -1,4 +1,4 @@
-import { getCurrentUser, getUserProfile, upsertProfile, supabase, addCollege } from './supabase-config.js';
+import { getCurrentUser, getUserProfile, upsertProfile, supabase, addCollege, getTrialInfo } from './supabase-config.js';
 import { updateNavbarUser } from './ui.js';
 import config from './config.js';
 
@@ -53,6 +53,9 @@ async function loadSettings(profile = null) {
     const membershipDesc = document.getElementById('membershipDescription');
     const membershipIcon = document.getElementById('membershipIcon');
     const upgradeBtn = document.getElementById('upgradeBtn');
+    const proHero = document.getElementById('proHero');
+
+    const trialInfo = getTrialInfo(profile);
 
     if (profile.is_beta) {
         membershipTier.textContent = 'Beta Tester (VIP)';
@@ -62,22 +65,31 @@ async function loadSettings(profile = null) {
         membershipIcon.style.color = 'white';
         upgradeBtn.style.display = 'none';
         document.getElementById('subscriptionStatus').style.border = '1px solid var(--accent-purple)';
+        if (proHero) proHero.style.display = 'none';
     } else if (profile.is_premium) {
         membershipTier.textContent = 'Pro Member';
         membershipDesc.textContent = 'Next-gen tools unlocked. Good luck with apps!';
         membershipIcon.textContent = '💎';
         membershipIcon.style.background = 'var(--warning)';
         upgradeBtn.textContent = 'Manage Plan';
+        if (proHero) proHero.style.display = 'none';
+    } else if (trialInfo.inTrial) {
+        membershipTier.textContent = `Free Trial (${trialInfo.daysRemaining} days left)`;
+        membershipDesc.textContent = 'Full Pro access enabled for your trial period.';
+        membershipIcon.textContent = '⏳';
+        membershipIcon.style.background = 'var(--primary-blue)';
+        membershipIcon.style.color = 'white';
+        upgradeBtn.textContent = 'Upgrade Now';
+        // Show pro hero but maybe with different text or hidden?
+        // Let's keep it visible to encourage upgrading
+        if (proHero) proHero.style.display = 'block';
     } else {
-        membershipTier.textContent = 'Free Account';
-        membershipDesc.textContent = 'Limited access to AI features';
-        membershipIcon.textContent = '👤';
-    }
-
-    // Toggle Pro Hero Banner
-    const proHero = document.getElementById('proHero');
-    if (proHero) {
-        proHero.style.display = (profile.is_premium || profile.is_beta) ? 'none' : 'block';
+        membershipTier.textContent = 'Trial Expired';
+        membershipDesc.textContent = 'Your free trial has ended. Upgrade to keep using Pro tools.';
+        membershipIcon.textContent = '🔒';
+        membershipIcon.style.background = 'var(--gray-300)';
+        upgradeBtn.textContent = 'Upgrade to Pro';
+        if (proHero) proHero.style.display = 'block';
     }
 }
 

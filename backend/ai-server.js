@@ -214,6 +214,66 @@ app.post('/api/colleges/add', async (req, res) => {
     }
 });
 
+// Onboarding Plan Generation
+app.post('/api/onboarding/plan', async (req, res) => {
+    try {
+        const { userId, colleges, profile } = req.body;
+        if (!userId) return res.status(400).json({ error: 'userId is required' });
+
+        if (!openai) {
+            console.warn('⚠️ OpenAI not configured for plan generation');
+            return res.status(503).json({ error: 'AI service unavailable' });
+        }
+
+        console.log(`🧠 Generating Admissions Action Plan for ${profile.full_name || 'student'}...`);
+
+        const systemPrompt = `You are an elite college admissions strategist. Your goal is to generate a highly customized, 3-month "Admissions Action Plan" for a student.
+
+        Student Profile:
+        - Name: ${profile.full_name}
+        - Intended Major: ${profile.intended_major || 'Undecided'}
+        - Graduation Year: ${profile.graduation_year}
+        - Colleges Interest: ${colleges.join(', ') || 'General Search'}
+        - Submission Target: ${profile.submission_leeway} days before actual deadlines.
+
+        The plan should be professional, motivating, and highly specific.
+        
+        Return a strictly valid JSON object with this structure:
+        {
+            "plan": {
+                "summary": "A 2-sentence executive summary of their specific strategic advantage and focus.",
+                "tasks": [
+                    {
+                        "title": "Clear action-oriented title (e.g., 'Draft Harvard Personal Statement')",
+                        "description": "Short, tactical instruction on HOW to do this well.",
+                        "dueDate": "YYYY-MM-DD",
+                        "category": "Essay",
+                        "priority": "High"
+                    }
+                ]
+            }
+        }
+
+        Generate exactly 5-6 high-impact tasks. Distribute them across the next 3 months. Assume the current date is ${new Date().toLocaleDateString()}.`;
+
+        const completion = await openai.chat.completions.create({
+            model: "gpt-4o",
+            messages: [
+                { role: "system", content: systemPrompt },
+                { role: "user", content: "Generate my admissions action plan." }
+            ],
+            response_format: { type: "json_object" }
+        });
+
+        const planData = JSON.parse(completion.choices[0].message.content);
+        res.json(planData);
+
+    } catch (error) {
+        console.error('Plan Generation Error:', error);
+        res.status(500).json({ error: 'Failed to generate plan' });
+    }
+});
+
 app.post('/api/essays/sync', async (req, res) => {
     try {
         const { userId } = req.body;

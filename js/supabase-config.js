@@ -102,7 +102,7 @@ async function updateProfile(userId, updates) {
 
 /**
  * Check if a user has premium access.
- * Returns true if the user is a paid subscriber OR a beta tester.
+ * Returns true if the user is a paid subscriber, a beta tester, or within their 7-day free trial.
  * @param {Object} profile The user profile object from Supabase
  * @returns {Boolean}
  */
@@ -110,8 +110,46 @@ function isPremiumUser(profile) {
     if (!profile) return false;
     // Whitelist check
     if (profile.email === 'kabirvideo@gmail.com') return true;
-    // Beta testers bypass the premium check
-    return !!(profile.is_premium || profile.is_beta);
+    // Paid subscribers or beta testers bypass trial check
+    if (profile.is_premium || profile.is_beta) return true;
+
+    // Free Trial Logic (7 days)
+    if (profile.created_at) {
+        const createdAt = new Date(profile.created_at);
+        const now = new Date();
+        const diffTime = Math.max(0, now - createdAt);
+        const diffDays = diffTime / (1000 * 60 * 60 * 24);
+        return diffDays <= 7;
+    }
+
+    return false;
+}
+
+/**
+ * Get detailed information about the user's trial status.
+ * @param {Object} profile 
+ * @returns {Object} { inTrial: boolean, daysRemaining: number }
+ */
+function getTrialInfo(profile) {
+    if (!profile || profile.is_premium || profile.is_beta) {
+        return { inTrial: false, daysRemaining: 0 };
+    }
+
+    if (profile.created_at) {
+        const createdAt = new Date(profile.created_at);
+        const now = new Date();
+        const diffTime = now - createdAt;
+        const diffDays = diffTime / (1000 * 60 * 60 * 24);
+        const remaining = Math.max(0, 7 - diffDays);
+
+        return {
+            inTrial: diffDays <= 7,
+            daysRemaining: Math.ceil(remaining),
+            isExpired: diffDays > 7
+        };
+    }
+
+    return { inTrial: false, daysRemaining: 0 };
 }
 
 // Colleges
@@ -812,7 +850,8 @@ export {
     addAward,
     updateAward,
     deleteAward,
-    isPremiumUser
+    isPremiumUser,
+    getTrialInfo
 };
 
 async function searchCollegeCatalog(query) {

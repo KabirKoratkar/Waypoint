@@ -48,7 +48,7 @@
                     email: userInfo.email || 'user@organization.com',
                     full_name: userInfo.name || userInfo.nickname || 'Waypoint User',
                     created_at: new Date().toISOString(),
-                    is_premium: true
+                    is_premium: false
                 };
 
                 localStorage.setItem('dev_user', JSON.stringify(mockUser));
