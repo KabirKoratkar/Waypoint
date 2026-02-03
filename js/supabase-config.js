@@ -281,20 +281,23 @@ async function getUserEssays(userId) {
         return [];
     }
 
-    const { data, error } = await awsClient
-        .from('essays')
-        .select(`
-            *,
-            colleges(name)
-        `)
-        .eq('user_id', userId)
-        .order('created_at', { ascending: false });
+    const [essaysResult, collegesResult] = await Promise.all([
+        awsClient.from('essays').select('*').eq('user_id', userId).order('created_at', { ascending: false }),
+        awsClient.from('colleges').select('id, name').eq('user_id', userId)
+    ]);
 
-    if (error) {
-        console.error('Error fetching essays:', error);
+    if (essaysResult.error) {
+        console.error('Error fetching essays:', essaysResult.error);
         return [];
     }
-    return data;
+
+    const essays = essaysResult.data || [];
+    const colleges = collegesResult.data || [];
+
+    return essays.map(essay => ({
+        ...essay,
+        colleges: colleges.find(c => c.id === essay.college_id) || null
+    }));
 }
 
 async function getEssay(id) {

@@ -280,22 +280,31 @@ app.get('/api/app-status/:userId', async (req, res) => {
         const { userId } = req.params;
         console.log(`📡 Fetching app status for user: ${userId}`);
 
-        const [colleges, tasks, essays, activities, awards] = await Promise.all([
+        const [collegesResult, tasksResult, essaysResult, activitiesResult, awardsResult] = await Promise.all([
             supabase.from('colleges').select('*').eq('user_id', userId),
             supabase.from('tasks').select('*').eq('user_id', userId),
-            supabase.from('essays').select('*, colleges(name, application_platform)').eq('user_id', userId),
+            supabase.from('essays').select('*').eq('user_id', userId),
             supabase.from('activities').select('*').eq('user_id', userId),
             supabase.from('awards').select('*').eq('user_id', userId)
         ]);
 
+        const colleges = collegesResult.data || [];
+        const essays = (essaysResult.data || []).map(essay => {
+            const college = colleges.find(c => c.id === essay.college_id);
+            return {
+                ...essay,
+                colleges: college ? { name: college.name, application_platform: college.application_platform } : null
+            };
+        });
+
         res.json({
             success: true,
             data: {
-                colleges: colleges.data || [],
-                tasks: tasks.data || [],
-                essays: essays.data || [],
-                activities: activities.data || [],
-                awards: awards.data || []
+                colleges,
+                tasks: tasksResult.data || [],
+                essays,
+                activities: activitiesResult.data || [],
+                awards: awardsResult.data || []
             }
         });
     } catch (error) {
@@ -1039,14 +1048,35 @@ async function handleAddCollege(userId, collegeName, type) {
 
 async function handleCreateEssays(userId, collegeName) {
     try {
-        const { data: collegeEntry } = await supabase
+        console.log(`[ESSAY-SYNC] Syncing essays for ${collegeName} (User: ${userId})`);
+
+        // Robust Matching: Try exact, then fuzzy
+        let { data: collegeEntry } = await supabase
             .from('colleges')
-            .select('id, name')
+            .select('id, name, application_platform')
             .eq('user_id', userId)
             .eq('name', collegeName)
-            .single();
+            .maybeSingle();
 
-        if (!collegeEntry) return { success: false, error: 'College not found in user list' };
+        if (!collegeEntry) {
+            console.log(`[ESSAY-SYNC] Exact match failed for "${collegeName}", trying fuzzy...`);
+            const { data: similar } = await supabase
+                .from('colleges')
+                .select('id, name, application_platform')
+                .eq('user_id', userId)
+                .ilike('name', `%${collegeName}%`)
+                .limit(1);
+
+            if (similar && similar.length > 0) {
+                collegeEntry = similar[0];
+                console.log(`[ESSAY-SYNC] Matched fuzzy: "${collegeEntry.name}"`);
+            }
+        }
+
+        if (!collegeEntry) {
+            console.error(`[ESSAY-SYNC] College NOT FOUND for user: ${collegeName}`);
+            return { success: false, error: 'College not found in user list' };
+        }
 
         // Use the same precautionary logic here: if empty, force research
         let research = await handleResearchCollege(collegeName, false);
@@ -1071,7 +1101,7 @@ async function handleCreateEssays(userId, collegeName) {
                 .maybeSingle();
 
             if (!hasPS) {
-                await supabase.from('essays').insert({
+                const { error: psError } = await supabase.from('essays').insert({
                     user_id: userId,
                     title: 'Common App Personal Statement',
                     prompt: 'Choose one of the seven Common App prompts...',
@@ -1080,7 +1110,8 @@ async function handleCreateEssays(userId, collegeName) {
                     status: 'Not Started',
                     content: ''
                 });
-                count++;
+                if (psError) console.error(`[ESSAY-SYNC] PS Error for ${userId}:`, psError);
+                else count++;
             }
         }
 
@@ -1102,7 +1133,7 @@ async function handleCreateEssays(userId, collegeName) {
                         .maybeSingle();
 
                     if (!existingPIQ) {
-                        await supabase.from('essays').insert({
+                        const { error: ucError } = await supabase.from('essays').insert({
                             user_id: userId,
                             title: `UC PIQ #${i}`,
                             prompt: `UC Personal Insight Question #${i}`,
@@ -1111,7 +1142,8 @@ async function handleCreateEssays(userId, collegeName) {
                             status: 'Not Started',
                             content: ''
                         });
-                        count++;
+                        if (ucError) console.error(`[ESSAY-SYNC] UC Error #${i} for ${userId}:`, ucError);
+                        else count++;
                     }
                 }
             }
@@ -1129,7 +1161,7 @@ async function handleCreateEssays(userId, collegeName) {
                     .maybeSingle();
 
                 if (!existing) {
-                    await supabase.from('essays').insert({
+                    const { error: insError } = await supabase.from('essays').insert({
                         user_id: userId,
                         college_id: collegeEntry.id,
                         title: `${collegeEntry.name} - ${essay.title}`,
@@ -1139,7 +1171,8 @@ async function handleCreateEssays(userId, collegeName) {
                         status: 'Not Started',
                         content: ''
                     });
-                    count++;
+                    if (insError) console.error(`[ESSAY-SYNC] Failed to insert essay for ${collegeEntry.name}:`, insError);
+                    else count++;
                 }
             }
         }
