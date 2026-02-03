@@ -71,15 +71,16 @@ document.addEventListener('DOMContentLoaded', async function () {
     const profile = await getUserProfile(currentUser.id);
     updateNavbarUser(currentUser, profile);
 
-    // Sync missing essays for existing colleges
-    if (window.showNotification) window.showNotification('Checking for missing essays...', 'info');
-    await syncEssays(currentUser.id);
-
-    // Load essays
+    // Load essays immediately
     await loadEssays();
 
-    // Load essays
-    await loadEssays();
+    // Sync missing essays for existing colleges in background
+    syncEssays(currentUser.id).then(result => {
+        console.log('Background essay sync result:', result);
+        loadEssays(); // Refresh after sync
+    }).catch(err => {
+        console.error('Background sync failed:', err);
+    });
 
     // Share button
     const shareBtn = document.getElementById('shareBtn');

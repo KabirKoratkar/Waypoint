@@ -283,7 +283,7 @@ async function getUserEssays(userId) {
 
     const [essaysResult, collegesResult] = await Promise.all([
         awsClient.from('essays').select('*').eq('user_id', userId).order('created_at', { ascending: false }),
-        awsClient.from('colleges').select('id, name').eq('user_id', userId)
+        awsClient.from('colleges').select('id, name, application_platform').eq('user_id', userId)
     ]);
 
     if (essaysResult.error) {
@@ -379,26 +379,27 @@ async function getUserTasks(userId, completed = null) {
         return [];
     }
 
-    let query = awsClient
-        .from('tasks')
-        .select(`
-            *,
-            colleges(name)
-        `)
-        .eq('user_id', userId)
-        .order('due_date', { ascending: true });
+    const [tasksResult, collegesResult] = await Promise.all([
+        awsClient.from('tasks').select('*').eq('user_id', userId).order('due_date', { ascending: true }),
+        awsClient.from('colleges').select('id, name').eq('user_id', userId)
+    ]);
 
-    if (completed !== null) {
-        query = query.eq('completed', completed);
-    }
-
-    const { data, error } = await query;
-
-    if (error) {
-        console.error('Error fetching tasks:', error);
+    if (tasksResult.error) {
+        console.error('Error fetching tasks:', tasksResult.error);
         return [];
     }
-    return data;
+
+    let tasks = tasksResult.data || [];
+    const colleges = collegesResult.data || [];
+
+    if (completed !== null) {
+        tasks = tasks.filter(t => t.completed === completed);
+    }
+
+    return tasks.map(task => ({
+        ...task,
+        colleges: colleges.find(c => c.id === task.college_id) || null
+    }));
 }
 
 async function createTask(task) {
@@ -662,23 +663,40 @@ async function shareEssay(essayId, sharedBy, sharedWithEmail, permission = 'view
 }
 
 async function getSharedEssays(userEmail) {
-    const { data, error } = await awsClient
+    const { data: shares, error: shareError } = await awsClient
         .from('essay_shares')
-        .select(`
-            *,
-            essays (
-                *,
-                profiles:user_id (full_name, email)
-            )
-        `)
+        .select('*')
         .eq('shared_with_email', userEmail);
 
-    if (error) {
-        console.error('Error fetching shared essays:', error);
+    if (shareError) {
+        console.error('Error fetching shared essays:', shareError);
         return [];
     }
-    // Filter out shares where the original essay was deleted
-    return (data || []).filter(item => item.essays !== null);
+
+    if (!shares || shares.length === 0) return [];
+
+    // Get all essay IDs from shares
+    const essayIds = shares.map(s => s.essay_id);
+
+    // Fetch essays separately
+    const { data: essays, error: essayError } = await awsClient
+        .from('essays')
+        .select('*')
+        .in('id', essayIds);
+
+    if (essayError) {
+        console.error('Error fetching shared essay details:', essayError);
+        return [];
+    }
+
+    // Map them together
+    return shares.map(share => {
+        const essay = essays.find(e => e.id === share.essay_id);
+        return {
+            ...share,
+            essays: essay || null
+        };
+    }).filter(s => s.essays); // Filter out shares with missing essays
 }
 
 // Comments
@@ -766,22 +784,36 @@ async function unlinkDocumentFromEssay(essayId, documentId) {
 }
 
 async function getEssayDocuments(essayId) {
-    const { data, error } = await awsClient
+    const { data: links, error: linkError } = await awsClient
         .from('essay_documents')
-        .select(`
-            document_id,
-            documents:document_id (*)
-        `)
+        .select('document_id')
         .eq('essay_id', essayId);
 
-    if (error) {
-        console.error('Error fetching essay documents:', error);
+    if (linkError) {
+        console.error('Error fetching essay document links:', linkError);
         return [];
     }
-    // Filter out links where the document was deleted
-    return (data || [])
-        .filter(item => item.documents !== null)
-        .map(item => item.documents);
+
+    if (!links || links.length === 0) return [];
+
+    const docIds = links.map(l => l.document_id);
+    const { data: documents, error: docError } = await awsClient
+        .from('documents')
+        .select('*')
+        .in('id', docIds);
+
+    if (docError) {
+        console.error('Error fetching linked documents:', docError);
+        return [];
+    }
+
+    return links.map(link => {
+        const doc = documents.find(d => d.id === link.document_id);
+        return {
+            ...link,
+            documents: doc || null
+        };
+    }).filter(l => l.documents);
 }
 
 async function signInWithGoogle(nextPath = 'dashboard.html') {
