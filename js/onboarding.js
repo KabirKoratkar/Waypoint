@@ -466,9 +466,8 @@ document.addEventListener('DOMContentLoaded', async function () {
                 console.log('Profile created successfully');
 
                 // 2. Add Colleges
-                for (const name of selectedColleges) {
-                    await supabaseAddCollege(currentUser.id, name);
-                }
+                const addPromises = selectedColleges.map(name => supabaseAddCollege(currentUser.id, name));
+                await Promise.all(addPromises);
 
                 if (window.showNotification) window.showNotification('Setup complete! Welcome to Waypoint', 'success');
 
@@ -483,9 +482,7 @@ document.addEventListener('DOMContentLoaded', async function () {
                 console.log('Profile verified, redirecting to dashboard...');
 
                 // Redirect to dashboard
-                setTimeout(() => {
-                    window.location.assign('dashboard.html');
-                }, 1500);
+                window.location.assign('dashboard.html');
             } catch (error) {
                 console.error('Onboarding Error:', error);
                 if (window.showNotification) window.showNotification('Error: ' + error.message, 'error');
