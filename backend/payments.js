@@ -41,6 +41,10 @@ router.post('/create-checkout-session', async (req, res) => {
             return res.status(400).json({ error: 'User ID and Email are required' });
         }
 
+        if (!stripe) {
+            return res.status(503).json({ error: 'Billing service is currently unavailable. Please check back later or contact support.' });
+        }
+
         // Create Checkout Session
         const session = await stripe.checkout.sessions.create({
             customer_email: email,
@@ -77,6 +81,10 @@ router.post('/create-portal-session', async (req, res) => {
 
         if (!userId) {
             return res.status(400).json({ error: 'User ID is required' });
+        }
+
+        if (!stripe) {
+            return res.status(503).json({ error: 'Billing service is currently unavailable. Please check back later or contact support.' });
         }
 
         // 1. Try to get stripe_customer_id from Supabase first
@@ -127,6 +135,11 @@ router.post('/webhook', express.raw({ type: 'application/json' }), async (req, r
     let event;
 
     try {
+        if (!stripe) {
+            console.error('Webhook received but Stripe is not initialized');
+            return res.status(503).send('Stripe not initialized');
+        }
+
         event = stripe.webhooks.constructEvent(
             req.body,
             sig,
