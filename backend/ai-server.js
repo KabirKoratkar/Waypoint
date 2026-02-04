@@ -110,7 +110,8 @@ app.get('/api/health', (req, res) => {
             openai: !!process.env.OPENAI_API_KEY,
             stripe: !!process.env.STRIPE_SECRET_KEY,
             supabase: !!process.env.SUPABASE_SERVICE_KEY,
-            anthropic: !!process.env.ANTHROPIC_API_KEY
+            anthropic: !!process.env.ANTHROPIC_API_KEY,
+            stripe_keys_found: Object.keys(process.env).filter(k => k.startsWith('STRIPE_'))
         },
         infrastructure: 'Railway + Supabase'
     });
