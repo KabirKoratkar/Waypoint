@@ -102,8 +102,20 @@ app.use((req, res, next) => {
 app.use('/api/payments', paymentsRouter);
 // Health Checks (Defined before limiter to avoid false negatives)
 app.get('/', (req, res) => res.json({ status: 'ok', service: 'waypoint-ai', timestamp: new Date().toISOString() }));
-app.get('/api/health', (req, res) => res.json({ status: 'ok', version: 'v3.0', infrastructure: 'Supabase Native' }));
-app.get('/health', (req, res) => res.json({ status: 'ok', message: 'AI server is running' }));
+app.get('/api/health', (req, res) => {
+    res.json({
+        status: 'ok',
+        version: 'v3.1',
+        services: {
+            openai: !!process.env.OPENAI_API_KEY,
+            stripe: !!process.env.STRIPE_SECRET_KEY,
+            supabase: !!process.env.SUPABASE_SERVICE_KEY,
+            anthropic: !!process.env.ANTHROPIC_API_KEY
+        },
+        infrastructure: 'Railway + Supabase'
+    });
+});
+app.get('/health', (req, res) => res.json({ status: 'ok', stripe: !!process.env.STRIPE_SECRET_KEY }));
 
 app.use('/api/', globalLimiter);
 
