@@ -779,24 +779,18 @@
     flex-direction: column;
     padding: 0 !important;
     overflow: hidden;
-    background: var(--white);
-    border: 1px solid var(--gray-200);
-    border-radius: var(--radius-xl);
-    box-shadow: var(--shadow-xl);
-    transition: box-shadow var(--transition-base);
+    background: var(--surface) !important;
+    border: 1px solid var(--border) !important;
+    box-shadow: var(--shadow-xl) !important;
+    border-radius: var(--radius-2xl) !important;
+    transition: all var(--transition-base);
 }
 
 .essay-editor-card:focus-within {
     box-shadow: 0 20px 40px -10px rgba(91, 141, 238, 0.15);
 }
 
-/* MODERN ESSAY WORKSPACE */
-.essay-editor-card {
-    background: var(--surface) !important;
-    border: 1px solid var(--border) !important;
-    box-shadow: var(--shadow-xl) !important;
-    border-radius: var(--radius-2xl) !important;
-}
+/* MODERN ESSAY WORKSPACE STYLES - CONSOLIDATED */
 
 .essay-toolbar {
     position: sticky !important;
@@ -819,7 +813,7 @@
     border: 1px solid var(--border) !important;
     border-radius: var(--radius-xl) !important;
     padding: var(--space-xl) !important;
-    margin: var(--space-xl) !important;
+    margin: var(--space-md) var(--space-xl) var(--space-xl) var(--space-xl) !important;
     position: relative !important;
     overflow: hidden !important;
     box-shadow: var(--shadow-sm) !important;
@@ -888,30 +882,6 @@
     border-radius: 0 0 var(--radius-2xl) var(--radius-2xl) !important;
 }
 
-.essay-textarea {
-    width: 100%;
-    min-height: 550px;
-    border: none;
-    outline: none;
-    padding: var(--space-4xl) var(--space-2xl) var(--space-2xl);
-    font-size: var(--text-lg);
-    line-height: 1.8;
-    color: var(--gray-800);
-    resize: none;
-    font-family: var(--font-primary);
-    background: transparent;
-    transition: all var(--transition-base);
-}
-
-.essay-footer {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: var(--space-md) var(--space-xl);
-    border-top: 1px solid var(--gray-100);
-    background: var(--gray-50);
-    font-size: var(--text-sm);
-}
 
 .stats-group {
     display: flex;
