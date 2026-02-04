@@ -572,73 +572,79 @@ window.viewFile = async (filePath) => {
 
 async function loadEssays() {
     if (!currentUser) return;
+    console.log('🔄 loadEssays started for user:', currentUser.id);
 
-    const [essays, sharedEssays, userColleges] = await Promise.all([
-        getUserEssays(currentUser.id),
-        getSharedEssays(currentUser.email),
-        getUserColleges(currentUser.id)
-    ]);
+    try {
+        const [essays, sharedEssays, userColleges] = await Promise.all([
+            getUserEssays(currentUser.id),
+            getSharedEssays(currentUser.email),
+            getUserColleges(currentUser.id)
+        ]);
+        console.log('✅ loadEssays data fetched:', { essays: essays.length, colleges: userColleges.length });
 
-    const navList = document.getElementById('essayNavList');
-    if (!navList) return;
-
-    // Clear previous items
-    navList.innerHTML = '';
-
-    const globalEssays = [];
-    const collegeEssays = [];
-
-    essays.forEach(e => {
-        const title = (e.title || '').toLowerCase();
-        const type = (e.essay_type || '').toLowerCase();
-        const platform = e.colleges?.application_platform;
-
-        // Is it a Personal Statement/Common App main?
-        const isPS = (type === 'common app' || type === 'personal statement' || title.includes('common app personal statement'));
-        // Is it a UC PIQ?
-        const isUCPIQ = (platform === 'UC App' && (type === 'uc piq' || title.includes('piq')));
-
-        if (isPS || isUCPIQ) {
-            globalEssays.push(e);
-        } else {
-            collegeEssays.push(e);
+        const navList = document.getElementById('essayNavList');
+        if (!navList) {
+            console.error('❌ essayNavList element not found!');
+            return;
         }
-    });
 
-    // 1. Render Main Application Components (PS, PIQs)
-    // Only show if the user has at least one college added (nitpick fix)
-    const hasColleges = (userColleges && userColleges.length > 0) || essays.some(e => e.college_id);
+        // Clear previous items
+        navList.innerHTML = '';
 
-    if (globalEssays.length > 0 && hasColleges) {
-        const mainSection = document.createElement('div');
-        mainSection.style.marginBottom = 'var(--space-xl)';
-        mainSection.innerHTML = `<h4 class="nav-section-title">Main Application</h4>`;
+        const globalEssays = [];
+        const collegeEssays = [];
 
-        globalEssays.forEach(e => {
-            mainSection.appendChild(createNavItem(e));
+        essays.forEach(e => {
+            const title = (e.title || '').toLowerCase();
+            const type = (e.essay_type || '').toLowerCase();
+            const platform = e.colleges?.application_platform;
+
+            // Is it a Personal Statement/Common App main?
+            const isPS = (type === 'common app' || type === 'personal statement' || title.includes('common app personal statement'));
+            // Is it a UC PIQ?
+            const isUCPIQ = (platform === 'UC App' && (type === 'uc piq' || title.includes('piq')));
+
+            if (isPS || isUCPIQ) {
+                globalEssays.push(e);
+            } else {
+                collegeEssays.push(e);
+            }
         });
-        navList.appendChild(mainSection);
-    }
 
-    // 2. Group College Supplements by College
-    const collegeGroups = collegeEssays.reduce((acc, e) => {
-        const name = e.colleges?.name || 'General';
-        if (!acc[name]) acc[name] = [];
-        acc[name].push(e);
-        return acc;
-    }, {});
+        // 1. Render Main Application Components (PS, PIQs)
+        // Only show if the user has at least one college added (nitpick fix)
+        const hasColleges = (userColleges && userColleges.length > 0) || essays.some(e => e.college_id);
 
-    Object.keys(collegeGroups).sort().forEach(collegeName => {
-        const groupEssays = collegeGroups[collegeName];
-        const platform = groupEssays[0]?.colleges?.application_platform;
+        if (globalEssays.length > 0 && hasColleges) {
+            const mainSection = document.createElement('div');
+            mainSection.style.marginBottom = 'var(--space-xl)';
+            mainSection.innerHTML = `<h4 class="nav-section-title">Main Application</h4>`;
 
-        const collegeSection = document.createElement('div');
-        collegeSection.className = 'collapsible-group';
-        collegeSection.style.marginBottom = 'var(--space-xs)';
+            globalEssays.forEach(e => {
+                mainSection.appendChild(createNavItem(e));
+            });
+            navList.appendChild(mainSection);
+        }
 
-        const emoji = collegeName === 'General' ? '📁' : (platform === 'UC App' ? '🐻' : '🏛️');
+        // 2. Group College Supplements by College
+        const collegeGroups = collegeEssays.reduce((acc, e) => {
+            const name = e.colleges?.name || 'General';
+            if (!acc[name]) acc[name] = [];
+            acc[name].push(e);
+            return acc;
+        }, {});
 
-        collegeSection.innerHTML = `
+        Object.keys(collegeGroups).sort().forEach(collegeName => {
+            const groupEssays = collegeGroups[collegeName];
+            const platform = groupEssays[0]?.colleges?.application_platform;
+
+            const collegeSection = document.createElement('div');
+            collegeSection.className = 'collapsible-group';
+            collegeSection.style.marginBottom = 'var(--space-xs)';
+
+            const emoji = collegeName === 'General' ? '📁' : (platform === 'UC App' ? '🐻' : '🏛️');
+
+            collegeSection.innerHTML = `
             <div class="collapsible-header" style="display: flex; align-items: center; justify-content: space-between; padding: var(--space-sm) var(--space-md); border-radius: var(--radius-md); cursor: pointer; transition: all 0.2s; background: var(--surface);">
                 <div style="display: flex; align-items: center; gap: var(--space-sm); overflow: hidden;">
                     <span style="font-size: 14px; flex-shrink: 0;">${emoji}</span>
@@ -652,64 +658,67 @@ async function loadEssays() {
             <div class="group-content" style="margin-left: var(--space-md); display: none; padding-top: 4px;"></div>
         `;
 
-        const header = collegeSection.querySelector('.collapsible-header');
-        const content = collegeSection.querySelector('.group-content');
-        const chevron = collegeSection.querySelector('.chevron');
-        const syncBtn = collegeSection.querySelector('.sync-mini-btn');
+            const header = collegeSection.querySelector('.collapsible-header');
+            const content = collegeSection.querySelector('.group-content');
+            const chevron = collegeSection.querySelector('.chevron');
+            const syncBtn = collegeSection.querySelector('.sync-mini-btn');
 
-        syncBtn.onclick = async (e) => {
-            e.stopPropagation();
-            syncBtn.style.opacity = '1';
-            syncBtn.classList.add('rotating');
-            showNotification(`Syncing essays for ${collegeName}...`, 'info');
-            await syncEssays(currentUser.id);
-            await loadEssays();
-            showNotification(`${collegeName} essays updated!`, 'success');
-        };
+            syncBtn.onclick = async (e) => {
+                e.stopPropagation();
+                syncBtn.style.opacity = '1';
+                syncBtn.classList.add('rotating');
+                showNotification(`Syncing essays for ${collegeName}...`, 'info');
+                await syncEssays(currentUser.id);
+                await loadEssays();
+                showNotification(`${collegeName} essays updated!`, 'success');
+            };
 
-        header.onclick = () => {
-            const isHidden = content.style.display === 'none';
-            content.style.display = isHidden ? 'block' : 'none';
-            chevron.style.transform = isHidden ? 'rotate(180deg)' : 'rotate(0deg)';
-            header.style.background = isHidden ? 'var(--gray-50)' : 'var(--surface)';
-        };
+            header.onclick = () => {
+                const isHidden = content.style.display === 'none';
+                content.style.display = isHidden ? 'block' : 'none';
+                chevron.style.transform = isHidden ? 'rotate(180deg)' : 'rotate(0deg)';
+                header.style.background = isHidden ? 'var(--gray-50)' : 'var(--surface)';
+            };
 
-        if (currentEssay && groupEssays.some(e => e.id === currentEssay.id)) {
-            content.style.display = 'block';
-            chevron.style.transform = 'rotate(180deg)';
-            header.style.background = 'var(--gray-50)';
-        }
+            if (currentEssay && groupEssays.some(e => e.id === currentEssay.id)) {
+                content.style.display = 'block';
+                chevron.style.transform = 'rotate(180deg)';
+                header.style.background = 'var(--gray-50)';
+            }
 
-        groupEssays.forEach(essay => {
-            content.appendChild(createNavItem(essay));
+            groupEssays.forEach(essay => {
+                content.appendChild(createNavItem(essay));
+            });
+
+            navList.appendChild(collegeSection);
         });
 
-        navList.appendChild(collegeSection);
-    });
+        // 3. Render shared essays
+        if (sharedEssays.length > 0) {
+            const sharedSection = document.createElement('div');
+            sharedSection.style.marginTop = 'var(--space-xl)';
+            sharedSection.innerHTML = `<div class="nav-section-title">Shared With Me</div>`;
 
-    // 3. Render shared essays
-    if (sharedEssays.length > 0) {
-        const sharedSection = document.createElement('div');
-        sharedSection.style.marginTop = 'var(--space-xl)';
-        sharedSection.innerHTML = `<div class="nav-section-title">Shared With Me</div>`;
-
-        sharedEssays.forEach(item => {
-            if (item.essays) sharedSection.appendChild(createNavItem(item.essays, true));
-        });
-        navList.appendChild(sharedSection);
-    }
-
-    if (essays.length === 0 && sharedEssays.length === 0) {
-        navList.innerHTML = '<p class="empty-state">No essays yet. Add colleges to see prompts.</p>';
-        return;
-    }
-
-    // Load first available essay if none selected
-    if (!currentEssay) {
-        const firstEssay = globalEssays[0] || collegeEssays[0] || (sharedEssays[0] ? sharedEssays[0].essays : null);
-        if (firstEssay) {
-            loadEssayContent(firstEssay.id);
+            sharedEssays.forEach(item => {
+                if (item.essays) sharedSection.appendChild(createNavItem(item.essays, true));
+            });
+            navList.appendChild(sharedSection);
         }
+
+        if (essays.length === 0 && sharedEssays.length === 0) {
+            navList.innerHTML = '<p class="empty-state">No essays yet. Add colleges to see prompts.</p>';
+            return;
+        }
+
+        // Load first available essay if none selected
+        if (!currentEssay) {
+            const firstEssay = globalEssays[0] || collegeEssays[0] || (sharedEssays[0] ? sharedEssays[0].essays : null);
+            if (firstEssay) {
+                loadEssayContent(firstEssay.id).catch(e => console.error('Error loading initial essay:', e));
+            }
+        }
+    } catch (error) {
+        console.error('❌ Error in loadEssays:', error);
     }
 }
 
