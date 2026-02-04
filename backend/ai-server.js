@@ -1097,12 +1097,15 @@ async function handleCreateEssays(userId, collegeName) {
         let count = 0;
         // 1. Create Global Essays (Personal Statement / PIQs)
         if (catalogEntry.application_platform === 'Common App') {
-            const { data: hasPS } = await supabase
+            const { data: existingEssays } = await supabase
                 .from('essays')
-                .select('id')
-                .eq('user_id', userId)
-                .eq('essay_type', 'Personal Statement')
-                .maybeSingle();
+                .select('id, title, essay_type')
+                .eq('user_id', userId);
+
+            const hasPS = (existingEssays || []).some(e =>
+                (e.essay_type === 'Personal Statement' || e.essay_type === 'Common App') ||
+                (e.title && e.title.toLowerCase().includes('common app personal statement'))
+            );
 
             if (!hasPS) {
                 const { error: psError } = await supabase.from('essays').insert({
