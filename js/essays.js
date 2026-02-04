@@ -706,7 +706,20 @@ async function loadEssays() {
         }
 
         if (essays.length === 0 && sharedEssays.length === 0) {
-            navList.innerHTML = '<p class="empty-state">No essays yet. Add colleges to see prompts.</p>';
+            navList.innerHTML = `
+                <div style="padding: var(--space-xl) var(--space-md); text-align: center;">
+                    <div style="font-size: 2rem; margin-bottom: var(--space-md);">✍️</div>
+                    <p style="color: var(--gray-600); font-size: 13px; margin-bottom: var(--space-lg); line-height: 1.5;">
+                        Your essay workspace is ready. Add colleges to see your prompts automatically.
+                    </p>
+                    <button class="btn btn-outline btn-sm" onclick="syncEssays()" style="width: 100%; border-radius: var(--radius-full);">
+                        🔄 Sync My Essays
+                    </button>
+                    <p style="font-size: 10px; color: var(--gray-400); margin-top: 12px;">
+                        Need help? <a href="#" onclick="window.location.assign('colleges.html')" style="color: var(--primary-blue); font-weight: 600;">Add your first college</a>
+                    </p>
+                </div>
+            `;
             return;
         }
 

@@ -225,7 +225,7 @@ app.post('/api/onboarding/plan', async (req, res) => {
             return res.status(503).json({ error: 'AI service unavailable' });
         }
 
-        console.log(`🧠 Generating Admissions Action Plan for ${profile.full_name || 'student'}...`);
+        console.log(`🧠 Generating Admissions Action Plan for student...`);
 
         const systemPrompt = `You are an elite college admissions strategist. Your goal is to generate a highly customized, 3-month "Admissions Action Plan" for a student.
 
