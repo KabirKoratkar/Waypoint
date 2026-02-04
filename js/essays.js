@@ -599,8 +599,8 @@ async function loadEssays() {
             const type = (e.essay_type || '').toLowerCase();
             const platform = e.colleges?.application_platform;
 
-            // Is it a Personal Statement/Common App main?
-            const isPS = (type === 'common app' || type === 'personal statement' || title.includes('common app personal statement'));
+            // Is it a global Personal Statement (Common App) or a specific College Essay?
+            const isPS = (type === 'common app' || title.includes('common app personal statement') || (type === 'personal statement' && !e.college_id));
             // Is it a UC PIQ?
             const isUCPIQ = (platform === 'UC App' && (type === 'uc piq' || title.includes('piq')));
 
