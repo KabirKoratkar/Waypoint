@@ -291,8 +291,11 @@ async function getUserEssays(userId) {
         return [];
     }
 
-    const essays = (essaysResult.data || []).map(essay => {
-        const college = colleges.find(c => c.id === essay.college_id);
+    const essaysData = essaysResult.data || [];
+    const collegesData = collegesResult.data || [];
+
+    const essays = essaysData.map(essay => {
+        const college = collegesData.find(c => c.id === essay.college_id);
         return {
             ...essay,
             colleges: college || null
