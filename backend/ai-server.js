@@ -105,7 +105,7 @@ app.get('/', (req, res) => res.json({ status: 'ok', service: 'waypoint-ai', time
 app.get('/api/health', (req, res) => {
     res.json({
         status: 'ok',
-        version: 'v3.1',
+        version: 'v3.2',
         services: {
             openai: !!process.env.OPENAI_API_KEY,
             stripe: !!process.env.STRIPE_SECRET_KEY,
