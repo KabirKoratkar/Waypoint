@@ -291,13 +291,15 @@ async function getUserEssays(userId) {
         return [];
     }
 
-    const essays = essaysResult.data || [];
-    const colleges = collegesResult.data || [];
+    const essays = (essaysResult.data || []).map(essay => {
+        const college = colleges.find(c => c.id === essay.college_id);
+        return {
+            ...essay,
+            colleges: college || null
+        };
+    });
 
-    return essays.map(essay => ({
-        ...essay,
-        colleges: colleges.find(c => c.id === essay.college_id) || null
-    }));
+    return essays;
 }
 
 async function getEssay(id) {

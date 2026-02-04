@@ -309,6 +309,14 @@ style.textContent = `
             opacity: 0;
         }
     }
+    @keyframes rotate {
+        from { transform: rotate(0deg); }
+        to { transform: rotate(360deg); }
+    }
+    .rotating {
+        animation: rotate 1s linear infinite;
+        opacity: 1 !important;
+    }
 `;
 document.head.appendChild(style);
 // Loading Overlay Helpers

@@ -208,15 +208,49 @@ document.addEventListener('DOMContentLoaded', async function () {
 
     // Essay Search
 
-    // Essay Search
+    // Improved Essay Search
     const essaySearch = document.getElementById('essaySearch');
     if (essaySearch) {
         essaySearch.addEventListener('input', (e) => {
-            const term = e.target.value.toLowerCase();
+            const term = e.target.value.toLowerCase().trim();
             const items = document.querySelectorAll('.essay-nav-item');
-            items.forEach(item => {
-                const text = item.textContent.toLowerCase();
-                item.style.display = text.includes(term) ? 'block' : 'none';
+            const groups = document.querySelectorAll('.collapsible-group');
+
+            if (!term) {
+                // Reset everything
+                items.forEach(i => i.style.display = 'block');
+                groups.forEach(g => {
+                    g.style.display = 'block';
+                });
+                return;
+            }
+
+            groups.forEach(group => {
+                const groupHeader = group.querySelector('.collapsible-header');
+                const groupContent = group.querySelector('.group-content');
+                const groupItems = group.querySelectorAll('.essay-nav-item');
+                const groupName = groupHeader.textContent.toLowerCase();
+
+                let groupMatches = groupName.includes(term);
+                let anyItemMatches = false;
+
+                groupItems.forEach(item => {
+                    const itemText = item.textContent.toLowerCase();
+                    const matches = itemText.includes(term);
+                    item.style.display = matches ? 'block' : 'none';
+                    if (matches) anyItemMatches = true;
+                });
+
+                if (groupMatches || anyItemMatches) {
+                    group.style.display = 'block';
+                    if (anyItemMatches) {
+                        groupContent.style.display = 'block';
+                        const chevron = group.querySelector('.chevron');
+                        if (chevron) chevron.style.transform = 'rotate(180deg)';
+                    }
+                } else {
+                    group.style.display = 'none';
+                }
             });
         });
     }
@@ -599,17 +633,21 @@ async function loadEssays() {
         const platform = groupEssays[0]?.colleges?.application_platform;
 
         const collegeSection = document.createElement('div');
+        collegeSection.className = 'collapsible-group';
         collegeSection.style.marginBottom = 'var(--space-xs)';
 
         const emoji = collegeName === 'General' ? '📁' : (platform === 'UC App' ? '🐻' : '🏛️');
 
         collegeSection.innerHTML = `
-            <div class="collapsible-header" style="display: flex; align-items: center; justify-content: space-between; padding: var(--space-sm) var(--space-md); border-radius: var(--radius-md); cursor: pointer; transition: all 0.2s;">
+            <div class="collapsible-header" style="display: flex; align-items: center; justify-content: space-between; padding: var(--space-sm) var(--space-md); border-radius: var(--radius-md); cursor: pointer; transition: all 0.2s; background: var(--surface);">
                 <div style="display: flex; align-items: center; gap: var(--space-sm); overflow: hidden;">
                     <span style="font-size: 14px; flex-shrink: 0;">${emoji}</span>
-                    <span style="font-weight: 700; font-size: 13px; color: var(--gray-700); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${collegeName}</span>
+                    <span style="font-weight: 700; font-size: 13px; color: var(--gray-800); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${collegeName}</span>
                 </div>
-                <span class="chevron" style="font-size: 10px; color: var(--gray-400); transition: transform 0.3s;">▼</span>
+                <div style="display: flex; align-items: center; gap: 8px;">
+                    <button class="sync-mini-btn" title="Refresh Essays" style="background: none; border: none; cursor: pointer; font-size: 12px; opacity: 0.3; transition: opacity 0.2s;">🔄</button>
+                    <span class="chevron" style="font-size: 10px; color: var(--gray-400); transition: transform 0.3s;">▼</span>
+                </div>
             </div>
             <div class="group-content" style="margin-left: var(--space-md); display: none; padding-top: 4px;"></div>
         `;
@@ -617,12 +655,23 @@ async function loadEssays() {
         const header = collegeSection.querySelector('.collapsible-header');
         const content = collegeSection.querySelector('.group-content');
         const chevron = collegeSection.querySelector('.chevron');
+        const syncBtn = collegeSection.querySelector('.sync-mini-btn');
+
+        syncBtn.onclick = async (e) => {
+            e.stopPropagation();
+            syncBtn.style.opacity = '1';
+            syncBtn.classList.add('rotating');
+            showNotification(`Syncing essays for ${collegeName}...`, 'info');
+            await syncEssays(currentUser.id);
+            await loadEssays();
+            showNotification(`${collegeName} essays updated!`, 'success');
+        };
 
         header.onclick = () => {
             const isHidden = content.style.display === 'none';
             content.style.display = isHidden ? 'block' : 'none';
             chevron.style.transform = isHidden ? 'rotate(180deg)' : 'rotate(0deg)';
-            header.style.background = isHidden ? 'var(--gray-50)' : 'transparent';
+            header.style.background = isHidden ? 'var(--gray-50)' : 'var(--surface)';
         };
 
         if (currentEssay && groupEssays.some(e => e.id === currentEssay.id)) {

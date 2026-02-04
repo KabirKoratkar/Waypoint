@@ -290,10 +290,15 @@ app.get('/api/app-status/:userId', async (req, res) => {
 
         const colleges = collegesResult.data || [];
         const essays = (essaysResult.data || []).map(essay => {
+            // Robust ID matching
             const college = colleges.find(c => c.id === essay.college_id);
             return {
                 ...essay,
-                colleges: college ? { name: college.name, application_platform: college.application_platform } : null
+                colleges: college ? {
+                    id: college.id,
+                    name: college.name,
+                    application_platform: college.application_platform
+                } : null
             };
         });
 
@@ -344,7 +349,7 @@ app.post('/api/colleges/research-deep', researchLimiter, async (req, res) => {
             model: 'gpt-4o',
             messages: [{
                 role: 'system',
-                content: `Generate a comprehensive "Intelligence Report" for ${collegeName}. 
+                content: `Generate a comprehensive "Intelligence Report" for ${collegeName}.
                 You are a senior admissions insider with specialized knowledge of this specific university.
 
                 Format the response as a JSON object with this exact structure:
@@ -530,7 +535,7 @@ app.post('/api/chat', async (req, res) => {
             .single();
 
         const profileContext = profile ?
-            `You are talking to ${profile.full_name || 'a student'}. 
+            `You are talking to ${profile.full_name || 'a student'}.
              Graduation Year: ${profile.graduation_year || 'Unknown'}
              Intended Major: ${profile.intended_major || 'Undecided'}
              Academic Stats: GPA: ${profile.unweighted_gpa || 'N/A'} (UW) / ${profile.weighted_gpa || 'N/A'} (W). SAT: ${profile.sat_score || 'N/A'}. ACT: ${profile.act_score || 'N/A'}.
@@ -560,7 +565,7 @@ app.post('/api/chat', async (req, res) => {
                 MISSION: Proactively manage their profile, schedule, and essays. YOU ARE AN ELITE ADMISSIONS COACH.
 
                 CONVERSATIONAL STYLE:
-                1. ASK ONLY ONE QUESTION AT A TIME. Never ask multiple questions in a single response. 
+                1. ASK ONLY ONE QUESTION AT A TIME. Never ask multiple questions in a single response.
                 2. Be concise. Avoid long walls of text.
                 
                 ${profileContext}
@@ -952,7 +957,7 @@ async function handleResearchCollege(collegeName, forceResearch = false) {
             model: 'gpt-4o',
             messages: [{
                 role: 'system',
-                content: `You are a world-class college admissions researcher. 
+                content: `You are a world-class college admissions researcher.
                 Provide accurate, comprehensive 2024-2025 admissions data for ${collegeName}.
                 
                 CRITICAL INSTRUCTION FOR ESSAYS:
@@ -1059,16 +1064,16 @@ async function handleCreateEssays(userId, collegeName) {
 
         if (!collegeEntry) {
             console.log(`[ESSAY-SYNC] Exact match failed for "${collegeName}", trying fuzzy...`);
-            const { data: similar } = await supabase
-                .from('colleges')
-                .select('id, name, application_platform')
-                .eq('user_id', userId)
-                .ilike('name', `%${collegeName}%`)
-                .limit(1);
+            // Let's try something even simpler: just get all and find in JS
+            const { data: allUserColls } = await supabase.from('colleges').select('id, name, application_platform').eq('user_id', userId);
+            const match = allUserColls.find(c =>
+                c.name.toLowerCase().includes(collegeName.toLowerCase()) ||
+                collegeName.toLowerCase().includes(c.name.toLowerCase())
+            );
 
-            if (similar && similar.length > 0) {
-                collegeEntry = similar[0];
-                console.log(`[ESSAY-SYNC] Matched fuzzy: "${collegeEntry.name}"`);
+            if (match) {
+                collegeEntry = match;
+                console.log(`[ESSAY-SYNC] Matched via JS fuzzy: "${collegeEntry.name}"`);
             }
         }
 
