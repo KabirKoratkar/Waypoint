@@ -156,53 +156,56 @@
             <div id="essayEditorContainer">
                 <div class="essay-editor-card card">
                     <!-- Toolbar -->
-                    <div class="essay-toolbar"
-                        style="position: sticky; top: 80px; z-index: 10; background: var(--white); border-bottom: 1px solid var(--gray-100); margin-bottom: var(--space-lg); padding-bottom: var(--space-md); margin-top: -1px;">
-                        <div style="display: flex; align-items: center; gap: var(--space-md);">
-                            <div class="badge badge-primary" id="essayTypeBadge">Select Essay</div>
-                            <div id="save-status" style="font-size: var(--text-xs); color: var(--gray-400);">Draft
-                            </div>
+                    <div class="essay-toolbar">
+                        <div style="display: flex; align-items: center; gap: 12px;">
+                            <div class="badge badge-primary" id="essayTypeBadge"
+                                style="padding: 6px 14px; letter-spacing: 0.05em; font-weight: 700;">Select Essay</div>
+                            <div id="save-status" style="font-size: 11px; font-weight: 600; color: var(--gray-400);">
+                                Draft</div>
                             <button class="btn btn-xs btn-success btn-outline" id="finalizeBtn"
-                                style="padding: 2px 8px; font-size: 10px; display: none;">✅ Finalize</button>
+                                style="padding: 2px 8px; font-size: 10px; display: none; border-radius: var(--radius-full);">✅
+                                Finalize</button>
                         </div>
                         <div style="flex: 1;"></div>
-                        <button class="btn btn-sm btn-ghost" id="importGoogleBtn"
-                            style="gap: 6px; color: var(--gray-600);">
-                            <img src="https://upload.wikimedia.org/wikipedia/commons/1/12/Google_Drive_icon_%282020%29.svg"
-                                style="width: 14px; height: 14px;">
-                            Import
-                        </button>
-                        <button class="btn btn-sm btn-ghost" id="shareBtn" title="Share with counselor">📤
-                            Share</button>
-                        <button class="btn btn-sm btn-primary" id="saveBtn"
-                            style="border-radius: var(--radius-full);">💾 Save Draft</button>
+                        <div style="display: flex; gap: 8px;">
+                            <button class="btn btn-sm btn-ghost" id="importGoogleBtn"
+                                style="gap: 8px; font-weight: 600;">
+                                <img src="https://upload.wikimedia.org/wikipedia/commons/1/12/Google_Drive_icon_%282020%29.svg"
+                                    style="width: 16px; height: 16px;">
+                                Import
+                            </button>
+                            <button class="btn btn-sm btn-ghost" id="shareBtn" style="font-weight: 600; gap: 6px;">📤
+                                Share</button>
+                            <button class="btn btn-sm btn-primary" id="saveBtn"
+                                style="border-radius: var(--radius-full); box-shadow: var(--shadow-glow); font-weight: 700;">💾
+                                Save Draft</button>
+                        </div>
                     </div>
 
-                    <!-- Physical Verbatim Prompt Card -->
-                    <div class="essay-prompt-container"
-                        style="background: rgba(91, 141, 238, 0.03); border: 1px solid rgba(91, 141, 238, 0.15); border-radius: var(--radius-lg); padding: var(--space-xl); margin-bottom: var(--space-xl); position: relative; overflow: hidden;">
-                        <div
-                            style="position: absolute; top: 0; right: 0; padding: var(--space-md); font-size: 2rem; opacity: 0.05; pointer-events: none;">
-                            📝</div>
-                        <div
-                            style="display: flex; align-items: center; gap: var(--space-sm); margin-bottom: var(--space-sm);">
-                            <h4
-                                style="margin: 0; font-size: 11px; text-transform: uppercase; letter-spacing: 0.1em; color: var(--primary-blue); font-weight: 800;">
-                                OFFICIAL PROMPT</h4>
+                    <!-- Modern Prompt Card -->
+                    <div class="essay-prompt-container">
+                        <div class="prompt-header">
+                            <span class="prompt-label">
+                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                    stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M12 20h9" />
+                                    <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" />
+                                </svg>
+                                Official Prompt
+                            </span>
                         </div>
-                        <div id="currentPrompt"
-                            style="font-weight: 600; font-size: 1.1rem; color: var(--gray-800); line-height: 1.6; font-family: var(--font-primary);">
+                        <div id="currentPrompt" class="prompt-text">
                             Select an essay from the sidebar to begin.
                         </div>
 
                         <!-- Official Guidance Slot -->
                         <div id="essayGuidanceSlot"
-                            style="margin-top: var(--space-lg); padding-top: var(--space-lg); border-top: 1px dashed rgba(91, 141, 238, 0.2); display: none;">
+                            style="margin-top: var(--space-lg); padding-top: var(--space-lg); border-top: 1px dashed var(--border); display: none; animation: fadeIn 0.4s ease-out;">
                             <h5
-                                style="font-size: 10px; font-weight: 800; color: var(--gray-400); text-transform: uppercase; margin-bottom: 8px;">
-                                Official Directions & Tips</h5>
+                                style="font-size: 10px; font-weight: 800; color: var(--gray-400); text-transform: uppercase; margin-bottom: 12px; letter-spacing: 0.1em;">
+                                Admissions Guidance</h5>
                             <p id="essayGuidanceText"
-                                style="font-size: 13px; color: var(--gray-600); line-height: 1.5; margin-bottom: 8px;">
+                                style="font-size: 14px; color: var(--gray-600); line-height: 1.6; margin-bottom: 16px;">
                             </p>
                             <div id="essayGuidanceTips" style="display: flex; flex-wrap: wrap; gap: 8px;"></div>
                         </div>
@@ -213,11 +216,35 @@
                         placeholder="Start writing your masterpiece..."></textarea>
 
                     <!-- Word Count Footer -->
-                    <div class="essay-footer"
-                        style="margin-top: var(--space-md); border-top: 1px solid var(--gray-100); padding-top: var(--space-md);">
-                        <div class="stats-group">
-                            <span><strong>Words:</strong> <span id="wordCount">0</span></span>
-                            <span><strong>Chars:</strong> <span id="charCount">0</span></span>
+                    <div class="essay-footer">
+                        <div class="stats-group" style="display: flex; gap: var(--space-xl); align-items: center;">
+                            <div class="stat-pill" style="display: flex; align-items: baseline; gap: 4px;">
+                                <span
+                                    style="font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em; opacity: 0.6;">Words</span>
+                                <span id="wordCount"
+                                    style="font-weight: 800; font-size: 16px; color: var(--gray-900);">0</span>
+                                <span id="wordLimitDisplay"
+                                    style="font-size: 12px; font-weight: 600; color: var(--gray-400);"></span>
+                            </div>
+                            <div class="stat-pill" style="display: flex; align-items: baseline; gap: 4px;">
+                                <span
+                                    style="font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em; opacity: 0.6;">Chars</span>
+                                <span id="charCount"
+                                    style="font-weight: 700; font-size: 14px; color: var(--gray-700);">0</span>
+                            </div>
+                        </div>
+
+                        <div
+                            style="flex: 1; display: flex; justify-content: flex-end; align-items: center; gap: var(--space-md);">
+                            <div class="progress-label"
+                                style="font-size: 10px; font-weight: 800; color: var(--gray-400); text-transform: uppercase;">
+                                Completeness</div>
+                            <div class="progress-track"
+                                style="width: 120px; height: 6px; background: var(--gray-200); border-radius: 10px; overflow: hidden; position: relative;">
+                                <div id="wordProgressFill"
+                                    style="width: 0%; height: 100%; background: var(--gradient-primary); border-radius: 10px; transition: width 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);">
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>

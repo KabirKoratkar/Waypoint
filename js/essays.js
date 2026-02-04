@@ -781,9 +781,20 @@ async function loadEssayContent(essayId, isReadOnly = false) {
     }
 
     if (essayTypeBadge) {
-        essayTypeBadge.textContent = essay.essay_type || 'Common App';
+        essayTypeBadge.textContent = essay.essay_type || 'Supplemental';
     }
-    document.getElementById('save-status').textContent = 'Last saved: ' + (essay.last_saved ? new Date(essay.last_saved).toLocaleTimeString() : 'Just now');
+
+    const wordLimitDisplay = document.getElementById('wordLimitDisplay');
+    if (wordLimitDisplay && essay.word_limit) {
+        wordLimitDisplay.textContent = `/ ${essay.word_limit}`;
+    } else if (wordLimitDisplay) {
+        wordLimitDisplay.textContent = '';
+    }
+
+    const saveStatus = document.getElementById('save-status');
+    if (saveStatus) {
+        saveStatus.textContent = 'Last saved: ' + (essay.last_saved ? new Date(essay.last_saved).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'Recently');
+    }
 
     // Show Guidance if applicable
     const guidanceSlot = document.getElementById('essayGuidanceSlot');
@@ -934,6 +945,7 @@ function updateCounts() {
     const essayEditor = document.getElementById('essayEditor');
     const wordCountDisplay = document.getElementById('wordCount');
     const charCountDisplay = document.getElementById('charCount');
+    const progressFill = document.getElementById('wordProgressFill');
 
     if (!essayEditor) return;
 
@@ -947,6 +959,20 @@ function updateCounts() {
     if (currentEssay) {
         currentEssay.word_count = words;
         currentEssay.char_count = chars;
+
+        if (progressFill && currentEssay.word_limit) {
+            const percentage = Math.min((words / currentEssay.word_limit) * 100, 100);
+            progressFill.style.width = `${percentage}%`;
+
+            // Critical warning if over limit
+            if (words > currentEssay.word_limit) {
+                progressFill.style.background = 'var(--error)';
+                if (wordCountDisplay) wordCountDisplay.style.color = 'var(--error)';
+            } else {
+                progressFill.style.background = 'var(--gradient-primary)';
+                if (wordCountDisplay) wordCountDisplay.style.color = 'inherit';
+            }
+        }
     }
 }
 

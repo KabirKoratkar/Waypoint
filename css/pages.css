@@ -790,13 +790,102 @@
     box-shadow: 0 20px 40px -10px rgba(91, 141, 238, 0.15);
 }
 
+/* MODERN ESSAY WORKSPACE */
+.essay-editor-card {
+    background: var(--surface) !important;
+    border: 1px solid var(--border) !important;
+    box-shadow: var(--shadow-xl) !important;
+    border-radius: var(--radius-2xl) !important;
+}
+
 .essay-toolbar {
+    position: sticky !important;
+    top: 80px !important;
+    z-index: 100 !important;
+    background: var(--glass-background) !important;
+    backdrop-filter: var(--glass-blur) !important;
+    -webkit-backdrop-filter: var(--glass-blur) !important;
+    border-bottom: 1px solid var(--border) !important;
+    padding: var(--space-md) var(--space-xl) !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: var(--space-md) !important;
+    margin: 0 !important;
+    border-radius: var(--radius-2xl) var(--radius-2xl) 0 0 !important;
+}
+
+.essay-prompt-container {
+    background: var(--surface-soft) !important;
+    border: 1px solid var(--border) !important;
+    border-radius: var(--radius-xl) !important;
+    padding: var(--space-xl) !important;
+    margin: var(--space-xl) !important;
+    position: relative !important;
+    overflow: hidden !important;
+    box-shadow: var(--shadow-sm) !important;
+    transition: all var(--transition-base) !important;
+}
+
+.essay-prompt-container:hover {
+    box-shadow: var(--shadow-md) !important;
+    transform: translateY(-2px);
+    border-color: var(--primary-blue) !important;
+}
+
+.essay-prompt-container::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 4px;
+    height: 100%;
+    background: var(--gradient-primary);
+}
+
+.prompt-label {
+    font-size: 10px;
+    font-weight: 800;
+    color: var(--primary-blue);
+    text-transform: uppercase;
+    letter-spacing: 0.15em;
+    margin-bottom: var(--space-sm);
     display: flex;
     align-items: center;
-    gap: var(--space-sm);
-    padding: var(--space-md) var(--space-xl);
-    border-bottom: 1px solid var(--gray-100);
-    background: var(--gray-50);
+    gap: 6px;
+}
+
+.prompt-text {
+    font-weight: 600;
+    font-size: 1.15rem !important;
+    color: var(--gray-800) !important;
+    line-height: 1.5 !important;
+    font-family: var(--font-display) !important;
+}
+
+.essay-textarea {
+    width: 100%;
+    min-height: 600px;
+    border: none !important;
+    outline: none !important;
+    padding: var(--space-xl) var(--space-2xl) var(--space-4xl) !important;
+    font-size: 1.1rem !important;
+    line-height: 1.8 !important;
+    color: var(--gray-700) !important;
+    resize: none !important;
+    font-family: var(--font-primary) !important;
+    background: transparent !important;
+    transition: all var(--transition-base) !important;
+}
+
+.essay-footer {
+    display: flex !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+    padding: var(--space-md) var(--space-xl) !important;
+    border-top: 1px solid var(--border) !important;
+    background: var(--surface-soft) !important;
+    color: var(--gray-500) !important;
+    border-radius: 0 0 var(--radius-2xl) var(--radius-2xl) !important;
 }
 
 .essay-textarea {
@@ -957,8 +1046,23 @@
     font-weight: 600;
 }
 
+.collapsible-header {
+    background: var(--surface) !important;
+    border: 1px solid var(--border) !important;
+    border-radius: var(--radius-lg) !important;
+    margin-bottom: 4px !important;
+    transition: all var(--transition-base) !important;
+}
+
 .collapsible-header:hover {
-    background: var(--gray-50);
+    background: var(--surface-soft) !important;
+    border-color: var(--primary-blue) !important;
+    transform: translateX(2px);
+}
+
+.collapsible-header.active {
+    border-color: var(--primary-blue) !important;
+    background: var(--surface-soft) !important;
 }
 
 .collapsible-header.active .chevron {
