@@ -26,7 +26,7 @@ import Anthropic from '@anthropic-ai/sdk';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const LOCAL_CATALOG_PATH = path.join(__dirname, 'college_catalog.json');
 
-dotenv.config();
+dotenv.config({ path: path.join(__dirname, '.env') });
 
 const app = express();
 const PORT = process.env.PORT || 3001;
