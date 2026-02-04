@@ -45,7 +45,11 @@ router.post('/create-checkout-session', async (req, res) => {
         }
 
         if (!stripe) {
-            return res.status(503).json({ error: 'Billing service is currently unavailable. Please check back later or contact support.' });
+            return res.status(503).json({
+                error: 'Billing service is currently unavailable.',
+                detail: 'Stripe failed to initialize. Please check backend environment variables.',
+                code: 'STRIPE_NOT_INITIALIZED'
+            });
         }
 
         // Create Checkout Session
@@ -87,7 +91,11 @@ router.post('/create-portal-session', async (req, res) => {
         }
 
         if (!stripe) {
-            return res.status(503).json({ error: 'Billing service is currently unavailable. Please check back later or contact support.' });
+            return res.status(503).json({
+                error: 'Billing service is currently unavailable.',
+                detail: 'Stripe failed to initialize. Please check backend environment variables.',
+                code: 'STRIPE_NOT_INITIALIZED'
+            });
         }
 
         // 1. Try to get stripe_customer_id from Supabase first
