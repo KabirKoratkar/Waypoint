@@ -1,6 +1,7 @@
 import { getCurrentUser, getUserProfile, getUserColleges, addCollege, updateCollege, searchCollegeCatalog, getUserEssays, getUserTasks } from './supabase-config.js';
 import { updateNavbarUser } from './ui.js';
 import config from './config.js';
+import { calculateSmartProgress, formatAIMessage } from './utils.js';
 
 let currentUser = null;
 let colleges = [];
@@ -266,37 +267,6 @@ async function fetchCollegesData(userId) {
     return { colleges, tasks, essays };
 }
 
-function calculateSmartProgress(college, allEssays, allTasks) {
-    const collegeEssays = allEssays.filter(e => e.college_id === college.id);
-    const collegeTasks = allTasks.filter(t => t.college_id === college.id);
-
-    if (collegeEssays.length === 0 && collegeTasks.length === 0) return 0;
-
-    let essayScore = 0;
-    if (collegeEssays.length > 0) {
-        const totalEssayProgress = collegeEssays.reduce((acc, essay) => {
-            if (essay.is_completed) return acc + 1;
-            const wordProgress = essay.word_limit > 0 ? Math.min(essay.word_count / essay.word_limit, 1) : 0;
-            return acc + (wordProgress * 0.8);
-        }, 0);
-        essayScore = totalEssayProgress / collegeEssays.length;
-    }
-
-    let taskScore = 0;
-    if (collegeTasks.length > 0) {
-        const completedTasks = collegeTasks.filter(t => t.completed).length;
-        taskScore = completedTasks / collegeTasks.length;
-    }
-
-    // Weighting: 40% Essays, 60% Tasks
-    let essayWeight = 0.4;
-    let taskWeight = 0.6;
-    if (collegeEssays.length === 0) { taskWeight = 1.0; essayWeight = 0; }
-    if (collegeTasks.length === 0) { essayWeight = 1.0; taskWeight = 0; }
-
-    return Math.round((essayScore * essayWeight + taskScore * taskWeight) * 100);
-}
-
 function updateSummary(collegesList) {
     const total = collegesList.length;
     const reach = collegesList.filter(c => c.type === 'Reach').length;
@@ -403,11 +373,10 @@ function showAIModal(title, content) {
         z-index: 2000; backdrop-filter: blur(8px);
     `;
 
-    // Process markdown-like headers
-    const formattedContent = content
+    // Process AI content safely and apply formatting
+    const formattedContent = formatAIMessage(content)
         .replace(/### (.*)/g, '<h3 style="color: var(--primary-blue); margin-top: var(--space-lg); margin-bottom: var(--space-sm);">$1</h3>')
-        .replace(/## (.*)/g, '<h2 style="color: var(--primary-blue); margin-top: var(--space-xl); margin-bottom: var(--space-md);">$1</h2>')
-        .replace(/\n/g, '<br>');
+        .replace(/## (.*)/g, '<h2 style="color: var(--primary-blue); margin-top: var(--space-xl); margin-bottom: var(--space-md);">$1</h2>');
 
     modal.innerHTML = `
         <div class="card" style="max-width: 650px; width: 90%; padding: var(--space-2xl); max-height: 85vh; overflow-y: auto; position: relative;">

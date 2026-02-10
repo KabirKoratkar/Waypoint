@@ -10,6 +10,7 @@ import {
     toggleTaskCompletion
 } from './supabase-config.js';
 import { updateNavbarUser } from './ui.js';
+import { calculateSmartProgress, formatAIMessage } from './utils.js';
 
 let enrollmentChart = null;
 let currentCollege = null;
@@ -276,37 +277,6 @@ function renderApplicationStatus(userCollege) {
             deadlineCountdown.textContent = 'Deadline TBD';
         }
     }
-}
-
-function calculateSmartProgress(college, allEssays, allTasks) {
-    const collegeEssays = allEssays.filter(e => e.college_id === college.id);
-    const collegeTasks = allTasks.filter(t => t.college_id === college.id);
-
-    if (collegeEssays.length === 0 && collegeTasks.length === 0) return 0;
-
-    let essayScore = 0;
-    if (collegeEssays.length > 0) {
-        const totalEssayProgress = collegeEssays.reduce((acc, essay) => {
-            if (essay.is_completed) return acc + 1;
-            const wordProgress = essay.word_limit > 0 ? Math.min(essay.word_count / essay.word_limit, 1) : 0;
-            return acc + (wordProgress * 0.8);
-        }, 0);
-        essayScore = totalEssayProgress / collegeEssays.length;
-    }
-
-    let taskScore = 0;
-    if (collegeTasks.length > 0) {
-        const completedTasks = collegeTasks.filter(t => t.completed).length;
-        taskScore = completedTasks / collegeTasks.length;
-    }
-
-    // Weighting: 40% Essays, 60% Tasks
-    let essayWeight = 0.4;
-    let taskWeight = 0.6;
-    if (collegeEssays.length === 0) { taskWeight = 1.0; essayWeight = 0; }
-    if (collegeTasks.length === 0) { essayWeight = 1.0; taskWeight = 0; }
-
-    return Math.round((essayScore * essayWeight + taskScore * taskWeight) * 100);
 }
 
 function renderTasks() {
@@ -622,7 +592,7 @@ function renderAIInsight(college) {
         `Pro-tip: This college values "cultural fit" and ${college.acceptance_rate < 15 ? 'intellectual curiosity' : 'academic grit'}. Make sure your supplemental essays reflect this.`
     ];
     const insightEl = document.getElementById('aiInsight');
-    if (insightEl) insightEl.textContent = insights.join(' ');
+    if (insightEl) insightEl.innerHTML = formatAIMessage(insights.join(' '));
 }
 
 function renderEnrollmentChart(college) {

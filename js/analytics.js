@@ -5,6 +5,7 @@
 
 import { getCurrentUser, getUserProfile, getUserColleges, getUserEssays, getUserTasks, getUserConversations, getEssayComments, supabase } from './supabase-config.js';
 import { updateNavbarUser } from './ui.js';
+import { calculateSmartProgress } from './utils.js';
 
 document.addEventListener('DOMContentLoaded', async () => {
     console.log('📊 Analytics initializing...');
@@ -41,13 +42,13 @@ document.addEventListener('DOMContentLoaded', async () => {
 
             updateSummaryStats(colleges, essays, tasks);
             renderCollegeBreakdown(colleges);
-            renderAppStatus(colleges);
+            renderAppStatus(colleges, essays, tasks);
             renderActivity(activityData);
             renderEssayProgress(essays);
         } else {
             console.log('No user found, using default view');
             renderCollegeBreakdown([]);
-            renderAppStatus([]);
+            renderAppStatus([], [], []);
             renderActivity({});
             renderEssayProgress([]);
         }
@@ -101,23 +102,26 @@ function updateSummaryStats(colleges, essays, tasks) {
 }
 
 function renderCollegeBreakdown(colleges) {
-    const ctx = document.getElementById('collegeBreakdownChart').getContext('2d');
+    const canvas = document.getElementById('collegeBreakdownChart');
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
 
     const types = { 'Reach': 0, 'Target': 0, 'Safety': 0 };
     colleges.forEach(c => {
         let type = c.type;
         if (!type) {
+            // Heuristic if unknown
             type = (c.name.includes('Stanford') || c.name.includes('MIT') || c.name.includes('Harvard')) ? 'Reach' : 'Target';
         }
         if (types[type] !== undefined) {
             types[type]++;
         } else {
-            // Default to Target if type is unknown
             types['Target']++;
         }
     });
 
-    new Chart(ctx, {
+    if (window.breakdownChart) window.breakdownChart.destroy();
+    window.breakdownChart = new Chart(ctx, {
         type: 'doughnut',
         data: {
             labels: ['Reach', 'Target', 'Safety'],
@@ -146,19 +150,22 @@ function renderCollegeBreakdown(colleges) {
     });
 }
 
-function renderAppStatus(colleges) {
-    const ctx = document.getElementById('appStatusChart').getContext('2d');
+function renderAppStatus(colleges, essays, tasks) {
+    const canvas = document.getElementById('appStatusChart');
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
 
     const statusCounts = { 'Not Started': 0, 'In Progress': 0, 'Completed': 0 };
     colleges.forEach(c => {
-        const progress = calculateSmartProgress(c, [], []); // Basic check with no essays/tasks for now if not available
+        const progress = calculateSmartProgress(c, essays, tasks);
         let status = 'Not Started';
         if (progress === 100) status = 'Completed';
         else if (progress > 0) status = 'In Progress';
         statusCounts[status]++;
     });
 
-    new Chart(ctx, {
+    if (window.statusChart) window.statusChart.destroy();
+    window.statusChart = new Chart(ctx, {
         type: 'bar',
         data: {
             labels: ['Not Started', 'In Progress', 'Completed'],
@@ -221,7 +228,9 @@ async function fetchActivityData(userId) {
 }
 
 function renderActivity(activityData) {
-    const ctx = document.getElementById('activityChart').getContext('2d');
+    const canvas = document.getElementById('activityChart');
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
 
     const days = [];
     const sessions = [];
@@ -235,7 +244,8 @@ function renderActivity(activityData) {
         sessions.push(activityData[dayLabel] || 0);
     }
 
-    new Chart(ctx, {
+    if (window.activityChart) window.activityChart.destroy();
+    window.activityChart = new Chart(ctx, {
         type: 'line',
         data: {
             labels: days,
@@ -310,33 +320,4 @@ function renderEssayProgress(essays) {
             </div>
         `;
     }).join('');
-}
-function calculateSmartProgress(college, allEssays, allTasks) {
-    const collegeEssays = allEssays.filter(e => e.college_id === college.id);
-    const collegeTasks = allTasks.filter(t => t.college_id === college.id);
-
-    if (collegeEssays.length === 0 && collegeTasks.length === 0) return 0;
-
-    let essayScore = 0;
-    if (collegeEssays.length > 0) {
-        const totalEssayProgress = collegeEssays.reduce((acc, essay) => {
-            if (essay.is_completed) return acc + 1;
-            const wordProgress = essay.word_limit > 0 ? Math.min(essay.word_count / essay.word_limit, 1) : 0;
-            return acc + (wordProgress * 0.8);
-        }, 0);
-        essayScore = totalEssayProgress / collegeEssays.length;
-    }
-
-    let taskScore = 0;
-    if (collegeTasks.length > 0) {
-        const completedTasks = collegeTasks.filter(t => t.completed).length;
-        taskScore = completedTasks / collegeTasks.length;
-    }
-
-    let essayWeight = 0.4;
-    let taskWeight = 0.6;
-    if (collegeEssays.length === 0) { taskWeight = 1.0; essayWeight = 0; }
-    if (collegeTasks.length === 0) { essayWeight = 1.0; taskWeight = 0; }
-
-    return Math.round((essayScore * essayWeight + taskScore * taskWeight) * 100);
 }

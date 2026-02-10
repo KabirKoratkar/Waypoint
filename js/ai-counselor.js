@@ -10,6 +10,7 @@ import {
 } from './supabase-config.js';
 import { updateNavbarUser } from './ui.js';
 import config from './config.js';
+import { formatAIMessage } from './utils.js';
 
 const AI_SERVER_URL = config.apiUrl;
 
@@ -204,10 +205,7 @@ function createMessageElement(text, isUser, timestamp = null) {
 }
 
 function formatMessageText(text) {
-    return text
-        .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
-        .replace(/\*(.+?)\*/g, '<em>$1</em>')
-        .replace(/\n/g, '<br>');
+    return formatAIMessage(text);
 }
 
 function createTypingIndicator() {

@@ -9,6 +9,7 @@ import {
     getUserProfile
 } from './supabase-config.js';
 import config from './config.js';
+import { formatAIMessage } from './utils.js';
 
 class AIChatWidget {
     constructor() {
@@ -233,10 +234,8 @@ class AIChatWidget {
         const div = document.createElement('div');
         div.className = `widget-message ${role}`;
 
-        // Handle basic formatting
-        let formatted = text
-            .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
-            .replace(/\n/g, '<br>');
+        // Handle basic formatting safely
+        let formatted = formatAIMessage(text);
 
         div.innerHTML = formatted;
         container.appendChild(div);
