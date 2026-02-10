@@ -197,6 +197,13 @@ function initScrollReveal() {
 
 
 async function updateLandingNav() {
+    // 1. Check for OAuth completion first (hash fragment)
+    if (window.location.hash && (window.location.hash.includes('access_token=') || window.location.hash.includes('type=recovery'))) {
+        console.log('[AUTH] Detected OAuth callback on landing page, redirecting to dashboard...');
+        window.location.assign('dashboard.html' + window.location.hash);
+        return;
+    }
+
     const navLinks = document.getElementById('navLinks');
     if (!navLinks) return;
 
