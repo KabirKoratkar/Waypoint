@@ -99,30 +99,37 @@
         </div>
 
         <!-- Calendar Card -->
-        <div class="card" style="padding: 0; overflow: hidden;">
+        <div class="card" style="padding: 0; overflow: hidden; border: none; box-shadow: var(--shadow-2xl);">
             <!-- Calendar Header -->
-            <div class="calendar-header">
-                <button id="prevMonth" class="calendar-nav-btn">
-                    <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-                        <path d="M12.5 15L7.5 10L12.5 5" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-                            stroke-linejoin="round" />
-                    </svg>
-                </button>
+            <div class="calendar-header" style="background: var(--surface); border-bottom: 1px solid var(--border);">
+                <div style="display: flex; gap: var(--space-sm);">
+                    <button id="prevMonth" class="calendar-nav-btn">
+                        <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                            <path d="M12.5 15L7.5 10L12.5 5" stroke="currentColor" stroke-width="2"
+                                stroke-linecap="round" stroke-linejoin="round" />
+                        </svg>
+                    </button>
+                    <button id="todayBtn" class="btn btn-ghost btn-sm"
+                        style="border-radius: var(--radius-md);">Today</button>
+                    <button id="nextMonth" class="calendar-nav-btn">
+                        <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                            <path d="M7.5 15L12.5 10L7.5 5" stroke="currentColor" stroke-width="2"
+                                stroke-linecap="round" stroke-linejoin="round" />
+                        </svg>
+                    </button>
+                </div>
 
-                <h2 id="currentMonth" class="calendar-month-title">January 2026</h2>
+                <h2 id="currentMonth" class="calendar-month-title"
+                    style="font-family: var(--font-secondary); letter-spacing: -0.02em;">January 2026</h2>
 
-                <button id="nextMonth" class="calendar-nav-btn">
-                    <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-                        <path d="M7.5 15L12.5 10L7.5 5" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-                            stroke-linejoin="round" />
-                    </svg>
-                </button>
+                <div style="width: 120px;"></div> <!-- Spacer for centering -->
             </div>
 
             <!-- Calendar Grid -->
-            <div class="calendar-container">
+            <div class="calendar-container" style="background: var(--surface);">
                 <!-- Day Headers -->
-                <div class="calendar-day-headers">
+                <div class="calendar-day-headers"
+                    style="border-bottom: 1px solid var(--border); padding-bottom: var(--space-sm);">
                     <div class="calendar-day-header">Sun</div>
                     <div class="calendar-day-header">Mon</div>
                     <div class="calendar-day-header">Tue</div>
@@ -173,13 +180,14 @@
     <!-- Add Task Modal -->
     <div id="addTaskModal" class="modal">
         <div class="modal-overlay" id="addModalOverlay"></div>
-        <div class="modal-content" style="max-width: 500px;">
+        <div class="modal-content" style="max-width: 500px; border-radius: var(--radius-2xl);">
             <div class="modal-header">
-                <h3>➕ Add Custom Task</h3>
+                <h3 id="addTaskModalTitle">➕ Add Custom Task</h3>
                 <button id="closeAddModal" class="modal-close">×</button>
             </div>
             <div class="modal-body">
                 <form id="addTaskForm">
+                    <input type="hidden" id="editingTaskId">
                     <div class="input-group">
                         <label class="input-label">Task Title</label>
                         <input type="text" id="taskTitle" class="input" placeholder="e.g. Request Transcript" required>
