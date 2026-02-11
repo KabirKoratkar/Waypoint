@@ -43,20 +43,56 @@
             </div>
 
             <form id="onboardingForm">
-                <!-- Step 1: Personal Details -->
+                <!-- Step 1: Role Selection (NEW) -->
                 <div class="onboarding-step" id="step1">
                     <div class="input-group">
-                        <label class="input-label" for="fullName">Full Name</label>
+                        <label class="input-label" style="text-align: center; display: block;">Are you a student or a
+                            parent?</label>
+                        <div class="grid grid-2 gap-md" style="margin-top: var(--space-md);">
+                            <label class="role-option">
+                                <input type="radio" name="userRole" value="student" checked style="display: none;">
+                                <div class="role-card">
+                                    <span class="icon">🎓</span>
+                                    <strong>I'm a Student</strong>
+                                </div>
+                            </label>
+                            <label class="role-option">
+                                <input type="radio" name="userRole" value="parent" style="display: none;">
+                                <div class="role-card">
+                                    <span class="icon">👨‍👩‍👧‍👦</span>
+                                    <strong>I'm a Parent</strong>
+                                </div>
+                            </label>
+                        </div>
+                        <p
+                            style="font-size: var(--text-xs); color: var(--gray-500); text-align: center; margin-top: var(--space-md);">
+                            We'll customize the experience and language based on your role.
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Step 2: Personal Details -->
+                <div class="onboarding-step" id="step2" style="display: none;">
+                    <div class="input-group">
+                        <label class="input-label" for="fullName" id="labelFullName">Your Full Name</label>
                         <input type="text" id="fullName" class="input" placeholder="First and Last Name" required>
+                    </div>
+
+                    <div id="studentDetailSection"
+                        style="display: none; margin-top: var(--space-lg); padding-top: var(--space-lg); border-top: 1px solid var(--gray-100);">
+                        <div class="input-group">
+                            <label class="input-label" for="studentName">Student's Full Name</label>
+                            <input type="text" id="studentName" class="input" placeholder="First and Last Name">
+                        </div>
                     </div>
 
                     <div class="grid grid-2 gap-md">
                         <div class="input-group">
-                            <label class="input-label" for="schoolName">High School</label>
+                            <label class="input-label" for="schoolName" id="labelSchoolName">High School</label>
                             <input type="text" id="schoolName" class="input" placeholder="e.g. Lowell High School">
                         </div>
                         <div class="input-group">
-                            <label class="input-label" for="gradYear">Graduation Year</label>
+                            <label class="input-label" for="gradYear" id="labelGradYear">Graduation Year</label>
                             <select id="gradYear" class="input" required>
                                 <option value="">Select year...</option>
                                 <option value="2025">2025</option>
@@ -69,7 +105,7 @@
                     </div>
 
                     <div class="input-group">
-                        <label class="input-label" for="intendedMajor">Intended Major</label>
+                        <label class="input-label" for="intendedMajor" id="labelMajor">Intended Major</label>
                         <div style="position: relative;">
                             <input type="text" id="intendedMajor" class="input" placeholder="e.g., Computer Science"
                                 autocomplete="off">
@@ -81,31 +117,32 @@
 
                     <div
                         style="margin-top: var(--space-lg); padding-top: var(--space-lg); border-top: 1px solid var(--gray-100);">
-                        <p
-                            style="font-size: var(--text-sm); font-weight: 700; color: var(--gray-800); margin-bottom: var(--space-sm);">
+                        <p style="font-size: var(--text-sm); font-weight: 700; color: var(--gray-800); margin-bottom: var(--space-sm);"
+                            id="labelAcademicStats">
                             Academic Stats (Optional but Recommended)</p>
                         <div class="grid grid-3 gap-md">
                             <div class="input-group">
-                                <label class="input-label" for="uwGPA">UW GPA</label>
+                                <label class="input-label" for="uwGPA">GPA</label>
                                 <input type="number" id="uwGPA" class="input" step="0.01" placeholder="4.00">
                             </div>
                             <div class="input-group">
-                                <label class="input-label" for="satScore">SAT Score</label>
+                                <label class="input-label" for="satScore">SAT</label>
                                 <input type="number" id="satScore" class="input" placeholder="1600">
                             </div>
                             <div class="input-group">
-                                <label class="input-label" for="actScore">ACT Score</label>
+                                <label class="input-label" for="actScore">ACT</label>
                                 <input type="number" id="actScore" class="input" placeholder="36">
                             </div>
                         </div>
                     </div>
                 </div>
 
-                <!-- Step 2 -->
-                <div class="onboarding-step" id="step2" style="display: none;">
+                <!-- Step 3: Colleges -->
+                <div class="onboarding-step" id="step3" style="display: none;">
                     <div class="input-group">
-                        <label class="input-label">Add Your College List</label>
-                        <p style="font-size: var(--text-sm); color: var(--gray-600); margin-bottom: var(--space-md);">
+                        <label class="input-label" id="labelCollegeList">Add Your College List</label>
+                        <p style="font-size: var(--text-sm); color: var(--gray-600); margin-bottom: var(--space-md);"
+                            id="labelCollegeSubtitle">
                             Start with a few colleges you're interested in. You can add more later.</p>
 
                         <div id="collegeList" style="margin-bottom: var(--space-md);"></div>
@@ -123,85 +160,84 @@
                     </div>
                 </div>
 
-                <!-- Step 3 -->
-                <div class="onboarding-step" id="step3" style="display: none;">
+                <!-- Step 4: Strategy & Goals -->
+                <div class="onboarding-step" id="step4" style="display: none;">
                     <div class="input-group">
-                        <label class="input-label">Application Deadlines You're Planning For</label>
-                        <p style="font-size: var(--text-sm); color: var(--gray-600); margin-bottom: var(--space-md);">
-                            Select all that apply</p>
+                        <label class="input-label" id="labelStrategy">Your Application Strategy</label>
+                        <p style="font-size: var(--text-sm); color: var(--gray-600); margin-bottom: var(--space-md);"
+                            id="labelStrategySubtitle">
+                            How do you want to tackle your application journey?</p>
 
-                        <div id="deadlineOptions" style="display: flex; flex-direction: column; gap: var(--space-md);">
-                            <label class="deadline-label" data-type="ED"
-                                style="display: flex; align-items: center; gap: var(--space-sm); padding: var(--space-md); background: var(--gray-50); border-radius: var(--radius-lg); cursor: pointer;">
-                                <input type="checkbox" name="deadline" value="ED">
-                                <div>
-                                    <strong>Early Decision (ED)</strong>
-                                    <p style="font-size: var(--text-sm); color: var(--gray-600); margin: 0;">November
-                                        1-15</p>
-                                </div>
-                            </label>
-
-                            <label class="deadline-label" data-type="EA"
-                                style="display: flex; align-items: center; gap: var(--space-sm); padding: var(--space-md); background: var(--gray-50); border-radius: var(--radius-lg); cursor: pointer;">
-                                <input type="checkbox" name="deadline" value="EA">
-                                <div>
-                                    <strong>Early Action (EA)</strong>
-                                    <p style="font-size: var(--text-sm); color: var(--gray-600); margin: 0;">November
-                                        1-15</p>
-                                </div>
-                            </label>
-
-                            <label class="deadline-label" data-type="UC"
-                                style="display: flex; align-items: center; gap: var(--space-sm); padding: var(--space-md); background: var(--gray-50); border-radius: var(--radius-lg); cursor: pointer;">
-                                <input type="checkbox" name="deadline" value="UC">
-                                <div>
-                                    <strong>University of California</strong>
-                                    <p style="font-size: var(--text-sm); color: var(--gray-600); margin: 0;">November 30
-                                    </p>
-                                </div>
-                            </label>
-
-                            <label class="deadline-label" data-type="CA"
-                                style="display: flex; align-items: center; gap: var(--space-sm); padding: var(--space-md); background: var(--gray-50); border-radius: var(--radius-lg); cursor: pointer;">
-                                <input type="checkbox" name="deadline" value="CA">
-                                <div>
-                                    <strong>Common App Essays</strong>
-                                    <p style="font-size: var(--text-sm); color: var(--gray-600); margin: 0;">Main
-                                        Personal Statement</p>
-                                </div>
-                            </label>
-
-                            <label class="deadline-label" data-type="RD"
-                                style="display: flex; align-items: center; gap: var(--space-sm); padding: var(--space-md); background: var(--gray-50); border-radius: var(--radius-lg); cursor: pointer;">
-                                <input type="checkbox" name="deadline" value="RD">
-                                <div>
-                                    <strong>Regular Decision (RD)</strong>
-                                    <p style="font-size: var(--text-sm); color: var(--gray-600); margin: 0;">January
-                                        1-15</p>
-                                </div>
-                            </label>
+                        <div class="grid grid-2 gap-md mb-xl">
+                            <div class="input-group">
+                                <label class="input-label" for="intensityLevel">Intensity Level</label>
+                                <select id="intensityLevel" class="input">
+                                    <option value="Balanced" selected>Balanced (Standard Pace)</option>
+                                    <option value="Aggressive">Aggressive (Fast-Tracked)</option>
+                                    <option value="Chill">Chill (Stress-Free)</option>
+                                </select>
+                            </div>
+                            <div class="input-group">
+                                <label class="input-label" for="submissionLeeway">Submission Buffer</label>
+                                <select id="submissionLeeway" class="input">
+                                    <option value="0">On the deadline</option>
+                                    <option value="1">1 Day early</option>
+                                    <option value="3" selected>3 Days early</option>
+                                    <option value="7">1 Week early</option>
+                                </select>
+                            </div>
                         </div>
 
-                        <div class="input-group" style="margin-top: var(--space-xl);">
-                            <label class="input-label" for="submissionLeeway">Submission Leeway (Buffer Days)</label>
+                        <div class="input-group">
+                            <label class="input-label">Primary Application Focus</label>
                             <p
-                                style="font-size: var(--text-sm); color: var(--gray-600); margin-bottom: var(--space-md);">
-                                How many days before the actual deadline do you want to be "App Ready"?</p>
-                            <select id="submissionLeeway" class="input">
-                                <option value="0">On the deadline (No buffer)</option>
-                                <option value="1">1 Day early</option>
-                                <option value="3" selected>3 Days early (Recommended)</option>
-                                <option value="7">1 Week early (Anti-stress mode)</option>
-                            </select>
+                                style="font-size: var(--text-xs); color: var(--gray-500); margin-bottom: var(--space-sm);">
+                                This helps the AI tailor essay advice and strategy recommendations.</p>
+                            <div class="grid grid-2 gap-sm">
+                                <label class="strategy-option">
+                                    <input type="radio" name="appFocus" value="STEM" checked style="display: none;">
+                                    <div class="strategy-card">
+                                        <span class="icon">🔬</span>
+                                        <strong>STEM</strong>
+                                    </div>
+                                </label>
+                                <label class="strategy-option">
+                                    <input type="radio" name="appFocus" value="Humanities" style="display: none;">
+                                    <div class="strategy-card">
+                                        <span class="icon">📚</span>
+                                        <strong>Humanities</strong>
+                                    </div>
+                                </label>
+                                <label class="strategy-option">
+                                    <input type="radio" name="appFocus" value="Arts" style="display: none;">
+                                    <div class="strategy-card">
+                                        <span class="icon">🎨</span>
+                                        <strong>Arts/Design</strong>
+                                    </div>
+                                </label>
+                                <label class="strategy-option">
+                                    <input type="radio" name="appFocus" value="Business" style="display: none;">
+                                    <div class="strategy-card">
+                                        <span class="icon">💼</span>
+                                        <strong>Business</strong>
+                                    </div>
+                                </label>
+                            </div>
+                        </div>
+
+                        <div class="input-group mt-xl">
+                            <label class="input-label" for="topGoal" id="labelGoal">Your #1 Goal This Year</label>
+                            <input type="text" id="topGoal" class="input"
+                                placeholder="e.g. Get into my dream reach school, Find a great scholarship, etc.">
                         </div>
                     </div>
                 </div>
 
-                <!-- Step 4: AI Plan -->
-                <div class="onboarding-step" id="step4" style="display: none;">
+                <!-- Step 5: AI Plan -->
+                <div class="onboarding-step" id="step5" style="display: none;">
                     <div id="planLoading" style="text-align: center; padding: 2rem;">
                         <div class="spinner" style="margin: 0 auto 1rem;"></div>
-                        <p>AI is crafting your personalized application schedule...</p>
+                        <p id="labelPlanLoading">AI is crafting your personalized application schedule...</p>
                     </div>
 
                     <div id="planDisplay" style="display: none;">
@@ -239,9 +275,12 @@
                     <div class="step-indicator" id="indicator2"></div>
                     <div class="step-indicator" id="indicator3"></div>
                     <div class="step-indicator" id="indicator4"></div>
+                    <div class="step-indicator" id="indicator5"></div>
                 </div>
             </div>
         </div>
+    </div>
+    </div>
     </div>
 
     <style>
@@ -282,6 +321,71 @@
 
         .search-item:hover {
             background: var(--gray-100) !important;
+        }
+
+        .strategy-card {
+            display: flex;
+            align-items: center;
+            gap: var(--space-md);
+            padding: var(--space-md);
+            background: var(--gray-50);
+            border: 2px solid transparent;
+            border-radius: var(--radius-lg);
+            cursor: pointer;
+            transition: all var(--transition-base);
+        }
+
+        .strategy-card .icon {
+            font-size: 24px;
+        }
+
+        .strategy-card strong {
+            font-size: var(--text-sm);
+            color: var(--gray-700);
+        }
+
+        .strategy-option input:checked+.strategy-card {
+            border-color: var(--primary-blue);
+            background: white;
+            box-shadow: var(--shadow-md);
+        }
+
+        .strategy-option input:checked+.strategy-card strong {
+            color: var(--primary-blue);
+        }
+
+        .role-card {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: var(--space-sm);
+            padding: var(--space-xl);
+            background: var(--gray-50);
+            border: 2px solid transparent;
+            border-radius: var(--radius-xl);
+            cursor: pointer;
+            transition: all var(--transition-base);
+            text-align: center;
+        }
+
+        .role-card .icon {
+            font-size: 3rem;
+        }
+
+        .role-card strong {
+            font-size: var(--text-md);
+            color: var(--gray-800);
+        }
+
+        .role-option input:checked+.role-card {
+            border-color: var(--primary-blue);
+            background: white;
+            box-shadow: var(--shadow-lg);
+            transform: translateY(-4px);
+        }
+
+        .role-option input:checked+.role-card strong {
+            color: var(--primary-blue);
         }
     </style>
 

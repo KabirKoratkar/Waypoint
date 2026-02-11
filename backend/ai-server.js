@@ -218,9 +218,9 @@ app.post('/api/chat/claude', async (req, res) => {
 
 app.post('/api/colleges/add', async (req, res) => {
     try {
-        const { userId, collegeName, type } = req.body;
+        const { userId, collegeName, type, intendedMajor } = req.body;
         if (!userId || !collegeName) return res.status(400).json({ error: 'userId and collegeName are required' });
-        const result = await handleAddCollege(userId, collegeName, type);
+        const result = await handleAddCollege(userId, collegeName, type, intendedMajor);
         res.json(result);
     } catch (error) {
         res.status(500).json({ error: 'Internal server error' });
@@ -627,6 +627,10 @@ app.post('/api/chat', async (req, res) => {
                             type: 'string',
                             enum: ['Reach', 'Target', 'Safety'],
                             description: 'The categorization of the college for the student (e.g., "Reach", "Target", "Safety")'
+                        },
+                        intendedMajor: {
+                            type: 'string',
+                            description: 'The major the student is applying for at this college.'
                         }
                     },
                     required: ['collegeName']
@@ -804,7 +808,8 @@ app.post('/api/chat', async (req, res) => {
                     properties: {
                         collegeId: { type: 'string' },
                         type: { type: 'string', enum: ['Reach', 'Target', 'Safety'] },
-                        status: { type: 'string' }
+                        status: { type: 'string' },
+                        intended_major: { type: 'string' }
                     },
                     required: ['collegeId']
                 }
@@ -861,7 +866,7 @@ app.post('/api/chat', async (req, res) => {
                         result = await handleResearchCollege(functionArgs.collegeName);
                         break;
                     case 'addCollege':
-                        result = await handleAddCollege(userId, functionArgs.collegeName, functionArgs.type);
+                        result = await handleAddCollege(userId, functionArgs.collegeName, functionArgs.type, functionArgs.intendedMajor);
                         break;
                     case 'createEssays':
                         result = await handleCreateEssays(userId, functionArgs.collegeName);
@@ -1020,7 +1025,7 @@ async function handleResearchCollege(collegeName, forceResearch = false) {
     }
 }
 
-async function handleAddCollege(userId, collegeName, type) {
+async function handleAddCollege(userId, collegeName, type, intendedMajor) {
     // Every new college gets a forced check if it's currently empty or slim
     const research = await handleResearchCollege(collegeName, false);
     let collegeData = research.college || { name: collegeName };
@@ -1044,6 +1049,13 @@ async function handleAddCollege(userId, collegeName, type) {
         return { success: true, message: 'Already in list' };
     }
 
+    // Default to profile major if not provided
+    let finalMajor = intendedMajor;
+    if (!finalMajor) {
+        const { data: profile } = await supabase.from('profiles').select('intended_major').eq('id', userId).single();
+        if (profile) finalMajor = profile.intended_major;
+    }
+
     const { data, error } = await supabase
         .from('colleges')
         .insert({
@@ -1051,6 +1063,7 @@ async function handleAddCollege(userId, collegeName, type) {
             name: collegeData.name,
             application_platform: collegeData.application_platform || 'Common App',
             type: type || 'Target',
+            intended_major: finalMajor || '',
             status: 'Not Started'
         })
         .select()

@@ -149,10 +149,10 @@ async function addFromSearch(name) {
     const searchInput = document.getElementById('collegeSearchInput');
     if (searchInput) searchInput.value = '';
 
-    await performAddCollege(name);
+    await performAddCollege(name, 'Target', document.getElementById('modalIntendedMajor')?.value || '');
 }
 
-async function performAddCollege(collegeName, type = 'Target') {
+async function performAddCollege(collegeName, type = 'Target', intendedMajor = '') {
     const btn = document.getElementById('addCollegeBtn');
     const originalText = btn ? btn.innerHTML : '+ Add College';
 
@@ -163,9 +163,9 @@ async function performAddCollege(collegeName, type = 'Target') {
         }
 
         showNotification(`Adding ${collegeName}...`, 'info');
-        console.log(`Adding college: ${collegeName} (${type})`);
+        console.log(`Adding college: ${collegeName} (${type}) with major: ${intendedMajor}`);
 
-        const newCollege = await addCollege(currentUser.id, collegeName, type);
+        const newCollege = await addCollege(currentUser.id, collegeName, type, intendedMajor);
 
         if (newCollege) {
             console.log('College added successfully:', newCollege);
@@ -223,6 +223,7 @@ async function loadAndRenderColleges() {
                         <option value="Safety" ${c.type === 'Safety' ? 'selected' : ''}>🛡️ Safety</option>
                     </select>
                 </td>
+                <td style="font-size: 12px; color: var(--gray-600);">${c.intended_major || 'General'}</td>
                 <td>${c.deadline ? new Date(c.deadline).toLocaleDateString() : 'TBD'}</td>
                 <td>
                     <div style="display: flex; flex-direction: column; gap: 4px; min-width: 120px;">
@@ -329,9 +330,10 @@ async function submitModalAdd() {
     }
 
     const type = document.querySelector('input[name="collegeType"]:checked').value;
+    const major = document.getElementById('modalIntendedMajor').value.trim();
 
     closeAddCollegeModal();
-    await performAddCollege(collegeName, type);
+    await performAddCollege(collegeName, type, major);
 }
 
 async function getAIStrategy(collegeName) {

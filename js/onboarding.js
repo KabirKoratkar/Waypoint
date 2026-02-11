@@ -2,9 +2,10 @@ import { getCurrentUser, upsertProfile, addCollege as supabaseAddCollege, getUse
 import config from './config.js';
 
 let currentStep = 1;
-const totalSteps = 4;
+const totalSteps = 5;
 let selectedColleges = [];
 let currentUser = null;
+let userRole = 'student';
 
 async function init() {
     showLoading('Securing your session...');
@@ -138,6 +139,9 @@ window.selectMajor = (name) => {
     if (container) container.style.display = 'none';
 };
 
+let highlightedIndex = -1;
+let currentResults = [];
+
 function setupCollegeSearch() {
     const input = document.getElementById('collegeInput');
     const container = document.getElementById('onboardingSearchResults');
@@ -148,11 +152,41 @@ function setupCollegeSearch() {
         const query = e.target.value.trim();
         if (query.length < 2) {
             container.style.display = 'none';
+            highlightedIndex = -1;
             return;
         }
 
-        const results = await searchCollegeCatalog(query);
-        renderSearchDropdown(results, container);
+        currentResults = await searchCollegeCatalog(query);
+        highlightedIndex = currentResults.length > 0 ? 0 : -1; // Default to first result
+        renderSearchDropdown(currentResults, container);
+    });
+
+    input.addEventListener('keydown', (e) => {
+        const items = container.querySelectorAll('.search-item');
+        if (container.style.display === 'block' && items.length > 0) {
+            if (e.key === 'ArrowDown') {
+                e.preventDefault();
+                highlightedIndex = (highlightedIndex + 1) % items.length;
+                updateHighlight(items);
+            } else if (e.key === 'ArrowUp') {
+                e.preventDefault();
+                highlightedIndex = (highlightedIndex - 1 + items.length) % items.length;
+                updateHighlight(items);
+            } else if (e.key === 'Enter') {
+                e.preventDefault();
+                const visibleItems = container.querySelectorAll('.search-item');
+                if (highlightedIndex >= 0 && highlightedIndex < currentResults.length) {
+                    const selected = currentResults[highlightedIndex];
+                    if (selected) selectOnboardingCollege(selected.name);
+                    else addCollegeToList();
+                } else {
+                    addCollegeToList();
+                }
+            }
+        } else if (e.key === 'Enter') {
+            e.preventDefault();
+            addCollegeToList();
+        }
     });
 
     document.addEventListener('click', (e) => {
@@ -162,12 +196,23 @@ function setupCollegeSearch() {
     });
 }
 
+function updateHighlight(items) {
+    items.forEach((item, index) => {
+        if (index === highlightedIndex) {
+            item.style.background = 'var(--gray-100)';
+            item.scrollIntoView({ block: 'nearest' });
+        } else {
+            item.style.background = 'transparent';
+        }
+    });
+}
+
 function renderSearchDropdown(results, container) {
     const query = document.getElementById('collegeInput').value.trim();
 
     if (results.length === 0) {
         container.innerHTML = `
-            <div style="padding: 12px; border-bottom: 1px solid var(--gray-50);">
+            <div style="padding: 12px;" class="search-item">
                 <div style="font-size: 13px; color: var(--gray-500); margin-bottom: 8px;">No colleges found matching "${query}"</div>
                 <button onclick="selectOnboardingCollege('${query.replace(/'/g, "\\'")}')" 
                         class="btn btn-ghost btn-sm" 
@@ -177,18 +222,19 @@ function renderSearchDropdown(results, container) {
             </div>
         `;
     } else {
-        let html = results.map(c => `
+        let html = results.map((c, idx) => `
             <div class="search-item" 
                  style="padding: 10px; cursor: pointer; border-bottom: 1px solid var(--gray-50);" 
-                 onclick="selectOnboardingCollege('${c.name.replace(/'/g, "\\'")}')">
+                 onclick="selectOnboardingCollege('${c.name.replace(/'/g, "\\'")}')"
+                 onmouseover="highlightedIndex = ${idx}; updateHighlight(this.parentElement.querySelectorAll('.search-item'))">
                 <div style="font-weight: 700; font-size: 14px; color: var(--gray-800);">${c.name}</div>
                 <div style="font-size: 11px; color: var(--gray-500);">${c.location || 'University'}</div>
             </div>
         `).join('');
 
-        // Add "Add manually" option at the bottom even if there are results
+        // Add "Add manually" option
         html += `
-            <div style="padding: 8px; background: var(--gray-50); text-align: center;">
+            <div class="search-item" style="padding: 8px; background: var(--gray-50); text-align: center;">
                 <button onclick="selectOnboardingCollege('${query.replace(/'/g, "\\'")}')" 
                         style="background: none; border: none; color: var(--gray-400); font-size: 10px; cursor: pointer; text-decoration: underline;">
                     Don't see it? Add "${query}" manually
@@ -196,6 +242,7 @@ function renderSearchDropdown(results, container) {
             </div>
         `;
         container.innerHTML = html;
+        updateHighlight(container.querySelectorAll('.search-item'));
     }
     container.style.display = 'block';
 }
@@ -228,7 +275,7 @@ function showStep(step) {
     const nextBtn = document.getElementById('nextBtn');
     const finishBtn = document.getElementById('finishBtn');
 
-    if (step === 3) {
+    if (step === 5) {
         updateDeadlineOptions();
     }
 
@@ -283,6 +330,13 @@ function updateDeadlineOptions() {
 
 function nextStep() {
     if (currentStep === 1) {
+        // Step 1 is now Role Selection
+        const selectedRole = document.querySelector('input[name="userRole"]:checked')?.value;
+        userRole = selectedRole || 'student';
+        updateOnboardingLabels(userRole);
+    }
+
+    if (currentStep === 2) {
         const fullName = document.getElementById('fullName').value;
         const gradYear = document.getElementById('gradYear').value;
 
@@ -303,11 +357,48 @@ function nextStep() {
         currentStep++;
         showStep(currentStep);
 
-        // If we just moved to step 4, trigger plan generation
-        if (currentStep === 4) {
+        // If we just moved to step 5, trigger plan generation
+        if (currentStep === 5) {
             generateAIPlan();
         }
     }
+}
+
+function updateOnboardingLabels(role) {
+    const isParent = role === 'parent';
+
+    // Step 2 Labels
+    const labelFullName = document.getElementById('labelFullName');
+    const studentDetailSection = document.getElementById('studentDetailSection');
+    const labelSchoolName = document.getElementById('labelSchoolName');
+    const labelGradYear = document.getElementById('labelGradYear');
+    const labelMajor = document.getElementById('labelMajor');
+    const labelAcademicStats = document.getElementById('labelAcademicStats');
+
+    if (labelFullName) labelFullName.textContent = isParent ? "Your Parent/Guardian Name" : "Your Full Name";
+    if (studentDetailSection) studentDetailSection.style.display = isParent ? "block" : "none";
+    if (labelSchoolName) labelSchoolName.textContent = isParent ? "Student's High School" : "High School";
+    if (labelGradYear) labelGradYear.textContent = isParent ? "Student's Graduation Year" : "Graduation Year";
+    if (labelMajor) labelMajor.textContent = isParent ? "Student's Intended Major" : "Intended Major";
+    if (labelAcademicStats) labelAcademicStats.textContent = isParent ? "Student's Academic Stats" : "Academic Stats (Optional but Recommended)";
+
+    // Step 3 Labels
+    const labelCollegeList = document.getElementById('labelCollegeList');
+    const labelCollegeSubtitle = document.getElementById('labelCollegeSubtitle');
+    if (labelCollegeList) labelCollegeList.textContent = isParent ? "Build Your Student's College List" : "Add Your College List";
+    if (labelCollegeSubtitle) labelCollegeSubtitle.textContent = isParent ? "Start with a few colleges your student is interested in." : "Start with a few colleges you're interested in. You can add more later.";
+
+    // Step 4 Labels
+    const labelStrategy = document.getElementById('labelStrategy');
+    const labelStrategySubtitle = document.getElementById('labelStrategySubtitle');
+    const labelGoal = document.getElementById('labelGoal');
+    if (labelStrategy) labelStrategy.textContent = isParent ? "Your Student's Application Strategy" : "Your Application Strategy";
+    if (labelStrategySubtitle) labelStrategySubtitle.textContent = isParent ? "How would you like to help your student tackle their journey?" : "How do you want to tackle your application journey?";
+    if (labelGoal) labelGoal.textContent = isParent ? "Your #1 Goal for Your Student" : "Your #1 Goal This Year";
+
+    // Step 5 Labels
+    const labelPlanLoading = document.getElementById('labelPlanLoading');
+    if (labelPlanLoading) labelPlanLoading.textContent = isParent ? "AI is crafting a personalized schedule for your student..." : "AI is crafting your personalized application schedule...";
 }
 
 async function generateAIPlan() {
@@ -486,17 +577,17 @@ document.addEventListener('DOMContentLoaded', async function () {
             const satScore = document.getElementById('satScore').value;
             const actScore = document.getElementById('actScore').value;
 
-            // Collect deadlines
-            const selectedDeadlines = Array.from(document.querySelectorAll('input[name="deadline"]:checked'))
-                .map(cb => cb.value);
-
             if (window.showNotification) window.showNotification('Saving your profile...', 'info');
 
             try {
-                // 1. Create/Update Profile
+                // Collect strategy and goals
+                const intensityLevel = document.getElementById('intensityLevel').value;
+                const submissionLeeway = parseInt(document.getElementById('submissionLeeway').value);
+                const appFocus = document.querySelector('input[name="appFocus"]:checked')?.value || 'General';
+                const topGoal = document.getElementById('topGoal').value.trim();
+
                 const profileData = {
                     id: currentUser.id,
-                    email: currentUser.email,
                     graduation_year: parseInt(gradYear),
                     intended_major: major,
                     full_name: fullName,
@@ -504,13 +595,19 @@ document.addEventListener('DOMContentLoaded', async function () {
                     unweighted_gpa: uwGPA ? parseFloat(uwGPA) : null,
                     sat_score: satScore ? parseInt(satScore) : null,
                     act_score: actScore ? parseInt(actScore) : null,
-                    planned_deadlines: selectedDeadlines,
-                    submission_leeway: parseInt(document.getElementById('submissionLeeway').value)
+                    intensity_level: intensityLevel,
+                    submission_leeway: submissionLeeway,
+                    app_focus: appFocus,
+                    top_goal: topGoal
                 };
+
+                // Add email only if it's a new profile or if needed for first-time creation
+                if (currentUser.email) {
+                    profileData.email = currentUser.email;
+                }
 
                 console.log('Creating profile...', profileData);
                 await upsertProfile(profileData);
-
                 console.log('Profile created successfully');
 
                 // 2. Add Colleges
@@ -520,16 +617,11 @@ document.addEventListener('DOMContentLoaded', async function () {
                 if (window.showNotification) window.showNotification('Setup complete! Welcome to Waypoint', 'success');
 
                 // 3. Verify profile exists before redirecting
-                console.log('Verifying profile...');
                 const verifyProfile = await getUserProfile(currentUser.id);
                 if (!verifyProfile) {
-                    console.error('Profile verification failed');
-                    throw new Error('Profile was not saved correctly. Please try again.');
+                    throw new Error('Profile was not saved correctly.');
                 }
 
-                console.log('Profile verified, redirecting to dashboard...');
-
-                // Redirect to dashboard
                 window.location.assign('dashboard.html');
             } catch (error) {
                 console.error('Onboarding Error:', error);
