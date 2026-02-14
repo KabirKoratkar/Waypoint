@@ -456,8 +456,8 @@ function nextStep() {
         showStep(currentStep);
         saveOnboardingState();
 
-        // If we just moved to step 6 (AI plan), trigger plan generation
-        if (currentStep === 6) {
+        // If we just moved to step 5 (AI plan), trigger plan generation
+        if (currentStep === 5) {
             generateAIPlan();
         }
     }
@@ -510,15 +510,16 @@ async function generateAIPlan() {
     const planDisplay = document.getElementById('planDisplay');
     const planSummary = document.getElementById('planSummary');
     const tasksContainer = document.getElementById('tasksContainer');
-    const finishBtn = document.getElementById('finishBtn');
+    const nextBtn = document.getElementById('nextBtn');
 
     if (!planLoading || !planDisplay) return;
 
     try {
-        if (finishBtn) {
-            finishBtn.disabled = true;
-            finishBtn.style.opacity = '0.5';
-            finishBtn.innerHTML = 'Generating your plan...';
+        // Disable next button while generating
+        if (nextBtn) {
+            nextBtn.disabled = true;
+            nextBtn.style.opacity = '0.5';
+            nextBtn.innerHTML = 'Generating plan...';
         }
 
         const gradYear = document.getElementById('gradYear').value;
@@ -583,21 +584,23 @@ async function generateAIPlan() {
         planLoading.style.display = 'none';
         planDisplay.style.display = 'block';
 
-        if (finishBtn) {
-            finishBtn.disabled = false;
-            finishBtn.style.opacity = '1';
-            finishBtn.innerHTML = 'Finish Setup & Enter Dashboard →';
+        // Re-enable next button to proceed to payment step
+        if (nextBtn) {
+            nextBtn.disabled = false;
+            nextBtn.style.opacity = '1';
+            nextBtn.innerHTML = 'Continue';
         }
 
     } catch (error) {
         console.error('Plan Generation Error:', error);
         const isTimeout = error.name === 'AbortError';
-        planLoading.innerHTML = `<p style="color: var(--error);">${isTimeout ? 'Plan generation timed out.' : 'Failed to generate your plan: ' + error.message} But don't worry, you can still finish setup!</p>`;
+        planLoading.innerHTML = `<p style="color: var(--error);">${isTimeout ? 'Plan generation timed out.' : 'Failed to generate your plan: ' + error.message} But don't worry, you can still continue!</p>`;
 
-        if (finishBtn) {
-            finishBtn.disabled = false;
-            finishBtn.style.opacity = '1';
-            finishBtn.innerHTML = 'Finish Setup Anyway →';
+        // Re-enable next button even on error
+        if (nextBtn) {
+            nextBtn.disabled = false;
+            nextBtn.style.opacity = '1';
+            nextBtn.innerHTML = 'Continue';
         }
     }
 }

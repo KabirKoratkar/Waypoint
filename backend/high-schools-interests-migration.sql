@@ -28,6 +28,9 @@ ALTER TABLE profiles ADD COLUMN IF NOT EXISTS interests TEXT[];
 -- Add user_role column to profiles
 ALTER TABLE profiles ADD COLUMN IF NOT EXISTS user_role TEXT DEFAULT 'student';
 
+-- Add student_name for parent accounts
+ALTER TABLE profiles ADD COLUMN IF NOT EXISTS student_name TEXT;
+
 -- Add high_school_id to profiles for linking
 ALTER TABLE profiles ADD COLUMN IF NOT EXISTS high_school_id UUID REFERENCES high_schools(id);
 

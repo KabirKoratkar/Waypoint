@@ -225,15 +225,41 @@
                     </div>
                 </div>
 
-                <!-- Step 5: Plan Selection (Free Trial / Paid) -->
+                <!-- Step 5: AI Plan -->
                 <div class="onboarding-step" id="step5" style="display: none;">
+                    <div id="planLoading" style="text-align: center; padding: 2rem;">
+                        <div class="spinner" style="margin: 0 auto 1rem;"></div>
+                        <p id="labelPlanLoading">AI is crafting your personalized application schedule...</p>
+                    </div>
+
+                    <div id="planDisplay" style="display: none;">
+                        <div class="card card-compact mb-lg"
+                            style="background: var(--gradient-subtle); border: 1px solid var(--primary-blue);">
+                            <div style="display: flex; align-items: center; gap: var(--space-md);">
+                                <span style="font-size: 2rem;">🤖</span>
+                                <div>
+                                    <h4 style="margin: 0; color: var(--primary-blue);">Counselor Strategy</h4>
+                                    <p id="planSummary"
+                                        style="font-size: var(--text-sm); margin: 0; color: var(--gray-700);"></p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div id="tasksContainer"
+                            style="display: flex; flex-direction: column; gap: var(--space-sm); max-height: 350px; overflow-y: auto; padding-right: 5px;">
+                            <!-- AI Tasks will be injected here -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Step 6: Plan Selection (Free Trial / Paid) — LAST STEP -->
+                <div class="onboarding-step" id="step6" style="display: none;">
                     <div class="input-group" style="text-align: center;">
                         <label class="input-label"
                             style="display: block; text-align: center; font-size: var(--text-xl); margin-bottom: var(--space-sm);">Choose
                             Your Plan</label>
                         <p style="font-size: var(--text-sm); color: var(--gray-600); margin-bottom: var(--space-xl);">
-                            Waypoint is a premium application management platform. Start with a free trial or unlock
-                            full access now.</p>
+                            Your profile and plan are ready! Pick how you'd like to get started.</p>
 
                         <div style="display: flex; gap: var(--space-lg); justify-content: center; flex-wrap: wrap;">
                             <!-- Free Trial -->
@@ -262,33 +288,6 @@
                                 <p style="font-size: var(--text-xs); color: var(--gray-500);">per application season (6
                                     months)</p>
                             </button>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Step 6: AI Plan -->
-                <div class="onboarding-step" id="step6" style="display: none;">
-                    <div id="planLoading" style="text-align: center; padding: 2rem;">
-                        <div class="spinner" style="margin: 0 auto 1rem;"></div>
-                        <p id="labelPlanLoading">AI is crafting your personalized application schedule...</p>
-                    </div>
-
-                    <div id="planDisplay" style="display: none;">
-                        <div class="card card-compact mb-lg"
-                            style="background: var(--gradient-subtle); border: 1px solid var(--primary-blue);">
-                            <div style="display: flex; align-items: center; gap: var(--space-md);">
-                                <span style="font-size: 2rem;">🤖</span>
-                                <div>
-                                    <h4 style="margin: 0; color: var(--primary-blue);">Counselor Strategy</h4>
-                                    <p id="planSummary"
-                                        style="font-size: var(--text-sm); margin: 0; color: var(--gray-700);"></p>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div id="tasksContainer"
-                            style="display: flex; flex-direction: column; gap: var(--space-sm); max-height: 350px; overflow-y: auto; padding-right: 5px;">
-                            <!-- AI Tasks will be injected here -->
                         </div>
                     </div>
                 </div>
