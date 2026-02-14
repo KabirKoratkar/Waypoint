@@ -72,15 +72,40 @@ async function getUserProfile(userId) {
 
 // Create or update profile
 async function upsertProfile(profile) {
+    // First try upsert
     const { data, error } = await awsClient
         .from('profiles')
-        .upsert(profile)
+        .upsert(profile, { onConflict: 'id' })
         .select()
         .single();
 
     if (error) {
-        console.error('Error upserting profile:', error);
-        throw new Error(`Database error: ${error.message} (${error.hint || 'no hint'})`);
+        // If upsert fails (e.g., RLS or conflict), try insert then update
+        console.warn('Upsert failed, trying fallback:', error.message);
+
+        const { data: insertData, error: insertError } = await awsClient
+            .from('profiles')
+            .insert(profile)
+            .select()
+            .single();
+
+        if (insertError) {
+            // Row might exist, try update
+            const { id, ...updateFields } = profile;
+            const { data: updateData, error: updateError } = await awsClient
+                .from('profiles')
+                .update(updateFields)
+                .eq('id', id)
+                .select()
+                .single();
+
+            if (updateError) {
+                console.error('All profile save attempts failed:', updateError);
+                throw new Error(`Database error: ${updateError.message} (${updateError.hint || 'no hint'})`);
+            }
+            return updateData;
+        }
+        return insertData;
     }
     return data;
 }
@@ -844,6 +869,46 @@ async function signInWithGoogle(nextPath = 'dashboard.html') {
 }
 
 
+// High School Search
+async function searchHighSchools(query) {
+    if (!query || query.length < 2) return [];
+
+    const { data, error } = await awsClient
+        .from('high_schools')
+        .select('*')
+        .ilike('name', `%${query}%`)
+        .limit(10);
+
+    if (error) {
+        console.error('Error searching high schools:', error);
+        return [];
+    }
+    return data || [];
+}
+
+async function addHighSchool(name, city, state) {
+    // Check if it already exists
+    const { data: existing } = await awsClient
+        .from('high_schools')
+        .select('id')
+        .ilike('name', name)
+        .limit(1);
+
+    if (existing && existing.length > 0) return existing[0];
+
+    const { data, error } = await awsClient
+        .from('high_schools')
+        .insert({ name, city: city || null, state: state || null })
+        .select()
+        .single();
+
+    if (error) {
+        console.error('Error adding high school:', error);
+        return null;
+    }
+    return data;
+}
+
 async function searchCollegeCatalog(query) {
     const abbrevMap = {
         'hmc': 'Harvey Mudd College',
@@ -883,6 +948,30 @@ async function searchCollegeCatalog(query) {
     if (error) {
         console.error('Error searching catalog:', error);
         return [];
+    }
+    return data;
+}
+
+// Add a college to the global catalog (accessible by all users)
+async function addCollegeToCatalog(name, location) {
+    // Check if already exists
+    const { data: existing } = await awsClient
+        .from('college_catalog')
+        .select('id, name')
+        .ilike('name', name)
+        .limit(1);
+
+    if (existing && existing.length > 0) return existing[0];
+
+    const { data, error } = await awsClient
+        .from('college_catalog')
+        .insert({ name, location: location || null })
+        .select()
+        .single();
+
+    if (error) {
+        console.error('Error adding to college catalog:', error);
+        return null;
     }
     return data;
 }
@@ -1050,5 +1139,8 @@ export {
     getActivities,
     addActivity,
     updateActivity,
-    deleteActivity
+    deleteActivity,
+    searchHighSchools,
+    addHighSchool,
+    addCollegeToCatalog
 };

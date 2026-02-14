@@ -240,42 +240,43 @@ app.post('/api/onboarding/plan', async (req, res) => {
 
         console.log(`🧠 Generating Admissions Action Plan for student...`);
 
-        const systemPrompt = `You are an elite college admissions strategist. Your goal is to generate a highly customized, 3-month "Admissions Action Plan" for a student.
+        const interests = Array.isArray(profile.interests) ? profile.interests.join(', ') : (profile.interests || profile.intended_major || 'Undecided');
+
+        const systemPrompt = `You are an elite college admissions strategist. Generate a focused "Admissions Action Plan" for a student.
 
         Student Profile:
         - Name: ${profile.full_name}
-        - Intended Major: ${profile.intended_major || 'Undecided'}
+        - Interests: ${interests}
         - Graduation Year: ${profile.graduation_year}
-        - Colleges Interest: ${colleges.join(', ') || 'General Search'}
-        - Submission Target: ${profile.submission_leeway} days before actual deadlines.
+        - Colleges: ${colleges.join(', ') || 'General Search'}
+        - Submission Target: ${profile.submission_leeway || 3} days before deadlines.
 
-        The plan should be professional, motivating, and highly specific.
-        
-        Return a strictly valid JSON object with this structure:
+        Return a strictly valid JSON object:
         {
             "plan": {
-                "summary": "A 2-sentence executive summary of their specific strategic advantage and focus.",
+                "summary": "A 1-2 sentence strategic summary.",
                 "tasks": [
                     {
-                        "title": "Clear action-oriented title (e.g., 'Draft Harvard Personal Statement')",
-                        "description": "Short, tactical instruction on HOW to do this well.",
+                        "title": "Action-oriented title",
+                        "description": "Short tactical instruction.",
                         "dueDate": "YYYY-MM-DD",
-                        "category": "Essay",
-                        "priority": "High"
+                        "category": "Essay|Research|Document|General",
+                        "priority": "High|Medium|Low"
                     }
                 ]
             }
         }
 
-        Generate exactly 5-6 high-impact tasks. Distribute them across the next 3 months. Assume the current date is ${new Date().toLocaleDateString()}.`;
+        Generate exactly 4 high-impact tasks over the next 2 months from ${new Date().toLocaleDateString()}. Be specific and concise.`;
 
         const completion = await openai.chat.completions.create({
-            model: "gpt-4o",
+            model: "gpt-4o-mini",
             messages: [
                 { role: "system", content: systemPrompt },
                 { role: "user", content: "Generate my admissions action plan." }
             ],
-            response_format: { type: "json_object" }
+            response_format: { type: "json_object" },
+            max_tokens: 800
         });
 
         const planData = JSON.parse(completion.choices[0].message.content);
