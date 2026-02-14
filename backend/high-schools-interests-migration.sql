@@ -31,6 +31,11 @@ ALTER TABLE profiles ADD COLUMN IF NOT EXISTS user_role TEXT DEFAULT 'student';
 -- Add student_name for parent accounts
 ALTER TABLE profiles ADD COLUMN IF NOT EXISTS student_name TEXT;
 
+-- Add onboarding strategy columns
+ALTER TABLE profiles ADD COLUMN IF NOT EXISTS top_goal TEXT;
+ALTER TABLE profiles ADD COLUMN IF NOT EXISTS intensity_level TEXT DEFAULT 'Balanced';
+ALTER TABLE profiles ADD COLUMN IF NOT EXISTS submission_leeway INTEGER DEFAULT 3;
+
 -- Add high_school_id to profiles for linking
 ALTER TABLE profiles ADD COLUMN IF NOT EXISTS high_school_id UUID REFERENCES high_schools(id);
 
