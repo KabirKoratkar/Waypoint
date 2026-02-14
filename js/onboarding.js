@@ -737,22 +737,25 @@ document.addEventListener('DOMContentLoaded', async function () {
                 if (selectedPlan === 'pro') {
                     // Redirect to Stripe checkout
                     try {
-                        const checkoutResponse = await fetch(`${config.apiUrl}/api/payments/create-checkout`, {
+                        const checkoutResponse = await fetch(`${config.apiUrl}/api/payments/create-checkout-session`, {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
                             body: JSON.stringify({ userId: currentUser.id, email: currentUser.email })
                         });
-                        if (checkoutResponse.ok) {
-                            const { url } = await checkoutResponse.json();
-                            if (url) {
-                                sessionStorage.removeItem('waypoint_onboarding');
-                                window.location.assign(url);
-                                return;
-                            }
+
+                        const data = await checkoutResponse.json();
+
+                        if (checkoutResponse.ok && data.url) {
+                            sessionStorage.removeItem('waypoint_onboarding');
+                            window.location.assign(data.url);
+                            return;
+                        } else {
+                            console.error('Checkout error:', data.error || 'Unknown error');
+                            if (window.showNotification) window.showNotification('Stripe redirect failed: ' + (data.error || 'Service unavailable'), 'error');
                         }
                     } catch (err) {
                         console.error('Checkout error:', err);
-                        // Continue to dashboard if checkout fails
+                        if (window.showNotification) window.showNotification('Payment connection error. Please try again from settings.', 'error');
                     }
                 }
 
