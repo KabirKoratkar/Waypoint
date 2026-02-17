@@ -441,16 +441,38 @@ a:hover {
         --text-5xl: 2rem;
         --text-4xl: 1.75rem;
         --text-3xl: 1.5rem;
+        --space-4xl: 3rem;
+        --space-3xl: 2rem;
     }
 
     .grid-2,
     .grid-3,
-    .grid-4 {
-        grid-template-columns: 1fr;
+    .grid-4,
+    .dashboard-grid {
+        grid-template-columns: 1fr !important;
+        gap: var(--space-lg);
     }
 
     .container {
         padding: 0 var(--space-md);
+    }
+
+    .section-title {
+        font-size: var(--text-3xl);
+    }
+
+    .section-subtitle {
+        font-size: var(--text-base);
+    }
+
+    .flex-center-mobile {
+        justify-content: center !important;
+        text-align: center !important;
+    }
+
+    .hero-stats-badge {
+        flex-wrap: wrap;
+        justify-content: center;
     }
 }
 
@@ -458,6 +480,17 @@ a:hover {
     :root {
         --text-2xl: 1.25rem;
         --text-xl: 1.125rem;
+        --text-lg: 1rem;
+    }
+
+    .btn {
+        width: 100%;
+        justify-content: center;
+    }
+
+    .hero-cta {
+        flex-direction: column;
+        width: 100%;
     }
 }
 
