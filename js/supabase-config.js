@@ -54,11 +54,15 @@ async function getUserProfile(userId) {
         .from('profiles')
         .select('*')
         .eq('id', userId)
-        .single();
+        .maybeSingle();
 
     if (error) {
-        console.error('Error fetching profile:', error);
+        console.error('Error fetching profile from DB:', error);
         return null;
+    }
+
+    if (!data && userId) {
+        console.warn(`No profile found for UID: ${userId}. This is expected for new users.`);
     }
 
     // WHITELIST: Automatically grant full access to primary account
@@ -76,8 +80,7 @@ async function upsertProfile(profile) {
     const { data, error } = await awsClient
         .from('profiles')
         .upsert(profile, { onConflict: 'id' })
-        .select()
-        .single();
+        .maybeSingle();
 
     if (error) {
         // If upsert fails (e.g., RLS or conflict), try insert then update
@@ -87,7 +90,7 @@ async function upsertProfile(profile) {
             .from('profiles')
             .insert(profile)
             .select()
-            .single();
+            .maybeSingle();
 
         if (insertError) {
             // Row might exist, try update
@@ -97,11 +100,13 @@ async function upsertProfile(profile) {
                 .update(updateFields)
                 .eq('id', id)
                 .select()
-                .single();
+                .maybeSingle();
 
-            if (updateError) {
+            if (updateError || !updateData) {
                 console.error('All profile save attempts failed:', updateError);
-                throw new Error(`Database error: ${updateError.message} (${updateError.hint || 'no hint'})`);
+                const msg = updateError ? updateError.message : 'No data returned (likely RLS restriction)';
+                const hint = updateError?.hint || 'Check RLS policies for Federated/Auth0 Users';
+                throw new Error(`Database error: ${msg} (${hint})`);
             }
             return updateData;
         }

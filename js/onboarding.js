@@ -179,7 +179,7 @@ function renderHighSchoolDropdown(results, query, container) {
     } else {
         let html = results.map(hs => `
             <div class="search-item"
-                 style="padding: 10px; cursor: pointer; border-bottom: 1px solid var(--gray-50);"
+                 style="padding: 10px; cursor: pointer; border-bottom: 1px solid var(--border);"
                  onclick="selectHighSchool('${hs.name.replace(/'/g, "\\'")}')">
                 <div style="font-weight: 700; font-size: 14px; color: var(--gray-800);">${hs.name}</div>
                 <div style="font-size: 11px; color: var(--gray-500);">${hs.city ? hs.city + ', ' : ''}${hs.state || ''}</div>
@@ -188,14 +188,13 @@ function renderHighSchoolDropdown(results, query, container) {
 
         // Add "Add manually" option
         html += `
-            <div class="search-item" style="padding: 8px; background: var(--gray-50); text-align: center;">
+            <div class="search-item" style="padding: 8px; background: var(--surface-soft); text-align: center;">
                 <button onclick="selectHighSchool('${query.replace(/'/g, "\\'")}')"
                         style="background: none; border: none; color: var(--gray-400); font-size: 10px; cursor: pointer; text-decoration: underline;">
                     Don't see it? Add "${query}" manually
                 </button>
             </div>
         `;
-        container.innerHTML = html;
     }
     container.style.display = 'block';
 }
@@ -373,7 +372,7 @@ function renderSearchDropdown(results, container) {
     } else {
         let html = results.map((c, idx) => `
             <div class="search-item"
-                 style="padding: 10px; cursor: pointer; border-bottom: 1px solid var(--gray-50);"
+                 style="padding: 10px; cursor: pointer; border-bottom: 1px solid var(--border);"
                  onclick="selectOnboardingCollege('${c.name.replace(/'/g, "\\'")}')"
                  onmouseover="highlightedIndex = ${idx}; updateHighlight(this.parentElement.querySelectorAll('.search-item'))">
                 <div style="font-weight: 700; font-size: 14px; color: var(--gray-800);">${c.name}</div>
@@ -382,7 +381,7 @@ function renderSearchDropdown(results, container) {
         `).join('');
 
         html += `
-            <div class="search-item" style="padding: 8px; background: var(--gray-50); text-align: center;">
+            <div class="search-item" style="padding: 8px; background: var(--surface-soft); text-align: center;">
                 <button onclick="selectOnboardingCollege('${query.replace(/'/g, "\\'")}')"
                         style="background: none; border: none; color: var(--gray-400); font-size: 10px; cursor: pointer; text-decoration: underline;">
                     Don't see it? Add "${query}" manually
@@ -735,7 +734,9 @@ document.addEventListener('DOMContentLoaded', async function () {
 
                 // Handle plan selection
                 if (selectedPlan === 'pro') {
-                    // Redirect to Stripe checkout
+                    console.log('Plan is Pro, initiating checkout...');
+                    if (window.showNotification) window.showNotification('Redirecting to secure checkout...', 'info');
+
                     try {
                         const checkoutResponse = await fetch(`${config.apiUrl}/api/payments/create-checkout-session`, {
                             method: 'POST',
@@ -746,30 +747,30 @@ document.addEventListener('DOMContentLoaded', async function () {
                         const data = await checkoutResponse.json();
 
                         if (checkoutResponse.ok && data.url) {
+                            console.log('Redirecting to Stripe:', data.url);
                             sessionStorage.removeItem('waypoint_onboarding');
                             window.location.assign(data.url);
-                            return;
+                            return; // Stop here, redirecting...
                         } else {
-                            console.error('Checkout error:', data.error || 'Unknown error');
-                            if (window.showNotification) window.showNotification('Stripe redirect failed: ' + (data.error || 'Service unavailable'), 'error');
+                            const errorMsg = data.error || 'Could not initialize Stripe.';
+                            console.error('Checkout error:', errorMsg);
+                            if (window.showNotification) window.showNotification('Checkout Error: ' + errorMsg, 'error');
+                            // STOP HERE so the user sees the error
+                            return;
                         }
                     } catch (err) {
-                        console.error('Checkout error:', err);
-                        if (window.showNotification) window.showNotification('Payment connection error. Please try again from settings.', 'error');
+                        console.error('Checkout network error:', err);
+                        if (window.showNotification) window.showNotification('Could not connect to payment server. Please try again.', 'error');
+                        return; // STOP HERE
                     }
                 }
 
+                // If we reach here, plan is 'trial' or payment failed/skipped
                 if (window.showNotification) window.showNotification('Setup complete! Welcome to Waypoint', 'success');
-
-                // Verify profile exists before redirecting
-                const verifyProfile = await getUserProfile(currentUser.id);
-                if (!verifyProfile) {
-                    throw new Error('Profile was not saved correctly.');
-                }
 
                 // Clear saved onboarding state
                 sessionStorage.removeItem('waypoint_onboarding');
-
+                console.log('Finished setup, entering dashboard...');
                 window.location.assign('dashboard.html');
             } catch (error) {
                 console.error('Onboarding Error:', error);
