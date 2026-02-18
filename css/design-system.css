@@ -311,6 +311,32 @@ a:hover {
     gap: var(--space-xl);
 }
 
+/* Alignment Utilities */
+.text-center {
+    text-align: center !important;
+}
+
+.text-left {
+    text-align: left !important;
+}
+
+.text-right {
+    text-align: right !important;
+}
+
+.mx-auto {
+    margin-left: auto !important;
+    margin-right: auto !important;
+}
+
+.block {
+    display: block !important;
+}
+
+.inline-block {
+    display: inline-block !important;
+}
+
 /* Grid */
 .grid {
     display: grid;
