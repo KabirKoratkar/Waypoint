@@ -9,6 +9,58 @@
     overflow: hidden;
 }
 
+.hero-og {
+    padding: 180px 0 var(--space-4xl) 0 !important;
+    text-align: left;
+}
+
+.hero-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--space-4xl);
+    align-items: center;
+}
+
+.hero-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(91, 141, 238, 0.1);
+    color: var(--primary-blue);
+    padding: 8px 16px;
+    border-radius: 99px;
+    font-weight: 700;
+    font-size: 14px;
+    margin-bottom: 24px;
+}
+
+.btn-explore-features {
+    background: transparent !important;
+    border: 1px solid var(--border) !important;
+    color: var(--gray-700) !important;
+}
+
+@media (max-width: 992px) {
+    .hero-og {
+        padding: 120px 0 var(--space-xl) 0 !important;
+        text-align: center !important;
+    }
+
+    .hero-grid {
+        grid-template-columns: 1fr !important;
+        gap: var(--space-xl);
+    }
+
+    .hero-title,
+    .hero-subtitle {
+        text-align: center !important;
+    }
+
+    .hero-cta {
+        justify-content: center !important;
+    }
+}
+
 .hero::before {
     content: '';
     position: absolute;
@@ -112,6 +164,20 @@
     gap: var(--space-xl);
 }
 
+@media (max-width: 1024px) {
+    .features-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (max-width: 768px) {
+    .features-grid {
+        grid-template-columns: 1fr;
+        max-width: 400px;
+        margin: 0 auto;
+    }
+}
+
 /* HOW IT WORKS */
 .steps-container {
     display: flex;
@@ -126,6 +192,12 @@
     .steps-container {
         flex-direction: column;
         gap: var(--space-xl);
+        padding: 0 var(--space-md);
+        text-align: center;
+    }
+
+    .step {
+        width: 100%;
     }
 }
 
@@ -138,7 +210,6 @@
 .steps-container {
     width: 100%;
     max-width: 1400px;
-    /* Widen for side-by-side feel */
     margin: 0 auto;
     padding: 0 var(--space-xl);
 }
@@ -253,6 +324,14 @@
     gap: var(--space-2xl);
     max-width: 900px;
     margin: 0 auto;
+}
+
+@media (max-width: 768px) {
+    .pricing-grid {
+        grid-template-columns: 1fr;
+        max-width: 400px;
+        padding: 0 var(--space-md);
+    }
 }
 
 .pricing-card {
