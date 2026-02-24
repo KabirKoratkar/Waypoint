@@ -7,6 +7,7 @@ This document tracks the status of features and polish required for the Beta lau
 - [x] **Dark Mode Optimization**: Improved the Onboarding search dropdowns (High Schools & Colleges) to support dark mode and consistent borders.
 - [x] **Free Trial Logic**: Verified 7-day free trial auto-access in `supabase-config.js` and `isPremiumUser` checks.
 - [x] **Feedback System**: Global feedback widget is active for all logged-in users, sending reports directly to the backend.
+- [x] **Beta Request System**: Added a stunning "Join the Beta" section to the landing page and a global modal linked to the Google Form.
 - [x] **Navigation Consistency**: Standardized logo sizes (24px for app pages, 32px for landing).
 
 ## 🛠️ Infrastructure Readiness
