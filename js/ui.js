@@ -30,7 +30,11 @@ export function updateNavbarUser(user, profile = null) {
         }
     }
 
-    userBadge.innerHTML = name + statusBadge;
+    // Build DOM safely to prevent XSS on user name
+    userBadge.textContent = name;
+    if (statusBadge) {
+        userBadge.insertAdjacentHTML('beforeend', statusBadge);
+    }
 
     // Add a settings listener to the parent item
     const userNavItem = document.getElementById('user-nav-item');

@@ -224,7 +224,7 @@ async function loadAndRenderColleges() {
                     </select>
                 </td>
                 <td style="font-size: 12px; color: var(--gray-600);">${c.intended_major || 'General'}</td>
-                <td>${c.deadline ? new Date(c.deadline).toLocaleDateString() : 'TBD'}</td>
+                <td>${c.deadline ? new Date(c.deadline + 'T00:00:00').toLocaleDateString() : 'TBD'}</td>
                 <td>
                     <div style="display: flex; flex-direction: column; gap: 4px; min-width: 120px;">
                         <div style="display: flex; justify-content: space-between; font-size: var(--text-xs); font-weight: 600;">

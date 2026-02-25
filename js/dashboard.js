@@ -107,16 +107,34 @@ function renderDashboard(tasks, essays, colleges) {
 
                 const priorityLabel = task.priority || 'General';
 
-                card.innerHTML = `
-                    <div class="task-info-group">
-                        <div class="task-title-premium">${task.title}</div>
-                        <div class="task-meta-premium">
-                            <span>${task.category || 'General'}</span>
-                            <span>⏰ ${task.due_date ? new Date(task.due_date).toLocaleDateString() : 'No due date'}</span>
-                        </div>
-                    </div>
-                    <div class="tag-premium">${priorityLabel.toUpperCase()}</div>
-                `;
+                // Build DOM safely to prevent XSS
+                const infoGroup = document.createElement('div');
+                infoGroup.className = 'task-info-group';
+
+                const titleEl = document.createElement('div');
+                titleEl.className = 'task-title-premium';
+                titleEl.textContent = task.title;
+
+                const meta = document.createElement('div');
+                meta.className = 'task-meta-premium';
+
+                const catSpan = document.createElement('span');
+                catSpan.textContent = task.category || 'General';
+
+                const dateSpan = document.createElement('span');
+                dateSpan.textContent = '⏰ ' + (task.due_date ? new Date(task.due_date + 'T00:00:00').toLocaleDateString() : 'No due date');
+
+                meta.appendChild(catSpan);
+                meta.appendChild(dateSpan);
+                infoGroup.appendChild(titleEl);
+                infoGroup.appendChild(meta);
+
+                const tag = document.createElement('div');
+                tag.className = 'tag-premium';
+                tag.textContent = priorityLabel.toUpperCase();
+
+                card.appendChild(infoGroup);
+                card.appendChild(tag);
 
                 card.onclick = () => {
                     const category = (task.category || '').toLowerCase();

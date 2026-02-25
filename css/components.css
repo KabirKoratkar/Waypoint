@@ -356,9 +356,24 @@
         padding: 8px var(--space-md);
     }
 
+
     .navbar-links {
         display: none;
-        /* We should implement a mobile menu toggle, but horizontal scroll is a quick fix for now if needed. However, the request is to fix it looking 'off'. */
+        position: absolute;
+        top: calc(100% + 8px);
+        left: 0;
+        right: 0;
+        background: var(--glass-background);
+        backdrop-filter: var(--glass-blur);
+        border: 1px solid var(--glass-border);
+        border-radius: var(--radius-xl);
+        padding: var(--space-md);
+        flex-direction: column;
+        gap: 4px;
+    }
+
+    .navbar-links.active {
+        display: flex;
     }
 }
 

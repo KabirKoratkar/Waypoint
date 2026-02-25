@@ -26,7 +26,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
     if (mobileToggle) {
         mobileToggle.addEventListener('click', function () {
-            navLinks.classList.toggle('active');
+            if (navLinks) navLinks.classList.toggle('active');
         });
     }
 

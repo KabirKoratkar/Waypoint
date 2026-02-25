@@ -60,9 +60,18 @@ document.addEventListener('DOMContentLoaded', function () {
     if (signupForm) {
         signupForm.addEventListener('submit', async function (e) {
             e.preventDefault();
-            const fullName = document.getElementById('fullName').value;
-            const email = document.getElementById('email').value;
+            const fullName = document.getElementById('fullName').value.trim();
+            const email = document.getElementById('email').value.trim();
             const password = document.getElementById('password').value;
+
+            if (password.length < 8) {
+                showNotification('Password must be at least 8 characters.', 'error');
+                return;
+            }
+            if (!fullName) {
+                showNotification('Please enter your full name.', 'error');
+                return;
+            }
 
             try {
                 const result = await signUp(email, password, fullName);
