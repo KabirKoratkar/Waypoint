@@ -45,6 +45,13 @@
                     journey</p>
             </div>
 
+            <div id="errorAlert" class="alert alert-error"
+                style="display: none; margin-bottom: var(--space-lg); padding: var(--space-md); border-radius: var(--radius-lg); border-left: 4px solid var(--error);">
+                <p style="font-weight: 700; margin-bottom: 4px;">⚠️ Connection Error</p>
+                <p style="font-size: 13px; margin: 0; opacity: 0.9;">The cloud database is currently unreachable. If
+                    you're an admin, please check if your Supabase project is paused.</p>
+            </div>
+
             <button class="google-btn">
                 <span style="font-size: 1.5rem;">🔐</span>
                 Continue with Google
@@ -95,6 +102,13 @@
 
     <script src="js/main.js"></script>
     <script type="module" src="js/auth.js"></script>
+    <script>
+        // Show server unavailable error if redirected with error param
+        const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.get('error') === 'server_unavailable') {
+            document.getElementById('errorAlert').style.display = 'block';
+        }
+    </script>
 </body>
 
 </html>

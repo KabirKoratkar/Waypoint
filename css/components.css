@@ -293,6 +293,17 @@
 
 /* Dark mode navbar-links: no override needed; dropdown uses var(--surface) which is already dark */
 
+/* Mobile-only nav items: hidden on desktop, visible in dropdown */
+.mobile-only-nav {
+    display: none;
+}
+
+@media (max-width: 992px) {
+    .mobile-only-nav {
+        display: list-item;
+    }
+}
+
 .navbar-link {
     color: var(--gray-700);
     font-weight: 600;
