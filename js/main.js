@@ -214,8 +214,7 @@ async function updateLandingNav() {
         if (user) {
             navLinks.innerHTML = `
                 <li><a href="#features" class="navbar-link">Features</a></li>
-                <li><a href="dashboard.html" class="navbar-link">Dashboard</a></li>
-                <li><a href="ai-counselor.html" class="navbar-link">AI Counselor</a></li>
+                <li><a href="dashboard.html" class="navbar-link">Home</a></li>
             `;
             const actions = document.querySelector('.navbar-actions');
             if (actions) {
@@ -223,7 +222,7 @@ async function updateLandingNav() {
                 const toggle = document.getElementById('themeToggle')?.outerHTML || '';
                 actions.innerHTML = `
                     ${toggle}
-                    <a href="dashboard.html" class="btn btn-primary btn-sm" style="border-radius: 99px;">Go to Dashboard</a>
+                    <a href="dashboard.html" class="btn btn-primary btn-sm" style="border-radius: 99px;">Go Home</a>
                 `;
                 // Re-init theme toggle listener if replaced
                 setTimeout(() => {
@@ -371,7 +370,7 @@ window.showNotification = showNotification;
 // Initialize AI Chat Widget for logged-in users (not on landing or counselor page)
 document.addEventListener('DOMContentLoaded', async () => {
     const currentPage = window.location.pathname.split('/').pop() || 'index.html';
-    const excludedPages = ['index.html', 'login.html', 'signup.html', 'confirm-email.html', 'ai-counselor.html', 'onboarding.html'];
+    const excludedPages = ['index.html', 'login.html', 'signup.html', 'confirm-email.html', 'ai-counselor.html', 'onboarding.html', 'dashboard.html'];
 
     if (!excludedPages.includes(currentPage)) {
         try {

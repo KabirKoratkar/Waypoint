@@ -22,11 +22,19 @@ export function formatAIMessage(text) {
     // First escape the HTML to prevent XSS
     let safeText = escapeHTML(text);
 
-    // Then apply formatting on the safe string
-    return safeText
-        .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
-        .replace(/\*(.+?)\*/g, '<em>$1</em>')
-        .replace(/\n/g, '<br>');
+    // Apply basic markdown formatting
+    let formatted = safeText
+        .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>') // Bold
+        .replace(/\*(.+?)\*/g, '<em>$1</em>')         // Italic
+        .replace(/^[\s]*[-*] (.+)$/gm, '<li>$1</li>'); // Lists (simple li wrap)
+
+    // Wrap groups of <li> in <ul>
+    if (formatted.includes('<li>')) {
+        formatted = formatted.replace(/(<li>.*<\/li>)/gs, '<ul>$1</ul>');
+    }
+
+    // Handle newlines for paragraphs (if not inside a list)
+    return formatted.replace(/\n/g, '<br>');
 }
 
 /**

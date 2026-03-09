@@ -36,13 +36,20 @@ export function updateNavbarUser(user, profile = null) {
         userBadge.insertAdjacentHTML('beforeend', statusBadge);
     }
 
-    // Add a settings listener to the parent item
+    // Add a settings/logout listener to the parent item
     const userNavItem = document.getElementById('user-nav-item');
-    if (userNavItem) {
+    if (userNavItem && !userNavItem.dataset.listener) {
         userNavItem.style.cursor = 'pointer';
-        userNavItem.title = 'Account Settings';
-        userNavItem.addEventListener('click', () => {
-            window.location.assign('settings.html');
+        userNavItem.dataset.listener = 'true';
+        userNavItem.title = 'Account Options';
+
+        userNavItem.addEventListener('click', async () => {
+            if (confirm('Navigate to settings? (Cancel to Sign Out)')) {
+                window.location.assign('settings.html');
+            } else {
+                await signOut();
+                window.location.assign('login.html');
+            }
         });
     }
 }

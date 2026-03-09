@@ -39,19 +39,27 @@ document.addEventListener('DOMContentLoaded', async function () {
     updateNavbarUser(currentUser, userProfile);
     updateGreeting(userProfile);
 
-    // Load all data in parallel
-    const { tasks, essays, colleges } = await fetchData(currentUser.id);
+    // Load all data in parallel with timeout to prevent hang
+    const initPromise = (async () => {
+        try {
+            const { tasks, essays, colleges } = await fetchData(currentUser.id);
+            renderStats(tasks, essays, colleges);
+            await initConversation(userProfile, tasks, essays, colleges);
+        } catch (err) {
+            console.error('Initialization error:', err);
+            appendAIMessage('I\'m ready to help, but I had trouble loading your personal context. Let\'s start something new!');
+            renderStats([], [], []);
+        }
+    })();
 
-    // Render secondary panel stats
-    renderStats(tasks, essays, colleges);
+    // Force hide loading after 6s regardless of network
+    await Promise.race([
+        initPromise,
+        new Promise(res => setTimeout(res, 6000))
+    ]);
 
     hideLoading();
-
-    // Wire up chat UI
     setupChat();
-
-    // Load past conversation or fire proactive greeting
-    await initConversation(userProfile, tasks, essays, colleges);
 });
 
 // ─── Greeting Bar ───────────────────────────────────────────────────────────
@@ -182,6 +190,13 @@ async function handleSend() {
 
     appendUserMessage(text);
 
+    // Save to DB
+    try {
+        await saveMessage(currentUser.id, 'user', text);
+    } catch (e) {
+        console.error('Failed to save user message:', e);
+    }
+
     // Hide ask chips after first user message
     const chipsRow = document.getElementById('askChips');
     if (chipsRow) chipsRow.style.display = 'none';
@@ -306,10 +321,18 @@ async function sendToAI(message) {
             const data = await response.json();
             const reply = data.response || 'Sorry, I had trouble with that. Try again?';
             appendAIMessage(reply);
+
+            // Persist locally for session and globally for DB
             conversationHistory.push({ role: 'user', content: message });
             conversationHistory.push({ role: 'assistant', content: reply });
+
+            try {
+                await saveMessage(currentUser.id, 'assistant', reply);
+            } catch (e) {
+                console.error('Failed to save AI reply:', e);
+            }
         } else {
-            appendAIMessage('I'm having trouble reaching the server right now.Try again in a moment.');
+            appendAIMessage('I\'m having trouble reaching the server right now. Try again in a moment.');
         }
     } catch (e) {
         if (typingEl && typingEl.parentNode) typingEl.parentNode.removeChild(typingEl);
@@ -338,7 +361,9 @@ function appendAIMessage(text, timestamp = null) {
         </div>
     `;
     container.appendChild(row);
-    container.scrollTop = container.scrollHeight;
+    setTimeout(() => {
+        container.scrollTop = container.scrollHeight;
+    }, 50);
     return row;
 }
 

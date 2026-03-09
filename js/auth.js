@@ -51,7 +51,12 @@ document.addEventListener('DOMContentLoaded', function () {
                 await signInWithGoogle(nextPath);
             } catch (err) {
                 console.error('OAuth Error:', err);
-                showNotification('Connection error: ' + err.message, 'error');
+                const errorAlert = document.getElementById('errorAlert');
+                if (errorAlert) {
+                    errorAlert.style.display = 'block';
+                } else {
+                    showNotification('Connection error: ' + err.message, 'error');
+                }
             }
         });
     }
