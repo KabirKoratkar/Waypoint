@@ -291,9 +291,7 @@
     border-radius: var(--radius-full);
 }
 
-[data-theme="dark"] .navbar-links {
-    background: transparent;
-}
+/* Dark mode navbar-links: no override needed; dropdown uses var(--surface) which is already dark */
 
 .navbar-link {
     color: var(--gray-700);
