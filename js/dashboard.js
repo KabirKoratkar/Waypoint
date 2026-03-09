@@ -1,11 +1,26 @@
-import { getCurrentUser, getUserTasks, getUserEssays, getUserColleges, getUserProfile } from './supabase-config.js';
+import {
+    getCurrentUser,
+    getUserTasks,
+    getUserEssays,
+    getUserColleges,
+    getUserProfile,
+    getUserConversations,
+    saveMessage
+} from './supabase-config.js';
 import { updateNavbarUser, showLoading, hideLoading } from './ui.js';
+import { formatAIMessage } from './utils.js';
 import config from './config.js';
 
-let currentUser = null;
+const AI_SERVER_URL = config.apiUrl;
 
+let currentUser = null;
+let userProfile = null;
+let conversationHistory = [];
+let isLoading = false;
+
+// ─── Boot ───────────────────────────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', async function () {
-    showLoading('Waking up your command center...');
+    showLoading('Waking up your counselor...');
 
     currentUser = await getCurrentUser();
     if (!currentUser) {
@@ -13,312 +28,384 @@ document.addEventListener('DOMContentLoaded', async function () {
         return;
     }
 
-    // Check for "Complete" profile (has graduation_year)
-    if (currentUser.id && !currentUser.id.startsWith('dev-user-')) {
-        const profile = await getUserProfile(currentUser.id);
-        if (!profile || !profile.graduation_year) {
-            console.log('Incomplete profile found, redirecting to onboarding...');
-            window.location.assign('onboarding.html');
-            return;
-        }
-        window.currentUserProfile = profile;
-    }
-
-    // UI Updates
-    updateNavbarUser(currentUser, window.currentUserProfile);
-    updateHeader(window.currentUserProfile);
-
-    // Load Data
-    const { tasks, essays, colleges } = await fetchDashboardData(currentUser.id);
-
-    // Render Data
-    renderDashboard(tasks, essays, colleges);
-
-    hideLoading();
-
-    // Generate AI Action Plan
-    generateAIActionPlan(tasks, essays, colleges);
-});
-
-function updateHeader(profile = null) {
-    const greeting = document.getElementById('greeting');
-    const dateEl = document.getElementById('currentDate');
-
-    if (greeting) {
-        const hour = new Date().getHours();
-        let intro = 'Good morning';
-        if (hour >= 12 && hour < 17) intro = 'Good afternoon';
-        if (hour >= 17) intro = 'Good evening';
-
-        let name = 'Student';
-        if (profile && profile.full_name) {
-            name = profile.full_name.split(' ')[0];
-        } else if (currentUser.user_metadata && currentUser.user_metadata.full_name) {
-            name = currentUser.user_metadata.full_name.split(' ')[0];
-        } else if (currentUser.email) {
-            name = currentUser.email.split('@')[0];
-        }
-
-        greeting.textContent = `${intro}, ${name}! 🌟`;
-    }
-
-    if (dateEl) {
-        dateEl.textContent = new Date().toLocaleDateString('en-US', {
-            weekday: 'long',
-            year: 'numeric',
-            month: 'long',
-            day: 'numeric'
-        });
-    }
-}
-
-function renderDashboard(tasks, essays, colleges) {
-    // 1. Render Today's Tasks
-    const taskContainer = document.getElementById('premium-tasks-container');
-    if (taskContainer) {
-        taskContainer.innerHTML = '';
-        const priorityScore = { 'High': 3, 'Medium': 2, 'Low': 1, 'General': 0 };
-        const sortedTasks = tasks
-            .filter(t => !t.completed)
-            .sort((a, b) => {
-                const pA = priorityScore[a.priority] || 0;
-                const pB = priorityScore[b.priority] || 0;
-                if (pA !== pB) return pB - pA;
-                if (!a.due_date) return 1;
-                if (!b.due_date) return -1;
-                return new Date(a.due_date) - new Date(b.due_date);
-            });
-
-        const badge = document.getElementById('task-count-badge');
-        if (badge) badge.textContent = `${sortedTasks.length} tasks`;
-
-        if (sortedTasks.length === 0) {
-            taskContainer.innerHTML = `
-                <div style="height: 180px; display: flex; flex-direction: column; align-items: center; justify-content: center; color: var(--gray-500);">
-                    <div style="font-size: 32px; margin-bottom: 12px;">✅</div>
-                    <p style="font-weight: 600;">All caught up!</p>
-                </div>
-            `;
-        } else {
-            sortedTasks.forEach(task => {
-                const card = document.createElement('div');
-                card.className = 'task-card-premium';
-                card.style.cursor = 'pointer';
-
-                const priorityLabel = task.priority || 'General';
-
-                // Build DOM safely to prevent XSS
-                const infoGroup = document.createElement('div');
-                infoGroup.className = 'task-info-group';
-
-                const titleEl = document.createElement('div');
-                titleEl.className = 'task-title-premium';
-                titleEl.textContent = task.title;
-
-                const meta = document.createElement('div');
-                meta.className = 'task-meta-premium';
-
-                const catSpan = document.createElement('span');
-                catSpan.textContent = task.category || 'General';
-
-                const dateSpan = document.createElement('span');
-                dateSpan.textContent = '⏰ ' + (task.due_date ? new Date(task.due_date + 'T00:00:00').toLocaleDateString() : 'No due date');
-
-                meta.appendChild(catSpan);
-                meta.appendChild(dateSpan);
-                infoGroup.appendChild(titleEl);
-                infoGroup.appendChild(meta);
-
-                const tag = document.createElement('div');
-                tag.className = 'tag-premium';
-                tag.textContent = priorityLabel.toUpperCase();
-
-                card.appendChild(infoGroup);
-                card.appendChild(tag);
-
-                card.onclick = () => {
-                    const category = (task.category || '').toLowerCase();
-                    if (category.includes('essay')) window.location.href = 'essays.html';
-                    else if (category.includes('document')) window.location.href = 'documents.html';
-                    else if (category.includes('school') || category.includes('college')) window.location.href = 'colleges.html';
-                    else window.location.href = 'calendar.html';
-                };
-                taskContainer.appendChild(card);
-            });
-        }
-    }
-
-    // 2. Render Deadlines
-    renderDeadlines(colleges);
-
-    // 3. Render Progress Widgets
-    const widgets = document.querySelectorAll('.progress-widget');
-    if (widgets.length >= 3) {
-        const completedEssays = essays.filter(e => e.is_completed).length;
-        updateWidget(widgets[0], completedEssays, essays.length);
-
-        const completedTasks = tasks.filter(t => t.completed).length;
-        updateWidget(widgets[1], completedTasks, tasks.length);
-
-        const avgProgress = colleges.length > 0
-            ? colleges.reduce((acc, c) => acc + (c.smartProgress || 0), 0) / colleges.length
-            : 0;
-        updateWidget(widgets[2], avgProgress, 100);
-    }
-}
-
-function renderDeadlines(colleges) {
-    const deadlineContainer = document.getElementById('premium-deadlines-container');
-    if (!deadlineContainer) return;
-
-    deadlineContainer.innerHTML = '';
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-
-    const sortedColleges = colleges
-        .filter(c => c.deadline)
-        .sort((a, b) => new Date(a.deadline) - new Date(b.deadline));
-
-    if (sortedColleges.length === 0) {
-        deadlineContainer.innerHTML = `
-            <div class="hero-stat-card-gradient">
-                <div class="stat-big-number">0</div>
-                <div class="stat-subtitle">Add a college to see your next deadline!</div>
-            </div>
-        `;
+    userProfile = await getUserProfile(currentUser.id);
+    if (!userProfile || !userProfile.graduation_year) {
+        console.log('Incomplete profile, redirecting to onboarding...');
+        window.location.assign('onboarding.html');
         return;
     }
 
-    const nextCollege = sortedColleges[0];
-    const nextDeadline = new Date(nextCollege.deadline);
-    const diffDays = Math.ceil((nextDeadline - today) / (1000 * 60 * 60 * 24));
+    window.currentUserProfile = userProfile;
+    updateNavbarUser(currentUser, userProfile);
+    updateGreeting(userProfile);
 
-    if (diffDays >= 0) {
-        deadlineContainer.innerHTML = `
-            <div class="hero-stat-card-gradient">
-                <div class="stat-big-number">${diffDays}</div>
-                <div class="stat-subtitle">Days until ${nextCollege.name} deadline</div>
-            </div>
-        `;
-    } else {
-        deadlineContainer.innerHTML = `
-            <div class="hero-stat-card-gradient" style="background: var(--error)">
-                <div class="stat-big-number">!</div>
-                <div class="stat-subtitle">${nextCollege.name} deadline has passed</div>
-            </div>
-        `;
-    }
+    // Load all data in parallel
+    const { tasks, essays, colleges } = await fetchData(currentUser.id);
 
-    return; // Already rendered the main focus card above
+    // Render secondary panel stats
+    renderStats(tasks, essays, colleges);
+
+    hideLoading();
+
+    // Wire up chat UI
+    setupChat();
+
+    // Load past conversation or fire proactive greeting
+    await initConversation(userProfile, tasks, essays, colleges);
+});
+
+// ─── Greeting Bar ───────────────────────────────────────────────────────────
+function updateGreeting(profile) {
+    const greetingEl = document.getElementById('greeting');
+    const dateEl = document.getElementById('currentDate');
+
+    const hour = new Date().getHours();
+    let salutation = 'Good morning';
+    if (hour >= 12 && hour < 17) salutation = 'Good afternoon';
+    if (hour >= 17) salutation = 'Good evening';
+
+    let name = 'there';
+    if (profile?.full_name) name = profile.full_name.split(' ')[0];
+    else if (currentUser?.user_metadata?.full_name) name = currentUser.user_metadata.full_name.split(' ')[0];
+    else if (currentUser?.email) name = currentUser.email.split('@')[0];
+
+    if (greetingEl) greetingEl.textContent = `${salutation}, ${name}! 🌟`;
+    if (dateEl) dateEl.textContent = new Date().toLocaleDateString('en-US', {
+        weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
+    });
 }
 
-function updateWidget(widget, completed, total) {
-    const label = widget.querySelector('.progress-label span:last-child');
-    const bar = widget.querySelector('.progress-fill');
-    const header = widget.querySelector('h3').textContent;
-
-    if (label) {
-        if (header.includes('Application')) label.textContent = `${Math.round(completed)}% AVG`;
-        else label.textContent = `${completed}/${total || 0}`;
-    }
-    if (bar) {
-        const percent = (completed / (total || (header.includes('Application') ? 100 : 1))) * 100;
-        bar.style.width = `${percent}%`;
-    }
-}
-
-async function fetchDashboardData(userId) {
+// ─── Data Fetch ─────────────────────────────────────────────────────────────
+async function fetchData(userId) {
     const [tasks, essays, colleges] = await Promise.all([
         getUserTasks(userId),
         getUserEssays(userId),
         getUserColleges(userId)
     ]);
-
-    colleges.forEach(college => {
-        college.smartProgress = calculateSmartProgress(college, essays, tasks);
-    });
-
     return { tasks, essays, colleges };
 }
 
-function calculateSmartProgress(college, allEssays, allTasks) {
-    const collegeEssays = allEssays.filter(e => e.college_id === college.id);
-    const collegeTasks = allTasks.filter(t => t.college_id === college.id);
+// ─── Stats Panel ────────────────────────────────────────────────────────────
+function renderStats(tasks, essays, colleges) {
+    const pendingTasks = tasks.filter(t => !t.completed);
+    const pendingEssays = essays.filter(e => !e.is_completed);
 
-    if (collegeEssays.length === 0 && collegeTasks.length === 0) return 0;
-
-    let essayWeight = collegeTasks.length === 0 ? 1.0 : 0.4;
-    let taskWeight = collegeEssays.length === 0 ? 1.0 : 0.6;
-
-    let essayScore = 0;
-    if (collegeEssays.length > 0) {
-        const progress = collegeEssays.reduce((acc, e) => {
-            if (e.is_completed) return acc + 1;
-            const wp = e.word_limit > 0 ? Math.min(e.word_count / e.word_limit, 1) : 0;
-            return acc + (wp * 0.8);
-        }, 0);
-        essayScore = progress / collegeEssays.length;
+    // Stat pills (top bar)
+    const pillsEl = document.getElementById('statPills');
+    if (pillsEl) {
+        pillsEl.innerHTML = `
+            <div class="stat-pill">
+                <span class="pill-val">${pendingTasks.length}</span> tasks left
+            </div>
+            <div class="stat-pill pill-purple">
+                <span class="pill-val">${pendingEssays.length}</span> essays in progress
+            </div>
+            <div class="stat-pill pill-green">
+                <span class="pill-val">${colleges.length}</span> colleges
+            </div>
+        `;
     }
 
-    let taskScore = 0;
-    if (collegeTasks.length > 0) {
-        taskScore = collegeTasks.filter(t => t.completed).length / collegeTasks.length;
-    }
+    // Panel cards
+    const statTasks = document.getElementById('statTasks');
+    const statEssays = document.getElementById('statEssays');
+    const statDeadline = document.getElementById('statDeadline');
+    const statDeadlineSub = document.getElementById('statDeadlineSub');
 
-    return Math.round((essayScore * essayWeight + taskScore * taskWeight) * 100);
+    if (statTasks) statTasks.textContent = pendingTasks.length;
+    if (statEssays) statEssays.textContent = pendingEssays.length;
+
+    // Next deadline
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const upcoming = colleges
+        .filter(c => c.deadline && new Date(c.deadline) >= today)
+        .sort((a, b) => new Date(a.deadline) - new Date(b.deadline));
+
+    if (upcoming.length > 0) {
+        const next = upcoming[0];
+        const daysLeft = Math.ceil((new Date(next.deadline) - today) / (1000 * 60 * 60 * 24));
+        if (statDeadline) statDeadline.textContent = `${daysLeft}d`;
+        if (statDeadlineSub) statDeadlineSub.textContent = `until ${next.name} deadline`;
+    } else {
+        if (statDeadline) statDeadline.textContent = '—';
+        if (statDeadlineSub) statDeadlineSub.textContent = 'Add colleges to track deadlines';
+    }
 }
 
-async function generateAIActionPlan(tasks, essays, colleges) {
-    const planEl = document.getElementById('aiActionPlan');
-    const breakdownEl = document.getElementById('aiStatsBreakdown');
-    const container = document.getElementById('aiPlanContainer');
-    if (!planEl || !breakdownEl) return;
+// ─── Chat Setup ─────────────────────────────────────────────────────────────
+function setupChat() {
+    const input = document.getElementById('chatInput');
+    const sendBtn = document.getElementById('sendBtn');
+    const newChatBtn = document.getElementById('newChatBtn');
+    const chips = document.querySelectorAll('.ask-chip');
 
-    if (container) container.onclick = () => window.location.href = 'ai-counselor.html';
+    sendBtn.addEventListener('click', () => handleSend());
+
+    input.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault();
+            handleSend();
+        }
+    });
+
+    // Auto-grow textarea
+    input.addEventListener('input', () => {
+        input.style.height = 'auto';
+        input.style.height = Math.min(input.scrollHeight, 140) + 'px';
+    });
+
+    newChatBtn.addEventListener('click', () => {
+        conversationHistory = [];
+        const messages = document.getElementById('chatMessages');
+        if (messages) messages.innerHTML = '';
+        appendSystemMessage('New session started. How can I help you?');
+    });
+
+    chips.forEach(chip => {
+        chip.addEventListener('click', () => {
+            if (input) {
+                input.value = chip.dataset.query;
+                handleSend();
+            }
+        });
+    });
+}
+
+async function handleSend() {
+    const input = document.getElementById('chatInput');
+    const text = input.value.trim();
+    if (!text || isLoading) return;
+
+    input.value = '';
+    input.style.height = 'auto';
+
+    appendUserMessage(text);
+
+    // Hide ask chips after first user message
+    const chipsRow = document.getElementById('askChips');
+    if (chipsRow) chipsRow.style.display = 'none';
+
+    await sendToAI(text);
+}
+
+// ─── Proactive Opening ──────────────────────────────────────────────────────
+async function initConversation(profile, tasks, essays, colleges) {
+    // Check if there's existing conversation history
+    const history = await getUserConversations(profile.id);
+
+    if (history && history.length > 0) {
+        // Restore last N messages
+        const recent = history.slice(-10);
+        recent.forEach(msg => {
+            if (msg.role === 'user') appendUserMessage(msg.content, msg.created_at);
+            else appendAIMessage(msg.content, msg.created_at);
+        });
+
+        // Rebuild conversation history for context
+        conversationHistory = recent.map(m => ({ role: m.role, content: m.content }));
+
+        // Hide chips after history loaded
+        const chipsRow = document.getElementById('askChips');
+        if (chipsRow) chipsRow.style.display = 'none';
+
+    } else {
+        // First visit — fire proactive counselor greeting
+        await fireProactiveGreeting(profile, tasks, essays, colleges);
+    }
+}
+
+async function fireProactiveGreeting(profile, tasks, essays, colleges) {
+    const typingEl = appendTyping();
 
     const pendingTasks = tasks.filter(t => !t.completed);
     const pendingEssays = essays.filter(e => !e.is_completed);
-    const upcomingDeadlines = colleges.filter(c => c.deadline && new Date(c.deadline) > new Date());
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const upcoming = colleges
+        .filter(c => c.deadline && new Date(c.deadline) >= today)
+        .sort((a, b) => new Date(a.deadline) - new Date(b.deadline));
 
-    breakdownEl.innerHTML = `
-        <div class="hero-stat-item">
-            <div class="stat-val">${pendingTasks.length}</div>
-            <div class="stat-lbl">Tasks</div>
-        </div>
-        <div class="hero-stat-item">
-            <div class="stat-val stat-purple">${pendingEssays.length}</div>
-            <div class="stat-lbl">Essays</div>
-        </div>
-        <div class="hero-stat-item">
-            <div class="stat-val stat-green">${upcomingDeadlines.length}</div>
-            <div class="stat-lbl">Goals</div>
-        </div>
-    `;
+    const daysUntil = upcoming.length > 0
+        ? Math.ceil((new Date(upcoming[0].deadline) - today) / (1000 * 60 * 60 * 24))
+        : null;
 
+    const name = profile?.full_name?.split(' ')[0] || 'there';
+    const intensity = profile?.intensity_level || 'Balanced';
+    const strategy = profile?.application_strategy || 'balanced';
+
+    const contextStr = [
+        `Student name: ${name}`,
+        `Graduation year: ${profile?.graduation_year || 'unknown'}`,
+        `Strategy/intensity: ${intensity}`,
+        `Colleges applied to/tracking: ${colleges.length} (${colleges.map(c => c.name).slice(0, 5).join(', ')}${colleges.length > 5 ? '...' : ''})`,
+        `Pending tasks: ${pendingTasks.length}`,
+        `Essays in progress: ${pendingEssays.length}`,
+        daysUntil !== null ? `Next deadline: ${upcoming[0].name} in ${daysUntil} days` : 'No upcoming deadlines on record',
+    ].join('. ');
 
     try {
-        const profile = window.currentUserProfile || await getUserProfile(currentUser.id);
-        const leeway = profile?.submission_leeway || 3;
-        const intensity = profile?.intensity_level || 'Balanced';
-
-        const statsStr = `Tasks: ${pendingTasks.length}, Essays: ${pendingEssays.length}, Colleges: ${colleges.length}, Next: ${upcomingDeadlines[0] ? upcomingDeadlines[0].name : 'None'}, Leeway: ${leeway} days, Strategy: ${intensity} pace`;
-
-        const response = await fetch(`${config.apiUrl}/api/chat`, {
+        const response = await fetch(`${AI_SERVER_URL}/api/chat`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-                message: `Give me a 2-sentence tactical action plan for TODAY based on these stats: ${statsStr}. Focus on the student's preferred ${intensity} pace. Be direct and coach-like.`,
+                message: `You are an elite, proactive college admissions counselor. The student just opened their dashboard. Using their profile data, give them a personalized, direct opening message (2-4 sentences max). Start with a warm but concise greeting, then immediately tell them the most important thing they should focus on right now and why. Sound like a real advisor — not a chatbot. Don't list tasks. Don't ask what they need. Just tell them what matters most based on their data. Profile: ${contextStr}`,
                 userId: currentUser.id,
                 conversationHistory: [],
                 saveToHistory: false
             })
         });
 
-        if (!response.ok) throw new Error('AI Server error');
-        const data = await response.json();
-        planEl.textContent = data.response;
-    } catch (error) {
-        planEl.textContent = "Focus on your upcoming deadlines and high-priority tasks!";
+        if (typingEl && typingEl.parentNode) typingEl.parentNode.removeChild(typingEl);
+
+        if (response.ok) {
+            const data = await response.json();
+            const greeting = data.response || getOfflineGreeting(name, pendingTasks, upcoming, daysUntil);
+            appendAIMessage(greeting);
+            conversationHistory.push({ role: 'assistant', content: greeting });
+        } else {
+            appendAIMessage(getOfflineGreeting(name, pendingTasks, upcoming, daysUntil));
+        }
+    } catch (e) {
+        if (typingEl && typingEl.parentNode) typingEl.parentNode.removeChild(typingEl);
+        appendAIMessage(getOfflineGreeting(name, pendingTasks, upcoming, daysUntil));
     }
 }
 
+function getOfflineGreeting(name, pendingTasks, upcoming, daysUntil) {
+    if (upcoming.length > 0 && daysUntil <= 14) {
+        return `Hey ${name} — you've got ${upcoming[0].name}'s deadline in just ${daysUntil} days. That's your single biggest priority right now. Tell me where things stand and we'll figure out exactly what needs to happen before then.`;
+    }
+    if (pendingTasks.length > 0) {
+        return `Hey ${name}! You've got ${pendingTasks.length} open tasks on your list. Let's make sure the right ones get done first. What's on your mind — or want me to assess where you should focus?`;
+    }
+    return `Hey ${name}! I'm your Waypoint counselor. Tell me what you're working on and I'll help you figure out the best next move for your applications.`;
+}
+
+// ─── AI Communication ────────────────────────────────────────────────────────
+async function sendToAI(message) {
+    isLoading = true;
+    document.getElementById('sendBtn').disabled = true;
+
+    const typingEl = appendTyping();
+
+    try {
+        const response = await fetch(`${AI_SERVER_URL}/api/chat`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                message,
+                userId: currentUser.id,
+                conversationHistory
+            })
+        });
+
+        if (typingEl && typingEl.parentNode) typingEl.parentNode.removeChild(typingEl);
+
+        if (response.ok) {
+            const data = await response.json();
+            const reply = data.response || 'Sorry, I had trouble with that. Try again?';
+            appendAIMessage(reply);
+            conversationHistory.push({ role: 'user', content: message });
+            conversationHistory.push({ role: 'assistant', content: reply });
+        } else {
+            appendAIMessage('I'm having trouble reaching the server right now.Try again in a moment.');
+        }
+    } catch (e) {
+        if (typingEl && typingEl.parentNode) typingEl.parentNode.removeChild(typingEl);
+        appendAIMessage('Connection issue — check your internet and try again.');
+    } finally {
+        isLoading = false;
+        document.getElementById('sendBtn').disabled = false;
+    }
+}
+
+// ─── Message Rendering ───────────────────────────────────────────────────────
+function appendAIMessage(text, timestamp = null) {
+    const container = document.getElementById('chatMessages');
+    if (!container) return;
+
+    const time = timestamp ? new Date(timestamp) : new Date();
+    const timeStr = time.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+    const row = document.createElement('div');
+    row.className = 'msg-row';
+    row.innerHTML = `
+        <div class="msg-avatar ai-av">🎓</div>
+        <div>
+            <div class="msg-bubble ai">${formatAIMessage(text)}</div>
+            <span class="msg-time">${timeStr}</span>
+        </div>
+    `;
+    container.appendChild(row);
+    container.scrollTop = container.scrollHeight;
+    return row;
+}
+
+function appendUserMessage(text, timestamp = null) {
+    const container = document.getElementById('chatMessages');
+    if (!container) return;
+
+    const time = timestamp ? new Date(timestamp) : new Date();
+    const timeStr = time.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+    const initials = getUserInitials();
+    const row = document.createElement('div');
+    row.className = 'msg-row user';
+    row.innerHTML = `
+        <div class="msg-avatar user-av">${initials}</div>
+        <div style="display:flex;flex-direction:column;align-items:flex-end;">
+            <div class="msg-bubble user">${escapeHtml(text)}</div>
+            <span class="msg-time">${timeStr}</span>
+        </div>
+    `;
+    container.appendChild(row);
+    container.scrollTop = container.scrollHeight;
+    return row;
+}
+
+function appendTyping() {
+    const container = document.getElementById('chatMessages');
+    if (!container) return null;
+
+    const row = document.createElement('div');
+    row.className = 'msg-row';
+    row.id = 'typingIndicator';
+    row.innerHTML = `
+        <div class="msg-avatar ai-av">🎓</div>
+        <div class="msg-bubble ai">
+            <div class="typing-dots">
+                <span></span><span></span><span></span>
+            </div>
+        </div>
+    `;
+    container.appendChild(row);
+    container.scrollTop = container.scrollHeight;
+    return row;
+}
+
+function appendSystemMessage(text) {
+    const container = document.getElementById('chatMessages');
+    if (!container) return;
+    const div = document.createElement('div');
+    div.style.cssText = 'text-align:center;color:var(--gray-400);font-size:12px;padding:8px 0;';
+    div.textContent = text;
+    container.appendChild(div);
+    container.scrollTop = container.scrollHeight;
+}
+
+// ─── Helpers ─────────────────────────────────────────────────────────────────
+function getUserInitials() {
+    const name = userProfile?.full_name || currentUser?.user_metadata?.full_name || currentUser?.email || 'U';
+    const parts = name.split(' ');
+    if (parts.length >= 2) return (parts[0][0] + parts[1][0]).toUpperCase();
+    return name[0].toUpperCase();
+}
+
+function escapeHtml(text) {
+    return text
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;');
+}
