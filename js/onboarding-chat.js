@@ -10,26 +10,26 @@ import config from './config.js';
 const AI_SERVER_URL = config.apiUrl;
 
 const ONBOARDING_SYSTEM_PROMPT = `
-You are a warm, professional, and knowledgeable college admissions counselor at Waypoint named Alex. 
-This is your first-time meeting with a student. Your style is conversational, empathetic, and organized.
+You are Alex, a warm, professional, and highly proactive college admissions counselor at Waypoint. 
+This is your first meeting with a student, and your goal is to build their profile while making them feel supported and excited.
 
-Your objective is to help the student set up their profile by gathering:
-1. Their Full Name
-2. Their Graduation Year (must be a number between 2025 and 2030)
-3. Their intended major or general academic interests
-4. Their academic stats (unweighted GPA and optional SAT/ACT scores)
-5. A list of 3 colleges they are currently considering
+MISSION: You MUST lead the conversation. Do not wait for the student to volunteer information. Use leading questions to gather:
+1. Full Name (e.g., "To start our journey, what's your full name?")
+2. Graduation Year (2025-2030) (e.g., "Great to meet you, [Name]! What year will you be walking across that graduation stage?")
+3. Intended Major or interest (e.g., "Got it. Thinking about the future, do you have a specific major in mind, or are you exploring different fields like STEM, Arts, or Humanities?")
+4. Academic Stats (GPA and Optional SAT/ACT)
+5. Top 3 Colleges they are interested in
 
-Guidelines:
-- Start with a personalized welcome. Mention that you're here to take the stress out of the process.
-- Ask questions one by one. Don't overwhelm them.
-- If they mention a major or college, give a brief, insightful comment (e.g., "Stanford's CS program is world-class, but very competitive!").
-- Keep the tone supportive.
-- Once you have gathered ALL the information, summarize it warmly, tell them you've set up their roadmap, and finish your message with exactly: "[COMPLETED_ONBOARDING]"
+CONVERSATIONAL RULES:
+- BE PROACTIVE. Every single response you give MUST end with a clear, leading question to move to the next piece of info.
+- ASK ONLY ONE THING AT A TIME.
+- If they mention a goal, give a quick "counselor tip" (e.g., "UC Berkeley is fantastic for Engineering!").
+- Keep it encouraging. Use their name once you have it.
+- Once you have all 5 items, summarize their profile enthusiastically and end your message with exactly: "[COMPLETED_ONBOARDING]"
 `;
 
 let currentUser = null;
-let conversationHistory = []; // Past messages (excluding latest user message)
+let conversationHistory = []; 
 let isProcessing = false;
 
 document.addEventListener('DOMContentLoaded', async () => {
@@ -38,13 +38,6 @@ document.addEventListener('DOMContentLoaded', async () => {
         window.location.assign('login.html');
         return;
     }
-
-    // Check if profile exists and is complete
-    const profile = await getUserProfile(currentUser.id);
-    if (profile && profile.graduation_year) {
-        console.log('User already has a grad year set.');
-    }
-
     initChat();
 });
 
@@ -55,7 +48,7 @@ async function initChat() {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-                message: "Hello! I'm a new student ready to start onboarding. Introduce yourself.",
+                message: "Hello! I'm a new student ready to start onboarding. Introduce yourself and ask for my name.",
                 userId: currentUser.id,
                 conversationHistory: [],
                 systemPrompt: ONBOARDING_SYSTEM_PROMPT,
@@ -64,7 +57,7 @@ async function initChat() {
         });
         const data = await response.json();
         removeTyping();
-        const aiMsg = data.content || "Hi! I'm Alex, your Waypoint counselor. I'm so excited to help you on your college journey. To get started, what's your name?";
+        const aiMsg = data.response || "Hi! I'm Alex, your Waypoint counselor. I'm so excited to help you navigate your journey to college. To get us started, what's your full name?";
         appendAIMessage(aiMsg);
         conversationHistory.push({ role: 'assistant', content: aiMsg });
     } catch (e) {
@@ -109,13 +102,13 @@ async function handleSend() {
                 userId: currentUser.id,
                 conversationHistory: conversationHistory,
                 systemPrompt: ONBOARDING_SYSTEM_PROMPT,
-                saveToHistory: false // We don't want to pollute their regular history with onboarding chat
+                saveToHistory: false
             })
         });
         const data = await response.json();
         removeTyping();
         
-        let aiMsg = data.content || "Got it! Tell me more.";
+        let aiMsg = data.response || "That's great! Tell me a bit more about your academic goals.";
         
         conversationHistory.push({ role: 'user', content: text });
         
@@ -140,22 +133,21 @@ async function handleSend() {
 
 function updateStepperProgress() {
     const dots = document.querySelectorAll('.step-dot');
-    const itemsFound = ['name', 'grad', 'major', 'stat', 'college'].filter(key => {
-        return conversationHistory.some(m => m.content.toLowerCase().includes(key));
-    }).length;
+    // Simple turn-based progress for the UI dots
+    const progress = Math.min(Math.floor(conversationHistory.length / 2), 5);
     
     dots.forEach((dot, i) => {
         dot.classList.remove('active', 'done');
-        if (i < itemsFound) dot.classList.add('done');
-        if (i === itemsFound) dot.classList.add('active');
+        if (i < progress) dot.classList.add('done');
+        if (i === progress) dot.classList.add('active');
     });
 }
 
 async function extractAndFinish() {
     appendTyping();
-    appendAIMessage("Give me just a second to set up your roadmap...");
+    appendAIMessage("I'm putting all those details into your roadmap now...");
 
-    const extractionPrompt = `Based on our conversation, extract the student's data into JSON:
+    const extractionPrompt = `Extract the student's profile from our chat into JSON:
 {
   "full_name": "string",
   "graduation_year": number,
@@ -164,7 +156,7 @@ async function extractAndFinish() {
   "sat_score": number or null,
   "top_colleges": ["string", "string", "string"]
 }
-ONLY return JSON. If missing, use null or empty array.`;
+Only return JSON.`;
 
     try {
         const response = await fetch(`${AI_SERVER_URL}/api/chat`, {
@@ -178,21 +170,18 @@ ONLY return JSON. If missing, use null or empty array.`;
             })
         });
         const data = await response.json();
-        const jsonStr = data.content.match(/\{[\s\S]*\}/)?.[0];
+        const jsonStr = data.response.match(/\{[\s\S]*\}/)?.[0];
         const profileData = JSON.parse(jsonStr);
-
-        console.log('Extracted Profile:', profileData);
 
         const updates = {
             id: currentUser.id,
-            full_name: profileData.full_name || currentUser.user_metadata?.full_name || 'Student',
-            graduation_year: profileData.graduation_year ? parseInt(profileData.graduation_year) : 2026,
+            full_name: profileData.full_name || 'Student',
+            graduation_year: profileData.graduation_year || 2026,
             intended_major: profileData.intended_major || '',
             unweighted_gpa: profileData.unweighted_gpa || null,
             sat_score: profileData.sat_score || null
         };
 
-        // Important: Update profile and WAIT for it
         await updateProfile(currentUser.id, updates);
 
         if (profileData.top_colleges && Array.isArray(profileData.top_colleges)) {
@@ -251,10 +240,7 @@ function renderRoadmap(plan) {
     });
 
     document.getElementById('finalDashboardBtn').onclick = () => {
-        const b = document.getElementById('finalDashboardBtn');
-        b.textContent = "Taking you home...";
-        b.disabled = true;
-        setTimeout(() => window.location.assign('dashboard.html'), 1200);
+        window.location.assign('dashboard.html');
     };
 }
 
@@ -264,10 +250,7 @@ function showFinishButton() {
     btn.className = 'btn btn-primary';
     btn.style.cssText = 'width: 100%; margin-top: 20px; height: 50px; border-radius: 99px;';
     btn.textContent = "CONTINUE TO DASHBOARD";
-    btn.onclick = () => {
-        btn.textContent = "Saving...";
-        setTimeout(() => window.location.assign('dashboard.html'), 1200);
-    };
+    btn.onclick = () => window.location.assign('dashboard.html');
     container.appendChild(btn);
     container.scrollTop = container.scrollHeight;
 }
