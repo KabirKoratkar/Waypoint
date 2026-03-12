@@ -32,14 +32,24 @@ document.addEventListener('DOMContentLoaded', async function () {
     userProfile = await getUserProfile(currentUser.id);
     console.log('[DEBUG] User Profile:', userProfile);
     
+    // Check if we just onboarded to bypass the redirect loop
+    const urlParams = new URLSearchParams(window.location.search);
+    const hasJustOnboarded = urlParams.has('onboarded') || sessionStorage.getItem('just_onboarded') === 'true';
+
     if (!userProfile || !userProfile.graduation_year || userProfile.graduation_year === 0) {
-        console.warn('Profile incomplete or graduation year missing. Redirecting to onboarding...');
-        // Only redirect if NOT already on onboarding or login
-        if (!window.location.pathname.includes('onboarding.html')) {
-            window.location.assign('onboarding.html');
-            return;
+        if (hasJustOnboarded) {
+            console.log('Profile looks empty but we just onboarded. Bypassing redirect to allow DB sync.');
+        } else {
+            console.warn('Profile incomplete or graduation year missing. Redirecting to onboarding...');
+            if (!window.location.pathname.includes('onboarding.html')) {
+                window.location.assign('onboarding.html');
+                return;
+            }
         }
     }
+    
+    // Clear the flag after use
+    sessionStorage.removeItem('just_onboarded');
 
     window.currentUserProfile = userProfile;
     updateNavbarUser(currentUser, userProfile);

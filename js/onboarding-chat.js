@@ -7,30 +7,38 @@ import {
 } from './supabase-config.js';
 import config from './config.js';
 
+// Import Supabase client for activities insert
+import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
+const supabase = createClient(config.supabaseUrl, config.supabaseKey);
+
 const AI_SERVER_URL = config.apiUrl;
 
 const ONBOARDING_SYSTEM_PROMPT = `
 You are Alex, a warm, professional, and highly proactive college admissions counselor at Waypoint. 
-This is your first meeting with a student, and your goal is to build their profile while making them feel supported and excited.
+Your goal is to have a deep first-time conversation with a student to set up their strategy.
 
-MISSION: You MUST lead the conversation. Do not wait for the student to volunteer information. Use leading questions to gather:
-1. Full Name (e.g., "To start our journey, what's your full name?")
-2. Graduation Year (2025-2030) (e.g., "Great to meet you, [Name]! What year will you be walking across that graduation stage?")
-3. Intended Major or interest (e.g., "Got it. Thinking about the future, do you have a specific major in mind, or are you exploring different fields like STEM, Arts, or Humanities?")
-4. Academic Stats (GPA and Optional SAT/ACT)
-5. Top 3 Colleges they are interested in
+MISSION: You MUST lead the conversation. Dig deeper than surface-level answers.
+Gather the following:
+1. Full Name
+2. Graduation Year (2025-2030)
+3. Intended Major & Career Aspirations (Dig deeper: Ask "What draws you to that field?" or "What's the dream career?")
+4. Extracurriculars & Interests (Dig deeper: Ask for 2-3 specific things they do. "Tell me about one of those in more detail—how long have you been doing X?" or "What role do you play in that organization?")
+5. Academic Stats (GPA and Optional SAT/ACT)
+6. Top 3 Colleges they are interested in
 
 CONVERSATIONAL RULES:
-- BE PROACTIVE. Every single response you give MUST end with a clear, leading question to move to the next piece of info.
+- BE PROACTIVE. Every single response you give MUST end with a clear, leading question.
 - ASK ONLY ONE THING AT A TIME.
-- If they mention a goal, give a quick "counselor tip" (e.g., "UC Berkeley is fantastic for Engineering!").
+- If they mention a major or interest, give a quick, expert "counselor tip" (e.g., "Robotics is a huge EC for STEM students—keep it up!").
 - Keep it encouraging. Use their name once you have it.
-- Once you have all 5 items, summarize their profile enthusiastically and end your message with exactly: "[COMPLETED_ONBOARDING]"
+- Once you have all info and have explored their passions, summarize their profile enthusiastically and end your message with exactly: "[COMPLETED_ONBOARDING]"
 `;
 
 let currentUser = null;
 let conversationHistory = []; 
 let isProcessing = false;
+let isVoiceEnabled = false;
+let currentAudio = null;
 
 document.addEventListener('DOMContentLoaded', async () => {
     currentUser = await getCurrentUser();
@@ -38,8 +46,56 @@ document.addEventListener('DOMContentLoaded', async () => {
         window.location.assign('login.html');
         return;
     }
+
+    setupVoiceToggle();
     initChat();
 });
+
+function setupVoiceToggle() {
+    const toggle = document.getElementById('voiceToggle');
+    if (!toggle) return;
+
+    toggle.onclick = () => {
+        isVoiceEnabled = !isVoiceEnabled;
+        const icon = toggle.querySelector('i');
+        const span = toggle.querySelector('span');
+        
+        if (isVoiceEnabled) {
+            icon.className = 'ph ph-speaker-high';
+            span.textContent = 'Voice On';
+            toggle.classList.add('btn-primary');
+            toggle.classList.remove('btn-secondary');
+        } else {
+            icon.className = 'ph ph-speaker-none';
+            span.textContent = 'Voice Off';
+            toggle.classList.remove('btn-primary');
+            toggle.classList.add('btn-secondary');
+            if (currentAudio) currentAudio.pause();
+        }
+    };
+}
+
+async function playTTS(text) {
+    if (!isVoiceEnabled || !text) return;
+
+    try {
+        const response = await fetch(`${AI_SERVER_URL}/api/tts`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ text })
+        });
+
+        if (response.ok) {
+            const blob = await response.blob();
+            const url = URL.createObjectURL(blob);
+            if (currentAudio) currentAudio.pause();
+            currentAudio = new Audio(url);
+            currentAudio.play();
+        }
+    } catch (e) {
+        console.error('TTS playback failed', e);
+    }
+}
 
 async function initChat() {
     appendTyping();
@@ -60,6 +116,7 @@ async function initChat() {
         const aiMsg = data.response || "Hi! I'm Alex, your Waypoint counselor. I'm so excited to help you navigate your journey to college. To get us started, what's your full name?";
         appendAIMessage(aiMsg);
         conversationHistory.push({ role: 'assistant', content: aiMsg });
+        playTTS(aiMsg);
     } catch (e) {
         removeTyping();
         appendAIMessage("Hi! I'm Alex, your Waypoint counselor. Let's start with your name — what should I call you?");
@@ -116,10 +173,12 @@ async function handleSend() {
             aiMsg = aiMsg.replace('[COMPLETED_ONBOARDING]', '').trim();
             appendAIMessage(aiMsg);
             conversationHistory.push({ role: 'assistant', content: aiMsg });
+            playTTS(aiMsg);
             await extractAndFinish();
         } else {
             appendAIMessage(aiMsg);
             conversationHistory.push({ role: 'assistant', content: aiMsg });
+            playTTS(aiMsg);
         }
     } catch (e) {
         console.error('Chat error:', e);
@@ -133,8 +192,8 @@ async function handleSend() {
 
 function updateStepperProgress() {
     const dots = document.querySelectorAll('.step-dot');
-    // Simple turn-based progress for the UI dots
-    const progress = Math.min(Math.floor(conversationHistory.length / 2), 5);
+    // Slower progress bar because we're digging deeper
+    const progress = Math.min(Math.floor(conversationHistory.length / 3), 5);
     
     dots.forEach((dot, i) => {
         dot.classList.remove('active', 'done');
@@ -145,18 +204,23 @@ function updateStepperProgress() {
 
 async function extractAndFinish() {
     appendTyping();
-    appendAIMessage("I'm putting all those details into your roadmap now...");
+    appendAIMessage("I'm setting up your profile and roadmap now...");
 
-    const extractionPrompt = `Extract the student's profile from our chat into JSON:
+    const extractionPrompt = `Extract the student's profile into JSON. If a piece of info is missing, use null.
+JSON structure:
 {
   "full_name": "string",
   "graduation_year": number,
   "intended_major": "string",
+  "interests": ["string", "string"],
+  "extracurriculars": [
+    {"title": "string", "organization": "string", "description": "string", "years_active": [number]}
+  ],
   "unweighted_gpa": number or null,
   "sat_score": number or null,
   "top_colleges": ["string", "string", "string"]
 }
-Only return JSON.`;
+`;
 
     try {
         const response = await fetch(`${AI_SERVER_URL}/api/chat`, {
@@ -173,17 +237,20 @@ Only return JSON.`;
         const jsonStr = data.response.match(/\{[\s\S]*\}/)?.[0];
         const profileData = JSON.parse(jsonStr);
 
+        // 1. Update Profile
         const updates = {
             id: currentUser.id,
             full_name: profileData.full_name || 'Student',
             graduation_year: profileData.graduation_year || 2026,
             intended_major: profileData.intended_major || '',
+            interests: profileData.interests || [],
             unweighted_gpa: profileData.unweighted_gpa || null,
             sat_score: profileData.sat_score || null
         };
 
         await updateProfile(currentUser.id, updates);
 
+        // 2. Add Colleges
         if (profileData.top_colleges && Array.isArray(profileData.top_colleges)) {
             for (const col of profileData.top_colleges) {
                 if (col && col.toLowerCase() !== 'null') {
@@ -192,6 +259,21 @@ Only return JSON.`;
             }
         }
 
+        // 3. Add Activities
+        if (profileData.extracurriculars && Array.isArray(profileData.extracurriculars)) {
+            const activities = profileData.extracurriculars.map(ec => ({
+                user_id: currentUser.id,
+                title: ec.title,
+                organization: ec.organization,
+                description: ec.description,
+                years_active: ec.years_active || []
+            }));
+            if (activities.length > 0) {
+                await supabase.from('activities').insert(activities);
+            }
+        }
+
+        // 4. Generate Strategy Plan
         const planRes = await fetch(`${AI_SERVER_URL}/api/onboarding/plan`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -240,7 +322,13 @@ function renderRoadmap(plan) {
     });
 
     document.getElementById('finalDashboardBtn').onclick = () => {
-        window.location.assign('dashboard.html');
+        const b = document.getElementById('finalDashboardBtn');
+        b.textContent = "Saving your profile...";
+        b.disabled = true;
+        sessionStorage.setItem('just_onboarded', 'true');
+        setTimeout(() => {
+            window.location.assign('dashboard.html?onboarded=true');
+        }, 1200);
     };
 }
 
@@ -250,7 +338,10 @@ function showFinishButton() {
     btn.className = 'btn btn-primary';
     btn.style.cssText = 'width: 100%; margin-top: 20px; height: 50px; border-radius: 99px;';
     btn.textContent = "CONTINUE TO DASHBOARD";
-    btn.onclick = () => window.location.assign('dashboard.html');
+    btn.onclick = () => {
+        sessionStorage.setItem('just_onboarded', 'true');
+        window.location.assign('dashboard.html?onboarded=true');
+    };
     container.appendChild(btn);
     container.scrollTop = container.scrollHeight;
 }
