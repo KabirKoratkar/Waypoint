@@ -16,6 +16,7 @@ const AI_SERVER_URL = config.apiUrl;
 let currentUser = null;
 let userProfile = null;
 let conversationHistory = [];
+let allMessages = [];
 let isLoading = false;
 
 // ─── Boot ───────────────────────────────────────────────────────────────────
@@ -61,6 +62,74 @@ document.addEventListener('DOMContentLoaded', async function () {
     hideLoading();
     setupChat();
 });
+
+// ─── Sessions Rendering ───────────────────────────────────────────────────────
+function renderSessions(messages) {
+    const listEl = document.getElementById('sessionsList');
+    if (!listEl) return;
+
+    if (!messages || messages.length === 0) {
+        listEl.innerHTML = '<div class="empty-state">No past chats yet</div>';
+        return;
+    }
+
+    // Group messages into sessions by time gap (e.g., 30 mins)
+    const sessions = [];
+    let currentSession = [];
+    
+    messages.forEach((msg, i) => {
+        if (i === 0) {
+            currentSession.push(msg);
+        } else {
+            const prevTime = new Date(messages[i-1].created_at).getTime();
+            const currTime = new Date(msg.created_at).getTime();
+            if (currTime - prevTime > 30 * 60 * 1000) {
+                sessions.push(currentSession);
+                currentSession = [msg];
+            } else {
+                currentSession.push(msg);
+            }
+        }
+    });
+    if (currentSession.length > 0) sessions.push(currentSession);
+
+    // Render sessions (reverse chronological)
+    listEl.innerHTML = '';
+    sessions.reverse().forEach((session, idx) => {
+        const firstUserMsg = session.find(m => m.role === 'user')?.content || 'Counseling Session';
+        const date = new Date(session[0].created_at).toLocaleDateString();
+        
+        const item = document.createElement('div');
+        item.className = 'session-item';
+        if (idx === 0) item.classList.add('active');
+        item.innerHTML = `
+            <div class="session-title">${firstUserMsg}</div>
+            <div class="session-date">${date}</div>
+        `;
+        item.onclick = () => {
+            document.querySelectorAll('.session-item').forEach(el => el.classList.remove('active'));
+            item.classList.add('active');
+            loadSession(session);
+        };
+        listEl.appendChild(item);
+    });
+}
+
+function loadSession(session) {
+    const container = document.getElementById('chatMessages');
+    if (container) container.innerHTML = '';
+    
+    session.forEach(msg => {
+        if (msg.role === 'user') appendUserMessage(msg.content, msg.created_at);
+        else appendAIMessage(msg.content, msg.created_at);
+    });
+    
+    conversationHistory = session.map(m => ({ role: m.role, content: m.content }));
+    
+    // Hide chips for old sessions
+    const chipsRow = document.getElementById('askChips');
+    if (chipsRow) chipsRow.style.display = 'none';
+}
 
 // ─── Greeting Bar ───────────────────────────────────────────────────────────
 function updateGreeting(profile) {
@@ -207,22 +276,29 @@ async function handleSend() {
 // ─── Proactive Opening ──────────────────────────────────────────────────────
 async function initConversation(profile, tasks, essays, colleges) {
     // Check if there's existing conversation history
-    const history = await getUserConversations(profile.id);
+    allMessages = await getUserConversations(profile.id);
 
-    if (history && history.length > 0) {
-        // Restore last N messages
-        const recent = history.slice(-10);
-        recent.forEach(msg => {
-            if (msg.role === 'user') appendUserMessage(msg.content, msg.created_at);
-            else appendAIMessage(msg.content, msg.created_at);
+    if (allMessages && allMessages.length > 0) {
+        renderSessions(allMessages);
+        
+        // Load the most recent session by default
+        const sessions = [];
+        let currentSession = [];
+        allMessages.forEach((msg, i) => {
+            if (i === 0) currentSession.push(msg);
+            else {
+                const prevTime = new Date(allMessages[i-1].created_at).getTime();
+                const currTime = new Date(msg.created_at).getTime();
+                if (currTime - prevTime > 30 * 60 * 1000) {
+                    sessions.push(currentSession);
+                    currentSession = [msg];
+                } else currentSession.push(msg);
+            }
         });
-
-        // Rebuild conversation history for context
-        conversationHistory = recent.map(m => ({ role: m.role, content: m.content }));
-
-        // Hide chips after history loaded
-        const chipsRow = document.getElementById('askChips');
-        if (chipsRow) chipsRow.style.display = 'none';
+        if (currentSession.length > 0) sessions.push(currentSession);
+        
+        const latestSession = sessions[sessions.length - 1];
+        loadSession(latestSession);
 
     } else {
         // First visit — fire proactive counselor greeting

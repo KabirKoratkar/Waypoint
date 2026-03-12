@@ -28,578 +28,242 @@
             }
         })();
     </script>
-</head>
-
-<body>
-    <div class="auth-container">
-        <div class="auth-card" style="max-width: 600px;">
-            <div class="auth-logo" style="text-align: center; margin-bottom: var(--space-xl);">
-                <img src="assets/logo.png" alt="Waypoint Logo" style="height: 64px; width: auto;">
-            </div>
-            <div class="auth-title">
-                <h1 style="font-size: var(--text-3xl); margin-bottom: var(--space-sm);">Let's Get Started</h1>
-                <p style="color: var(--gray-600); margin-bottom: var(--space-2xl);">Tell us a bit about yourself so we
-                    can personalize your experience</p>
-            </div>
-
-            <form id="onboardingForm">
-                <!-- Step 1: Role Selection -->
-                <div class="onboarding-step" id="step1">
-                    <div class="input-group">
-                        <label class="input-label" style="text-align: center; display: block;">Are you a student or a
-                            parent?</label>
-                        <div class="role-selection"
-                            style="display: flex; gap: var(--space-lg); margin-top: var(--space-md); justify-content: center;">
-                            <button type="button" class="role-btn active" data-role="student"
-                                onclick="selectRole('student')">
-                                <span class="role-icon">🎓</span>
-                                <strong>I'm a Student</strong>
-                            </button>
-                            <button type="button" class="role-btn" data-role="parent" onclick="selectRole('parent')">
-                                <span class="role-icon">👨‍👩‍👧‍👦</span>
-                                <strong>I'm a Parent</strong>
-                            </button>
-                        </div>
-                        <p
-                            style="font-size: var(--text-xs); color: var(--gray-500); text-align: center; margin-top: var(--space-md);">
-                            We'll customize the experience and language based on your role.
-                        </p>
-                    </div>
-                </div>
-
-                <!-- Step 2: Personal Details -->
-                <div class="onboarding-step" id="step2" style="display: none;">
-                    <div class="input-group">
-                        <label class="input-label" for="fullName" id="labelFullName">Your Full Name</label>
-                        <input type="text" id="fullName" class="input" placeholder="First and Last Name" required>
-                    </div>
-
-                    <div id="studentDetailSection"
-                        style="display: none; margin-top: var(--space-lg); padding-top: var(--space-lg); border-top: 1px solid var(--gray-100);">
-                        <div class="input-group">
-                            <label class="input-label" for="studentName">Student's Full Name</label>
-                            <input type="text" id="studentName" class="input" placeholder="First and Last Name">
-                        </div>
-                    </div>
-
-                    <div class="grid grid-2 gap-md">
-                        <div class="input-group">
-                            <label class="input-label" for="schoolName" id="labelSchoolName">High School</label>
-                            <div style="position: relative;">
-                                <input type="text" id="schoolName" class="input" placeholder="Start typing to search..."
-                                    autocomplete="off">
-                                <div id="highSchoolSearchResults" class="card"
-                                    style="position: absolute; top: calc(100% + 4px); left: 0; width: 100%; z-index: 100; display: none; padding: var(--space-xs); max-height: 200px; overflow-y: auto; box-shadow: var(--shadow-lg); border: 1px solid var(--border); background: var(--surface); border-radius: var(--radius-lg);">
-                                </div>
-                            </div>
-                        </div>
-                        <div class="input-group">
-                            <label class="input-label" for="gradYear" id="labelGradYear">Graduation Year</label>
-                            <select id="gradYear" class="input" required>
-                                <option value="">Select year...</option>
-                                <option value="2025">2025</option>
-                                <option value="2026">2026</option>
-                                <option value="2027">2027</option>
-                                <option value="2028">2028</option>
-                                <option value="2029">2029</option>
-                            </select>
-                        </div>
-                    </div>
-
-                    <div class="input-group">
-                        <label class="input-label" id="labelInterests">Interests</label>
-                        <p style="font-size: var(--text-xs); color: var(--gray-500); margin-bottom: var(--space-sm);">
-                            Select or type areas that interest you. This helps the AI personalize your strategy.</p>
-                        <div id="interestTags"
-                            style="display: flex; flex-wrap: wrap; gap: var(--space-xs); margin-bottom: var(--space-sm);">
-                        </div>
-                        <input type="text" id="interestInput" class="input" placeholder="e.g. AI, Biology, Music..."
-                            autocomplete="off">
-                        <div class="interest-suggestions"
-                            style="display: flex; flex-wrap: wrap; gap: var(--space-xs); margin-top: var(--space-sm);">
-                            <button type="button" class="interest-pill" onclick="toggleInterest('Computer Science')">💻
-                                Computer Science</button>
-                            <button type="button" class="interest-pill" onclick="toggleInterest('Engineering')">⚙️
-                                Engineering</button>
-                            <button type="button" class="interest-pill" onclick="toggleInterest('Biology')">🧬
-                                Biology</button>
-                            <button type="button" class="interest-pill" onclick="toggleInterest('Business')">💼
-                                Business</button>
-                            <button type="button" class="interest-pill" onclick="toggleInterest('Arts')">🎨
-                                Arts</button>
-                            <button type="button" class="interest-pill" onclick="toggleInterest('Psychology')">🧠
-                                Psychology</button>
-                            <button type="button" class="interest-pill" onclick="toggleInterest('Pre-Med')">🩺
-                                Pre-Med</button>
-                            <button type="button" class="interest-pill" onclick="toggleInterest('Economics')">📈
-                                Economics</button>
-                            <button type="button" class="interest-pill" onclick="toggleInterest('Political Science')">⚖️
-                                Political Science</button>
-                            <button type="button" class="interest-pill" onclick="toggleInterest('Writing')">✍️
-                                Writing</button>
-                            <button type="button" class="interest-pill" onclick="toggleInterest('Music')">🎵
-                                Music</button>
-                            <button type="button" class="interest-pill" onclick="toggleInterest('Mathematics')">📐
-                                Mathematics</button>
-                        </div>
-                    </div>
-
-                    <div
-                        style="margin-top: var(--space-lg); padding-top: var(--space-lg); border-top: 1px solid var(--gray-100);">
-                        <p style="font-size: var(--text-sm); font-weight: 700; color: var(--gray-800); margin-bottom: var(--space-sm);"
-                            id="labelAcademicStats">
-                            Academic Stats (Optional but Recommended)</p>
-                        <div class="grid grid-3 gap-md">
-                            <div class="input-group">
-                                <label class="input-label" for="uwGPA">GPA</label>
-                                <input type="number" id="uwGPA" class="input" step="0.01" placeholder="4.00">
-                            </div>
-                            <div class="input-group">
-                                <label class="input-label" for="satScore">SAT</label>
-                                <input type="number" id="satScore" class="input" placeholder="1600">
-                            </div>
-                            <div class="input-group">
-                                <label class="input-label" for="actScore">ACT</label>
-                                <input type="number" id="actScore" class="input" placeholder="36">
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Step 3: Colleges -->
-                <div class="onboarding-step" id="step3" style="display: none;">
-                    <div class="input-group">
-                        <label class="input-label" id="labelCollegeList">Add Your College List</label>
-                        <p style="font-size: var(--text-sm); color: var(--gray-600); margin-bottom: var(--space-md);"
-                            id="labelCollegeSubtitle">
-                            Start with a few colleges you're interested in. You can add more later.</p>
-
-                        <div id="collegeList" style="margin-bottom: var(--space-md);"></div>
-
-                        <div style="position: relative;">
-                            <div style="display: flex; gap: var(--space-sm);">
-                                <input type="text" id="collegeInput" class="input" placeholder="Enter college name..."
-                                    autocomplete="off">
-                                <button type="button" class="btn btn-secondary" onclick="addCollege()">Add</button>
-                            </div>
-                            <div id="onboardingSearchResults" class="card"
-                                style="position: absolute; top: calc(100% + 4px); left: 0; width: 100%; z-index: 100; display: none; padding: var(--space-xs); max-height: 250px; overflow-y: auto; box-shadow: var(--shadow-lg); border: 1px solid var(--border); background: var(--surface); border-radius: var(--radius-lg);">
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Step 4: Strategy & Goals -->
-                <div class="onboarding-step" id="step4" style="display: none;">
-                    <div class="input-group">
-                        <label class="input-label" id="labelStrategy">Your Application Strategy</label>
-                        <p style="font-size: var(--text-sm); color: var(--gray-600); margin-bottom: var(--space-md);"
-                            id="labelStrategySubtitle">
-                            How do you want to tackle your application journey?</p>
-
-                        <div class="grid grid-2 gap-md mb-xl">
-                            <div class="input-group">
-                                <label class="input-label" for="intensityLevel">Intensity Level</label>
-                                <select id="intensityLevel" class="input">
-                                    <option value="Balanced" selected>Balanced (Standard Pace)</option>
-                                    <option value="Aggressive">Aggressive (Fast-Tracked)</option>
-                                    <option value="Chill">Chill (Stress-Free)</option>
-                                </select>
-                            </div>
-                            <div class="input-group">
-                                <label class="input-label" for="submissionLeeway">Submission Buffer</label>
-                                <select id="submissionLeeway" class="input">
-                                    <option value="0">On the deadline</option>
-                                    <option value="1">1 Day early</option>
-                                    <option value="3" selected>3 Days early</option>
-                                    <option value="7">1 Week early</option>
-                                </select>
-                            </div>
-                        </div>
-
-                        <div class="input-group mt-xl">
-                            <label class="input-label" for="topGoal" id="labelGoal">Your #1 Goal This Year</label>
-                            <input type="text" id="topGoal" class="input"
-                                placeholder="e.g. Get into my dream reach school, Find a great scholarship, etc.">
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Step 5: AI Plan -->
-                <div class="onboarding-step" id="step5" style="display: none;">
-                    <div id="planLoading" style="text-align: center; padding: 2rem;">
-                        <div class="spinner" style="margin: 0 auto 1rem;"></div>
-                        <p id="labelPlanLoading">AI is crafting your personalized application schedule...</p>
-                    </div>
-
-                    <div id="planDisplay" style="display: none;">
-                        <div class="card card-compact mb-lg"
-                            style="background: var(--gradient-subtle); border: 1px solid var(--primary-blue);">
-                            <div style="display: flex; align-items: center; gap: var(--space-md);">
-                                <span style="font-size: 2rem;">🤖</span>
-                                <div>
-                                    <h4 style="margin: 0; color: var(--primary-blue);">Counselor Strategy</h4>
-                                    <p id="planSummary"
-                                        style="font-size: var(--text-sm); margin: 0; color: var(--gray-700);"></p>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div id="tasksContainer"
-                            style="display: flex; flex-direction: column; gap: var(--space-sm); max-height: 350px; overflow-y: auto; padding-right: 5px;">
-                            <!-- AI Tasks will be injected here -->
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Step 6: Plan Selection (Free Trial / Paid) — LAST STEP -->
-                <div class="onboarding-step" id="step6" style="display: none;">
-                    <div class="input-group" style="text-align: center;">
-                        <label class="input-label"
-                            style="display: block; text-align: center; font-size: var(--text-xl); margin-bottom: var(--space-sm);">Choose
-                            Your Plan</label>
-                        <p style="font-size: var(--text-sm); color: var(--gray-600); margin-bottom: var(--space-xl);">
-                            Your profile and plan are ready! Pick how you'd like to get started.</p>
-
-                        <div style="display: flex; gap: var(--space-lg); justify-content: center; flex-wrap: wrap;">
-                            <!-- Free Trial -->
-                            <button type="button" class="plan-card active" data-plan="trial"
-                                onclick="selectPlan('trial')">
-                                <div class="plan-badge">RECOMMENDED</div>
-                                <span class="plan-icon">🚀</span>
-                                <strong style="font-size: var(--text-lg);">7-Day Free Trial</strong>
-                                <p
-                                    style="font-size: var(--text-sm); color: var(--gray-600); margin: var(--space-sm) 0;">
-                                    Full access to all features. No credit card required.</p>
-                                <div style="font-size: var(--text-2xl); font-weight: 800; color: var(--primary-blue);">
-                                    $0</div>
-                                <p style="font-size: var(--text-xs); color: var(--gray-500);">for 7 days</p>
-                            </button>
-
-                            <!-- Pro Plan -->
-                            <button type="button" class="plan-card" data-plan="pro" onclick="selectPlan('pro')">
-                                <span class="plan-icon">⚡</span>
-                                <strong style="font-size: var(--text-lg);">Waypoint Pro</strong>
-                                <p
-                                    style="font-size: var(--text-sm); color: var(--gray-600); margin: var(--space-sm) 0;">
-                                    Full season access. AI counselor, essays, analytics, and more.</p>
-                                <div style="font-size: var(--text-2xl); font-weight: 800; color: var(--primary-blue);">
-                                    $55.99</div>
-                                <p style="font-size: var(--text-xs); color: var(--gray-500);">per application season (6
-                                    months)</p>
-                            </button>
-                        </div>
-                    </div>
-                </div>
-
-                <div style="display: flex; justify-content: space-between; margin-top: var(--space-2xl);">
-                    <button type="button" class="btn btn-ghost" id="backBtn" style="display: none;"
-                        onclick="prevStep()">Back</button>
-                    <button type="button" class="btn btn-primary" id="nextBtn" onclick="nextStep()">Continue</button>
-                    <button type="submit" class="btn btn-primary" id="finishBtn" style="display: none;">Finish & Go to
-                        Dashboard</button>
-                </div>
-            </form>
-
-            <div style="margin-top: var(--space-xl);">
-                <div style="display: flex; gap: var(--space-sm); justify-content: center;">
-                    <div class="step-indicator active" id="indicator1"></div>
-                    <div class="step-indicator" id="indicator2"></div>
-                    <div class="step-indicator" id="indicator3"></div>
-                    <div class="step-indicator" id="indicator4"></div>
-                    <div class="step-indicator" id="indicator5"></div>
-                    <div class="step-indicator" id="indicator6"></div>
-                </div>
-            </div>
-        </div>
-    </div>
-    </div>
-    </div>
 
     <style>
-        .step-indicator {
-            width: 12px;
-            height: 12px;
-            border-radius: 50%;
-            background: var(--gray-300);
-            transition: all var(--transition-base);
+        .onboarding-chat-container {
+            max-width: 800px;
+            margin: 40px auto;
+            display: flex;
+            flex-direction: column;
+            height: calc(100vh - 120px);
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-2xl);
+            overflow: hidden;
+            box-shadow: var(--shadow-xl);
         }
 
-        .step-indicator.active {
-            background: var(--primary-blue);
-            width: 32px;
-            border-radius: var(--radius-full);
-        }
-
-        .college-tag {
-            display: inline-flex;
-            align-items: center;
-            gap: var(--space-sm);
-            padding: var(--space-sm) var(--space-md);
-            background: var(--gray-100);
-            border-radius: var(--radius-full);
-            margin: var(--space-xs);
-            font-size: var(--text-sm);
-        }
-
-        .remove-college {
-            cursor: pointer;
-            color: var(--gray-500);
-            font-weight: 700;
-        }
-
-        .remove-college:hover {
-            color: var(--error);
-        }
-
-        .search-item:hover {
-            background: var(--gray-100) !important;
-        }
-
-        .strategy-card {
+        .chat-header {
+            padding: var(--space-lg) var(--space-xl);
+            border-bottom: 1px solid var(--border);
             display: flex;
             align-items: center;
             gap: var(--space-md);
-            padding: var(--space-md);
-            background: var(--gray-50);
-            border: 2px solid transparent;
-            border-radius: var(--radius-lg);
-            cursor: pointer;
-            transition: all var(--transition-base);
+            background: var(--surface-soft);
         }
 
-        .strategy-card .icon {
+        .chat-avatar {
+            width: 48px;
+            height: 48px;
+            background: var(--gradient-primary);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
             font-size: 24px;
         }
 
-        .strategy-card strong {
-            font-size: var(--text-sm);
-            color: var(--gray-700);
-        }
-
-        .strategy-option input:checked+.strategy-card {
-            border-color: var(--primary-blue);
-            background: white;
-            box-shadow: var(--shadow-md);
-        }
-
-        .strategy-option input:checked+.strategy-card strong {
-            color: var(--primary-blue);
-        }
-
-        /* Role Buttons */
-        .role-btn {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: var(--space-sm);
-            padding: var(--space-xl) var(--space-2xl);
-            background: var(--gray-50);
-            border: 2px solid transparent;
-            border-radius: var(--radius-xl);
-            cursor: pointer;
-            transition: all var(--transition-base);
-            text-align: center;
-            min-width: 180px;
-        }
-
-        .role-btn:hover {
-            border-color: var(--gray-300);
-            transform: translateY(-2px);
-        }
-
-        .role-btn.active {
-            border-color: var(--primary-blue);
-            background: white;
-            box-shadow: var(--shadow-lg);
-            transform: translateY(-4px);
-        }
-
-        .role-btn.active strong {
-            color: var(--primary-blue);
-        }
-
-        .role-icon {
-            font-size: 3rem;
-        }
-
-        .role-btn strong {
-            font-size: var(--text-md);
-            color: var(--gray-800);
-        }
-
-        /* Plan Cards */
-        .plan-card {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: var(--space-xs);
-            padding: var(--space-xl) var(--space-xl);
-            background: var(--gray-50);
-            border: 2px solid transparent;
-            border-radius: var(--radius-xl);
-            cursor: pointer;
-            transition: all var(--transition-base);
-            text-align: center;
-            min-width: 220px;
-            max-width: 260px;
+        .chat-messages {
             flex: 1;
-            position: relative;
+            overflow-y: auto;
+            padding: var(--space-xl);
+            display: flex;
+            flex-direction: column;
+            gap: var(--space-lg);
+            scroll-behavior: smooth;
         }
 
-        .plan-card:hover {
-            border-color: var(--gray-300);
-            transform: translateY(-2px);
+        .chat-input-area {
+            padding: var(--space-xl);
+            border-top: 1px solid var(--border);
+            background: var(--surface);
         }
 
-        .plan-card.active {
+        .chat-input-wrap {
+            display: flex;
+            gap: var(--space-md);
+            background: var(--surface-soft);
+            border: 2px solid var(--border);
+            border-radius: var(--radius-xl);
+            padding: 8px 12px 8px 20px;
+            transition: all var(--transition-base);
+        }
+
+        .chat-input-wrap:focus-within {
             border-color: var(--primary-blue);
-            background: white;
-            box-shadow: var(--shadow-lg);
-            transform: translateY(-4px);
+            box-shadow: var(--shadow-glow);
         }
 
-        .plan-badge {
-            position: absolute;
-            top: -10px;
-            background: var(--primary-blue);
+        .chat-textarea {
+            flex: 1;
+            background: transparent;
+            border: none;
+            outline: none;
+            padding: 10px 0;
+            font-size: var(--text-base);
+            font-family: var(--font-primary);
+            resize: none;
+            max-height: 120px;
+        }
+
+        .send-btn {
+            width: 44px;
+            height: 44px;
+            background: var(--gradient-primary);
             color: white;
-            padding: 2px 12px;
-            border-radius: var(--radius-full);
-            font-size: 10px;
-            font-weight: 800;
-            letter-spacing: 0.05em;
-            display: none;
-        }
-
-        .plan-card.active .plan-badge {
-            display: block;
-        }
-
-        .plan-icon {
-            font-size: 2.5rem;
-        }
-
-        /* Interest Pills */
-        .interest-pill {
-            background: var(--gray-100);
-            border: 1px solid var(--gray-200);
-            border-radius: var(--radius-full);
-            padding: 6px 14px;
-            font-size: var(--text-xs);
-            cursor: pointer;
-            transition: all var(--transition-fast);
-            color: var(--gray-700);
-        }
-
-        .interest-pill:hover {
-            background: var(--gray-200);
-        }
-
-        .interest-pill.selected {
-            background: var(--primary-blue);
-            color: white;
-            border-color: var(--primary-blue);
-        }
-
-        .interest-tag {
-            display: inline-flex;
+            border: none;
+            border-radius: 50%;
+            display: flex;
             align-items: center;
-            gap: 4px;
-            padding: 4px 10px;
-            background: var(--primary-blue);
-            color: white;
-            border-radius: var(--radius-full);
-            font-size: var(--text-xs);
-            font-weight: 600;
-        }
-
-        .interest-tag .remove-interest {
+            justify-content: center;
             cursor: pointer;
-            font-weight: 700;
-            margin-left: 2px;
-            opacity: 0.7;
+            transition: transform 0.2s;
         }
 
-        .interest-tag .remove-interest:hover {
-            opacity: 1;
+        .send-btn:hover {
+            transform: scale(1.1);
         }
 
-        /* Dark mode overrides */
-        [data-theme="dark"] .role-btn {
-            background: rgba(255, 255, 255, 0.05);
+        .msg-row {
+            display: flex;
+            gap: var(--space-md);
+            max-width: 85%;
         }
 
-        [data-theme="dark"] .role-btn.active {
-            background: rgba(91, 141, 238, 0.1);
+        .msg-row.user {
+            align-self: flex-end;
+            flex-direction: row-reverse;
         }
 
-        [data-theme="dark"] .plan-card {
-            background: rgba(255, 255, 255, 0.05);
+        .msg-bubble {
+            padding: var(--space-md) var(--space-xl);
+            border-radius: var(--radius-xl);
+            font-size: var(--text-base);
+            line-height: 1.6;
+        }
+
+        .msg-bubble.ai {
+            background: var(--surface-soft);
+            border: 1px solid var(--border);
+            border-top-left-radius: 4px;
+        }
+
+        .msg-bubble.user {
+            background: var(--gradient-primary);
             color: white;
+            border-top-right-radius: 4px;
         }
 
-        [data-theme="dark"] .plan-card p {
-            color: rgba(255, 255, 255, 0.7) !important;
+        .progress-stepper {
+            padding: 12px var(--space-xl);
+            background: var(--surface-soft);
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: center;
+            gap: 8px;
         }
 
-        [data-theme="dark"] .plan-card.active {
-            background: rgba(91, 141, 238, 0.1);
-            color: white;
+        .step-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--gray-300);
+            transition: all 0.3s;
         }
 
-        [data-theme="dark"] .interest-pill {
-            background: rgba(255, 255, 255, 0.05);
-            border-color: rgba(255, 255, 255, 0.1);
-            color: var(--gray-400);
-        }
-
-        [data-theme="dark"] .interest-pill.selected {
+        .step-dot.active {
             background: var(--primary-blue);
-            color: white;
+            transform: scale(1.4);
         }
 
-        /* Responsive Fixes */
-        @media (max-width: 768px) {
-            .role-grid {
-                flex-direction: column !important;
-                align-items: stretch !important;
-            }
+        .step-dot.done {
+            background: var(--success);
+        }
 
-            .role-btn {
-                min-width: 0 !important;
-                width: 100% !important;
-                padding: var(--space-lg) !important;
-            }
+        .roadmap-card {
+            background: var(--gradient-subtle);
+            border: 1px solid var(--primary-blue);
+            border-radius: var(--radius-xl);
+            padding: var(--space-xl);
+            margin-top: var(--space-md);
+        }
 
-            .role-icon {
-                font-size: 2rem !important;
-            }
+        .roadmap-task {
+            display: flex;
+            gap: var(--space-md);
+            margin-bottom: var(--space-md);
+            padding: var(--space-md);
+            background: var(--surface);
+            border-radius: var(--radius-lg);
+            border-left: 4px solid var(--primary-blue);
+        }
+        .typing-dots {
+            display: flex;
+            gap: 4px;
+            padding: 8px 0;
+        }
 
-            .plan-grid {
-                flex-direction: column !important;
-                align-items: stretch !important;
-            }
+        .typing-dots span {
+            width: 8px;
+            height: 8px;
+            background: var(--gray-400);
+            border-radius: 50%;
+            animation: typing 1s infinite alternate;
+        }
 
-            .plan-card {
-                min-width: 0 !important;
-                max-width: none !important;
-                width: 100% !important;
-            }
+        .typing-dots span:nth-child(2) { animation-delay: 0.2s; }
+        .typing-dots span:nth-child(3) { animation-delay: 0.4s; }
 
-            .onboarding-card {
-                padding: var(--space-lg) !important;
-                border-radius: var(--radius-lg) !important;
-            }
-
-            .step-indicator.active {
-                width: 20px !important;
-            }
+        @keyframes typing {
+            from { opacity: 0.3; transform: translateY(0); }
+            to { opacity: 1; transform: translateY(-4px); }
         }
     </style>
+</head>
+
+<body>
+    <div class="onboarding-chat-container">
+        <!-- Progress -->
+        <div class="progress-stepper" id="progressStepper">
+            <div class="step-dot active"></div>
+            <div class="step-dot"></div>
+            <div class="step-dot"></div>
+            <div class="step-dot"></div>
+            <div class="step-dot"></div>
+        </div>
+
+        <!-- Header -->
+        <div class="chat-header">
+            <div class="chat-avatar">
+                <img src="assets/logo.png" alt="Logo" style="width:32px; height:32px; object-fit:contain;">
+            </div>
+            <div>
+                <h3 style="margin: 0; font-size: var(--text-lg);">Your Waypoint Counselor</h3>
+                <p style="margin: 0; font-size: 12px; color: var(--success);">Online - Setting up your profile</p>
+            </div>
+        </div>
+
+        <!-- Messages -->
+        <div class="chat-messages" id="chatMessages">
+            <!-- Messages injected by JS -->
+        </div>
+
+        <!-- Input -->
+        <div class="chat-input-area">
+            <div class="chat-input-wrap">
+                <textarea id="chatInput" class="chat-textarea" placeholder="Type your answer here..." rows="1"></textarea>
+                <button id="sendBtn" class="send-btn">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="22" y1="2" x2="11" y2="13"></line>
+                        <polyline points="22 2 15 22 11 13 2 9 22 2"></polyline>
+                    </svg>
+                </button>
+            </div>
+        </div>
+    </div>
 
     <script src="js/main.js"></script>
-    <script type="module" src="js/onboarding.js"></script>
+    <script type="module" src="js/onboarding-chat.js"></script>
 </body>
 
 </html>
