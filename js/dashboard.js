@@ -30,10 +30,15 @@ document.addEventListener('DOMContentLoaded', async function () {
     }
 
     userProfile = await getUserProfile(currentUser.id);
-    if (!userProfile || !userProfile.graduation_year) {
-        console.log('Incomplete profile, redirecting to onboarding...');
-        window.location.assign('onboarding.html');
-        return;
+    console.log('[DEBUG] User Profile:', userProfile);
+    
+    if (!userProfile || !userProfile.graduation_year || userProfile.graduation_year === 0) {
+        console.warn('Profile incomplete or graduation year missing. Redirecting to onboarding...');
+        // Only redirect if NOT already on onboarding or login
+        if (!window.location.pathname.includes('onboarding.html')) {
+            window.location.assign('onboarding.html');
+            return;
+        }
     }
 
     window.currentUserProfile = userProfile;

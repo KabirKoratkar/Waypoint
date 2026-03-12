@@ -104,6 +104,15 @@
             font-family: var(--font-primary);
             resize: none;
             max-height: 120px;
+            color: #1a1a1a; /* Explicit dark color for light mode */
+        }
+
+        [data-theme="dark"] .chat-textarea {
+            color: #ffffff !important;
+        }
+
+        .chat-textarea::placeholder {
+            color: var(--gray-400);
         }
 
         .send-btn {
@@ -238,8 +247,8 @@
                 <img src="assets/logo.png" alt="Logo" style="width:32px; height:32px; object-fit:contain;">
             </div>
             <div>
-                <h3 style="margin: 0; font-size: var(--text-lg);">Your Waypoint Counselor</h3>
-                <p style="margin: 0; font-size: 12px; color: var(--success);">Online - Setting up your profile</p>
+                <h3 style="margin: 0; font-size: var(--text-lg);">Alex — Waypoint Counselor</h3>
+                <p style="margin: 0; font-size: 12px; color: var(--success);">Online • Onboarding Session</p>
             </div>
         </div>
 

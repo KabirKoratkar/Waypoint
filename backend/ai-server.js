@@ -280,6 +280,20 @@ app.post('/api/onboarding/plan', async (req, res) => {
         });
 
         const planData = JSON.parse(completion.choices[0].message.content);
+        
+        // Save tasks to DB
+        if (planData.plan && planData.plan.tasks) {
+            const tasksToInsert = planData.plan.tasks.map(t => ({
+                user_id: userId,
+                title: t.title,
+                description: t.description,
+                due_date: t.dueDate,
+                category: t.category,
+                priority: t.priority
+            }));
+            await supabase.from('tasks').insert(tasksToInsert);
+        }
+
         res.json(planData);
 
     } catch (error) {
@@ -535,7 +549,7 @@ app.post('/api/tts', async (req, res) => {
 // Main AI chat endpoint
 app.post('/api/chat', async (req, res) => {
     try {
-        const { message, userId, conversationHistory = [], saveToHistory = true } = req.body;
+        const { message, userId, conversationHistory = [], saveToHistory = true, systemPrompt: customSystemPrompt } = req.body;
 
         if (!message || !userId) {
             return res.status(400).json({ error: 'Message and userId are required' });
@@ -574,7 +588,7 @@ app.post('/api/chat', async (req, res) => {
         const messages = [
             {
                 role: 'system',
-                content: `You are the central "Intelligence Command Center" for ${profile?.full_name || 'this student'}'s college application process. You have ABSOLUTE access to view and manipulate their entire application ecosystem.
+                content: customSystemPrompt || `You are the central "Intelligence Command Center" for ${profile?.full_name || 'this student'}'s college application process. You have ABSOLUTE access to view and manipulate their entire application ecosystem.
                 
                 MISSION: Proactively manage their profile, schedule, and essays. YOU ARE AN ELITE ADMISSIONS COACH.
 
