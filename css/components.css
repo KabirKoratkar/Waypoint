@@ -298,7 +298,7 @@
     display: none;
 }
 
-@media (max-width: 992px) {
+@media (max-width: 1150px) {
     .mobile-only-nav {
         display: list-item;
     }
@@ -356,7 +356,7 @@
     color: var(--primary-blue);
 }
 
-@media (max-width: 992px) {
+@media (max-width: 1150px) {
     .navbar {
         top: 10px;
         border-radius: var(--radius-xl);
@@ -951,7 +951,7 @@
     color: var(--primary-blue);
 }
 
-@media (max-width: 992px) {
+@media (max-width: 1150px) {
     .navbar-links {
         display: none;
         position: absolute;
