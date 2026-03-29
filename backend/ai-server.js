@@ -139,9 +139,10 @@ app.post('/api/feedback', async (req, res) => {
             .select();
 
         if (resend) {
+            const adminEmails = process.env.ADMIN_EMAILS?.split(',') || ['onboarding@resend.dev'];
             await resend.emails.send({
                 from: 'Waypoint <onboarding@resend.dev>',
-                to: ['kabirvideo@gmail.com'],
+                to: adminEmails,
                 subject: `[Waypoint Beta] ${type || 'Feedback'}: ${subject || 'No Subject'}`,
                 html: `<p><strong>From:</strong> ${email || 'Anonymous'}</p><p>${message}</p>`
             }).catch(e => console.error('Email failed:', e));

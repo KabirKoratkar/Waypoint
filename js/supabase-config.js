@@ -65,8 +65,9 @@ async function getUserProfile(userId) {
         console.warn(`No profile found for UID: ${userId}. This is expected for new users.`);
     }
 
-    // WHITELIST: Automatically grant full access to primary account
-    if (data && data.email === 'kabirvideo@gmail.com') {
+    // ADMIN WHITELIST: Check environment variable for admin email
+    const adminEmail = import.meta.env.VITE_ADMIN_EMAILS?.split(',') || [];
+    if (data && adminEmail.includes(data.email)) {
         data.is_premium = true;
         data.is_beta = true;
     }
@@ -138,8 +139,9 @@ async function updateProfile(userId, updates) {
  */
 function isPremiumUser(profile) {
     if (!profile) return false;
-    // Whitelist check
-    if (profile.email === 'kabirvideo@gmail.com') return true;
+    // Admin whitelist check
+    const adminEmail = import.meta.env.VITE_ADMIN_EMAILS?.split(',') || [];
+    if (adminEmail.includes(profile.email)) return true;
     // Paid subscribers or beta testers bypass trial check
     if (profile.is_premium || profile.is_beta) return true;
 

@@ -162,58 +162,69 @@ router.post('/webhook', express.raw({ type: 'application/json' }), async (req, r
     }
 
     // Handle the event
-    switch (event.type) {
-        case 'checkout.session.completed':
-            const session = event.data.object;
-            const userId = session.client_reference_id;
-            const customerId = session.customer;
+    try {
+        switch (event.type) {
+            case 'checkout.session.completed':
+                const session = event.data.object;
+                const userId = session.client_reference_id;
+                const customerId = session.customer;
 
-            console.log(`Payment successful for user: ${userId}, Customer: ${customerId}`);
+                console.log(`Payment successful for user: ${userId}, Customer: ${customerId}`);
 
-            // Update user's premium status in Supabase
-            const { error: upgradeError } = await supabase
-                .from('profiles')
-                .update({
-                    is_premium: true,
-                    premium_since: new Date().toISOString(),
-                    stripe_customer_id: customerId
-                })
-                .eq('id', userId);
+                // Update user's premium status in Supabase
+                const { error: upgradeError } = await supabase
+                    .from('profiles')
+                    .update({
+                        is_premium: true,
+                        premium_since: new Date().toISOString(),
+                        stripe_customer_id: customerId
+                    })
+                    .eq('id', userId);
 
-            if (upgradeError) {
-                console.error('Error updating profile after payment:', upgradeError);
-            } else {
+                if (upgradeError) {
+                    console.error('Error updating profile after payment:', upgradeError);
+                    return res.status(500).json({ 
+                        error: 'Failed to update user premium status',
+                        details: upgradeError.message 
+                    });
+                }
                 console.log(`User ${userId} upgraded to Premium!`);
-            }
-            break;
+                break;
 
-        case 'customer.subscription.deleted':
-            const subscription = event.data.object;
-            const stripeCustId = subscription.customer;
+            case 'customer.subscription.deleted':
+                const subscription = event.data.object;
+                const stripeCustId = subscription.customer;
 
-            console.log(`Subscription deleted for customer: ${stripeCustId}`);
+                console.log(`Subscription deleted for customer: ${stripeCustId}`);
 
-            // Revoke premium status in Supabase
-            const { error: revokeError } = await supabase
-                .from('profiles')
-                .update({
-                    is_premium: false,
-                    premium_since: null
-                })
-                .eq('stripe_customer_id', stripeCustId);
+                // Revoke premium status in Supabase
+                const { error: revokeError } = await supabase
+                    .from('profiles')
+                    .update({
+                        is_premium: false,
+                        premium_since: null
+                    })
+                    .eq('stripe_customer_id', stripeCustId);
 
-            if (revokeError) {
-                console.error('Error revoking premium status:', revokeError);
-            } else {
+                if (revokeError) {
+                    console.error('Error revoking premium status:', revokeError);
+                    return res.status(500).json({ 
+                        error: 'Failed to revoke premium status',
+                        details: revokeError.message 
+                    });
+                }
                 console.log(`Customer ${stripeCustId} premium status revoked.`);
-            }
-            break;
+                break;
 
-        default:
-            console.log(`Unhandled event type ${event.type}`);
+            default:
+                console.log(`Unhandled event type ${event.type}`);
+        }
+
+        res.json({ received: true });
+    } catch (err) {
+        console.error('Error processing webhook event:', err);
+        res.status(500).json({ error: 'Webhook processing failed', details: err.message });
     }
-
-    res.json({ received: true });
 });
 
 export default router;
