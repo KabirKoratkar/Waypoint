@@ -139,11 +139,13 @@ async function updateProfile(userId, updates) {
  */
 function isPremiumUser(profile) {
     if (!profile) return false;
-    // Admin whitelist check
-    const adminEmail = import.meta.env.VITE_ADMIN_EMAILS?.split(',') || [];
+    // Admin or moderator always has premium
+    if (profile.role === 'admin' || profile.role === 'moderator') return true;
+    // Fallback: check environment variable for admin email (legacy support)
+    const adminEmail = import.meta.env.VITE_ADMIN_EMAILS?.split(',').map(e => e.trim()) || [];
     if (adminEmail.includes(profile.email)) return true;
     // Paid subscribers or beta testers bypass trial check
-    if (profile.is_premium || profile.is_beta) return true;
+    if (profile.is_premium || profile.is_beta || profile.role === 'beta_tester') return true;
 
     // Free Trial Logic (7 days)
     if (profile.created_at) {
