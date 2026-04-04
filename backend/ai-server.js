@@ -91,14 +91,26 @@ const researchLimiter = rateLimit({
 });
 
 app.use(cors({
-    origin: [
-        'https://waypointedu.org',
-        'https://www.waypointedu.org',
-        'https://waypoint-app.vercel.app',
-        'https://waypoint-ai.vercel.app',
-        'http://localhost:5500', // For local development tests
-        'http://localhost:3001'
-    ],
+    origin: (origin, callback) => {
+        // Allow local development
+        if (!origin || origin.includes('localhost') || origin.includes('127.0.0.1')) {
+            return callback(null, true);
+        }
+        
+        // Allow any Vercel subdomain and waypointedu.org
+        const allowedPatterns = [
+            /\.vercel\.app$/,
+            /^https:\/\/waypointedu\.org$/,
+            /^https:\/\/www\.waypointedu\.org$/
+        ];
+        
+        if (allowedPatterns.some(pattern => pattern.test(origin))) {
+            callback(null, true);
+        } else {
+            console.warn('Blocked by CORS:', origin);
+            callback(new Error('Not allowed by CORS'));
+        }
+    },
     credentials: true
 }));
 app.use((req, res, next) => {
