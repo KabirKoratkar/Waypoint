@@ -17,20 +17,46 @@ let currentUser = null;
 let userProfile = null;
 let conversationHistory = [];
 let allMessages = [];
-let isLoading = false;
-
 // ─── Boot ───────────────────────────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', async function () {
     showLoading('Waking up your counselor...');
 
-    currentUser = await getCurrentUser();
+    // 1. Handle Auth Redirects (Google/Social)
+    // If we just got redirected, wait a moment for the Supabase session to sync
+    if (window.location.hash || window.location.search.includes('access_token') || window.location.search.includes('code=')) {
+        console.log('[DEBUG] Auth redirect detected, waiting for session sync...');
+        await new Promise(resolve => setTimeout(resolve, 1500));
+    }
+
+    try {
+        currentUser = await getCurrentUser();
+    } catch (err) {
+        console.error('Failed to get user session:', err);
+        window.location.assign('login.html');
+        return;
+    }
+
     if (!currentUser) {
         window.location.assign('login.html');
         return;
     }
 
-    userProfile = await getUserProfile(currentUser.id);
-    console.log('[DEBUG] User Profile:', userProfile);
+    // 2. Strict Email Confirmation Check (unless mock user)
+    const isMockUser = currentUser.id && (currentUser.id.startsWith('dev-user-') || currentUser.id.startsWith('auth0-'));
+    if (!isMockUser && !currentUser.email_confirmed_at && currentUser.app_metadata?.provider === 'email') {
+        console.warn('Email not confirmed, redirecting...');
+        window.location.assign(`confirm-email.html?email=${encodeURIComponent(currentUser.email)}`);
+        return;
+    }
+
+    try {
+        userProfile = await getUserProfile(currentUser.id);
+        console.log('[DEBUG] User Profile:', userProfile);
+    } catch (err) {
+        console.error('Profile fetch error:', err);
+        // If we can't get the profile, proceed with a null profile to trigger onboarding
+        userProfile = null;
+    }
     
     // Check if we just onboarded to bypass the redirect loop
     const urlParams = new URLSearchParams(window.location.search);

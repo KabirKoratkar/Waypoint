@@ -90,7 +90,17 @@ const researchLimiter = rateLimit({
     message: { error: 'Research limit reached. Please wait an hour.' }
 });
 
-app.use(cors({ origin: '*' }));
+app.use(cors({
+    origin: [
+        'https://waypointedu.org',
+        'https://www.waypointedu.org',
+        'https://waypoint-app.vercel.app',
+        'https://waypoint-ai.vercel.app',
+        'http://localhost:5500', // For local development tests
+        'http://localhost:3001'
+    ],
+    credentials: true
+}));
 app.use((req, res, next) => {
     if (req.originalUrl === '/api/payments/webhook') {
         next();
@@ -139,9 +149,9 @@ app.post('/api/feedback', async (req, res) => {
             .select();
 
         if (resend) {
-            const adminEmails = process.env.ADMIN_EMAILS?.split(',') || ['onboarding@resend.dev'];
+            const adminEmails = process.env.ADMIN_EMAILS?.split(',') || ['kabirvideo@gmail.com'];
             await resend.emails.send({
-                from: 'Waypoint <onboarding@resend.dev>',
+                from: 'Waypoint Support <help@waypointedu.org>',
                 to: adminEmails,
                 subject: `[Waypoint Beta] ${type || 'Feedback'}: ${subject || 'No Subject'}`,
                 html: `<p><strong>From:</strong> ${email || 'Anonymous'}</p><p>${message}</p>`
@@ -177,14 +187,13 @@ app.get('/api/colleges/research', researchLimiter, async (req, res) => {
  */
 app.post('/api/chat/claude', async (req, res) => {
     try {
-        const { message, userId, conversationHistory = [], saveToHistory = true } = req.body;
-        if (!anthropic) return res.status(503).json({ error: 'Claude service not configured' });
+        const { message, userId, conversationHistory = [] } = req.body;
         if (!message || !userId) return res.status(400).json({ error: 'Message and userId are required' });
 
         const { data: profile } = await supabase.from('profiles').select('*').eq('id', userId).single();
 
-        const systemPrompt = `You are the Claude-powered Intelligence Command Center for ${profile?.full_name || 'this student'}.
-        Your goal is to provide high-level strategic reasoning and deep essay analysis.
+        const systemPrompt = `You are the High Intelligence Strategic Center for ${profile?.full_name || 'this student'}.
+        Your goal is to provide high-level reasoning and deep essay analysis using GPT-4o.
         Be sophisticated, insightful, and proactive.
         
         Student Context:
@@ -198,21 +207,23 @@ app.post('/api/chat/claude', async (req, res) => {
                 role: msg.role === 'assistant' ? 'assistant' : 'user',
                 content: msg.content
             }));
-        messages.push({ role: 'user', content: message });
 
-        const response = await anthropic.messages.create({
-            model: "claude-3-5-sonnet-20240620",
+        const response = await openai.chat.completions.create({
+            model: "gpt-4o",
             max_tokens: 1536,
-            system: systemPrompt,
-            messages: messages,
+            messages: [
+                { role: "system", content: systemPrompt },
+                ...messages,
+                { role: "user", content: message }
+            ]
         });
 
-        const aiResponse = response.content[0].text;
-        await saveConversation(userId, message, aiResponse, { model: 'claude-3.5-sonnet' });
+        const aiResponse = response.choices[0].message.content;
+        await saveConversation(userId, message, aiResponse, { model: 'gpt-4o-intelligence' });
 
         res.json({ response: aiResponse });
     } catch (error) {
-        console.error('Claude error:', error);
+        console.error('Intelligence AI error:', error);
         res.status(500).json({ error: 'Internal server error' });
     }
 });
