@@ -67,27 +67,17 @@ document.addEventListener('DOMContentLoaded', async function () {
     const hasJustOnboarded = urlParams.has('onboarded') || sessionStorage.getItem('just_onboarded') === 'true';
 
     // 3. Profile Completion Check
-    // A profile is complete balance if it has either a graduation_year (Freshman) OR is marked as a transfer
-    const isProfileComplete = userProfile && (
-        (userProfile.graduation_year && userProfile.graduation_year > 0) || 
-        userProfile.is_transfer || 
-        userProfile.target_start_year
-    );
+    // LENIENT: If a profile row exists in Supabase at all, the user has completed onboarding.
+    // We only redirect brand-new users who have NO profile row yet.
+    // Do NOT gate on specific fields (graduation_year, is_transfer, etc.) — these may not all
+    // save perfectly but the user is still a valid, onboarded member.
+    const hasProfile = !!userProfile && !!userProfile.id;
 
-    if (!isProfileComplete) {
-        if (hasJustOnboarded) {
-            console.log('Profile looks incomplete but we just onboarded. Bypassing redirect for sync...');
-            // Optional: Fetch again after 2 seconds to be sure
-            setTimeout(async () => {
-                userProfile = await getUserProfile(currentUser.id);
-                updateGreeting(userProfile);
-            }, 2000);
-        } else {
-            console.warn('Profile incomplete. Redirecting to onboarding to finish setup...');
-            if (!window.location.pathname.includes('onboarding.html')) {
-                window.location.assign('onboarding.html');
-                return;
-            }
+    if (!hasProfile && !hasJustOnboarded) {
+        console.warn('[AUTH] No profile found for user. Redirecting to onboarding...');
+        if (!window.location.pathname.includes('onboarding.html')) {
+            window.location.assign('onboarding.html');
+            return;
         }
     }
     
