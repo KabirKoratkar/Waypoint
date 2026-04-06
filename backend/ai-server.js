@@ -1098,42 +1098,45 @@ async function handleResearchCollege(collegeName, forceResearch = false) {
 }
 
 async function handleAddCollege(userId, collegeName, type, intendedMajor) {
-    // Every new college gets a forced check if it's currently empty or slim
-    const research = await handleResearchCollege(collegeName, false);
-    let collegeData = research.college || { name: collegeName };
-
-    // Precautionary: if it has 0 essays, FORCE a re-research to be sure
-    if (!collegeData.essays || collegeData.essays.length === 0) {
-        console.log(`[PRECAUTIONARY] ${collegeName} has 0 essays. Forcing a deep research...`);
-        const deepResearch = await handleResearchCollege(collegeName, true);
-        if (deepResearch.success) collegeData = deepResearch.college;
-    }
-
+    // Step 1: Check if already in list
     const { data: existing } = await supabase
         .from('colleges')
         .select('id')
         .eq('user_id', userId)
-        .eq('name', collegeData.name)
+        .ilike('name', collegeName)
         .maybeSingle();
 
     if (existing) {
-        await handleCreateEssays(userId, collegeData.name); // Ensure essays are synced
-        return { success: true, message: 'Already in list' };
+        // Already exists — just sync essays in background and return
+        handleCreateEssays(userId, collegeName).catch(e => console.warn('Essay sync error:', e));
+        return { success: true, collegeId: existing.id, message: 'Already in list' };
     }
 
-    // Default to profile major if not provided
+    // Step 2: Get profile default major if none provided
     let finalMajor = intendedMajor;
     if (!finalMajor) {
         const { data: profile } = await supabase.from('profiles').select('intended_major').eq('id', userId).single();
         if (profile) finalMajor = profile.intended_major;
     }
 
+    // Step 3: Quick catalog lookup (no AI, just DB)
+    let detectedPlatform = 'Common App';
+    const { data: catalogEntry } = await supabase
+        .from('college_catalog')
+        .select('name, application_platform')
+        .ilike('name', `%${collegeName}%`)
+        .maybeSingle();
+    if (catalogEntry?.application_platform) {
+        detectedPlatform = catalogEntry.application_platform;
+    }
+
+    // Step 4: INSERT the college immediately — don't wait for AI
     const { data, error } = await supabase
         .from('colleges')
         .insert({
             user_id: userId,
-            name: collegeData.name,
-            application_platform: collegeData.application_platform || 'Common App',
+            name: collegeName,
+            application_platform: detectedPlatform,
             type: type || 'Target',
             intended_major: finalMajor || '',
             status: 'Not Started'
@@ -1141,11 +1144,38 @@ async function handleAddCollege(userId, collegeName, type, intendedMajor) {
         .select()
         .single();
 
-    if (data) {
-        await handleCreateEssays(userId, collegeData.name);
+    if (error) {
+        console.error('[ADD_COLLEGE] Insert error:', error);
+        return { success: false, error: error.message };
     }
 
-    return { success: true, collegeId: data?.id };
+    console.log(`[ADD_COLLEGE] Inserted ${collegeName} (id: ${data.id}). Running AI research in background...`);
+
+    // Step 5: Fire AI research + essay sync in background (non-blocking)
+    setImmediate(async () => {
+        try {
+            const research = await handleResearchCollege(collegeName, false);
+            const collegeData = research.college;
+
+            // Update with research data if we got it
+            if (collegeData) {
+                await supabase.from('colleges').update({
+                    application_platform: collegeData.application_platform || detectedPlatform,
+                    deadline: collegeData.deadline_date || null,
+                    deadline_type: collegeData.deadline_type || null,
+                    test_policy: collegeData.test_policy || null,
+                    lors_required: collegeData.lors_required || null
+                }).eq('id', data.id);
+            }
+
+            await handleCreateEssays(userId, collegeName);
+            console.log(`[ADD_COLLEGE] Background research + essay sync complete for ${collegeName}`);
+        } catch (e) {
+            console.warn(`[ADD_COLLEGE] Background research failed for ${collegeName}:`, e.message);
+        }
+    });
+
+    return { success: true, collegeId: data.id };
 }
 
 async function handleCreateEssays(userId, collegeName) {
