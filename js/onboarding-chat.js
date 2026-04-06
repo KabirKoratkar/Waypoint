@@ -45,19 +45,28 @@ document.addEventListener('DOMContentLoaded', async () => {
         return;
     }
 
-    // CRITICAL: Create a minimal profile row immediately so the user is never
-    // stuck in the redirect loop, even if the extraction step crashes later.
-    fetch(`${AI_SERVER_URL}/api/profile/save`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-            userId: currentUser.id,
-            email: currentUser.email,
-            full_name: currentUser.user_metadata?.full_name || currentUser.email?.split('@')[0] || 'Student'
-        })
-    }).then(r => r.json())
-      .then(d => console.log('[ONBOARDING] Seed profile created:', d.success))
-      .catch(e => console.warn('[ONBOARDING] Seed profile failed (non-fatal):', e));
+    // CRITICAL: Create a minimal profile row immediately via direct Supabase write.
+    // RLS is disabled on profiles table so anon key works. This guarantees a profile
+    // row exists BEFORE the conversation even starts — no backend dependency.
+    try {
+        const { error: seedErr } = await supabase
+            .from('profiles')
+            .upsert({
+                id: currentUser.id,
+                email: currentUser.email || '',
+                full_name: currentUser.user_metadata?.full_name || 
+                           currentUser.user_metadata?.name ||
+                           currentUser.email?.split('@')[0] || 'Student'
+            }, { onConflict: 'id' });
+
+        if (seedErr) {
+            console.error('[ONBOARDING] Seed profile error:', seedErr);
+        } else {
+            console.log('[ONBOARDING] Seed profile created successfully ✓');
+        }
+    } catch (e) {
+        console.error('[ONBOARDING] Seed profile exception:', e);
+    }
 
     setupVoiceToggle();
     initChat();
@@ -236,36 +245,49 @@ JSON structure:
 }
 `;
 
-    // Helper to save profile — always called, even in fallback
+    // Helper to save profile — uses direct Supabase write (RLS is off on profiles)
     const saveProfile = async (profileData = {}) => {
+        // Only include columns that definitely exist in the schema
         const updates = {
-            userId: currentUser.id,
-            email: currentUser.email,
+            id: currentUser.id,
+            email: currentUser.email || '',
             full_name: profileData.full_name || currentUser.user_metadata?.full_name || 'Student',
             graduation_year: profileData.graduation_year || null,
-            intended_major: profileData.intended_major || '',
-            interests: profileData.interests || [],
-            unweighted_gpa: profileData.unweighted_gpa || null,
-            sat_score: profileData.sat_score || null
+            intended_major: profileData.intended_major || ''
         };
-        // Only include transfer fields if they exist (columns may not be in DB yet)
-        if (profileData.is_transfer !== undefined) updates.is_transfer = profileData.is_transfer;
-        if (profileData.target_start_year) updates.target_start_year = profileData.target_start_year;
 
-        console.log('[ONBOARDING] Saving profile:', updates);
-        try {
-            const res = await fetch(`${AI_SERVER_URL}/api/profile/save`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(updates)
-            });
-            const d = await res.json();
-            console.log('[ONBOARDING] Profile save result:', d);
-            return d.success;
-        } catch (e) {
-            console.error('[ONBOARDING] Profile save error:', e);
-            return false;
+        console.log('[ONBOARDING] Saving profile (direct):', updates);
+
+        // PRIMARY: Direct Supabase upsert (works because RLS is disabled)
+        const { error: directErr } = await supabase
+            .from('profiles')
+            .upsert(updates, { onConflict: 'id' });
+
+        if (directErr) {
+            console.error('[ONBOARDING] Direct save error:', directErr);
+        } else {
+            console.log('[ONBOARDING] Profile saved directly to Supabase ✓');
         }
+
+        // SECONDARY: Also try backend to save extended fields (is_transfer, etc.)
+        // Non-blocking — don't await, don't let failure affect the flow
+        fetch(`${AI_SERVER_URL}/api/profile/save`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                ...updates,
+                userId: currentUser.id,
+                interests: profileData.interests || [],
+                unweighted_gpa: profileData.unweighted_gpa || null,
+                sat_score: profileData.sat_score || null,
+                is_transfer: profileData.is_transfer || false,
+                target_start_year: profileData.target_start_year || null
+            })
+        }).then(r => r.json())
+          .then(d => console.log('[ONBOARDING] Backend profile save:', d.success))
+          .catch(e => console.warn('[ONBOARDING] Backend save failed (non-fatal):', e));
+
+        return !directErr;
     };
 
     try {
