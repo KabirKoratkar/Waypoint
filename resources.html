@@ -298,10 +298,15 @@
                     Instant, AI-powered deep dives into any part of the college process.
                 </p>
 
-                <div class="search-container-large">
-                    <span class="search-icon-large">🔍</span>
-                    <input type="text" id="topicInput" class="search-input-large"
-                        placeholder="What do you want to master today? (e.g. 'Stanford University', 'Common App Guide')">
+                <div class="search-container-large" style="display: flex; gap: var(--space-md);">
+                    <div style="position: relative; flex: 1;">
+                        <span class="search-icon-large">🔍</span>
+                        <input type="text" id="topicInput" class="search-input-large"
+                            placeholder="What do you want to master today? (e.g. 'Stanford University', 'Common App Guide')">
+                    </div>
+                    <button class="btn btn-primary" onclick="searchTopic(document.getElementById('topicInput').value)" style="height: 60px; padding: 0 40px; font-weight: 800; border-radius: var(--radius-full); box-shadow: var(--shadow-lg);">
+                        SEARCH
+                    </button>
                 </div>
 
                 <div

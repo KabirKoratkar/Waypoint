@@ -19,6 +19,10 @@ let conversationHistory = [];
 let allMessages = [];
 // ─── Boot ───────────────────────────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', async function () {
+    // SECURITY: Force-clear any legacy mock/dev sessions that might cause ghosting
+    localStorage.removeItem('dev_user');
+    sessionStorage.removeItem('mock_user_active');
+    
     showLoading('Waking up your counselor...');
 
     // 1. Handle Auth Redirects (Google/Social)
@@ -62,11 +66,24 @@ document.addEventListener('DOMContentLoaded', async function () {
     const urlParams = new URLSearchParams(window.location.search);
     const hasJustOnboarded = urlParams.has('onboarded') || sessionStorage.getItem('just_onboarded') === 'true';
 
-    if (!userProfile || !userProfile.graduation_year || userProfile.graduation_year === 0) {
+    // 3. Profile Completion Check
+    // A profile is complete balance if it has either a graduation_year (Freshman) OR is marked as a transfer
+    const isProfileComplete = userProfile && (
+        (userProfile.graduation_year && userProfile.graduation_year > 0) || 
+        userProfile.is_transfer || 
+        userProfile.target_start_year
+    );
+
+    if (!isProfileComplete) {
         if (hasJustOnboarded) {
-            console.log('Profile looks empty but we just onboarded. Bypassing redirect to allow DB sync.');
+            console.log('Profile looks incomplete but we just onboarded. Bypassing redirect for sync...');
+            // Optional: Fetch again after 2 seconds to be sure
+            setTimeout(async () => {
+                userProfile = await getUserProfile(currentUser.id);
+                updateGreeting(userProfile);
+            }, 2000);
         } else {
-            console.warn('Profile incomplete or graduation year missing. Redirecting to onboarding...');
+            console.warn('Profile incomplete. Redirecting to onboarding to finish setup...');
             if (!window.location.pathname.includes('onboarding.html')) {
                 window.location.assign('onboarding.html');
                 return;

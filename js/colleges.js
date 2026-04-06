@@ -169,7 +169,15 @@ async function performAddCollege(collegeName, type = 'Target', intendedMajor = '
 
         if (newCollege) {
             console.log('College added successfully:', newCollege);
-            showNotification(`${collegeName} added successfully!`, 'success');
+            showNotification(`${collegeName} added successfully! Synchronizing requirements...`, 'success');
+            
+            // Trigger essay sync in background
+            fetch(`${config.apiUrl}/api/essays/sync`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ userId: currentUser.id })
+            }).catch(e => console.warn('Sync delayed:', e));
+
             await loadAndRenderColleges();
         } else {
             throw new Error('Failed to add college - no response from server');
@@ -274,12 +282,26 @@ function updateSummary(collegesList) {
     const target = collegesList.filter(c => c.type === 'Target').length;
     const safety = collegesList.filter(c => c.type === 'Safety').length;
 
-    const cards = document.querySelectorAll('.grid-4 .card div:first-child');
-    if (cards.length >= 4) {
-        cards[0].textContent = total;
-        cards[1].textContent = reach;
-        cards[2].textContent = target;
-        cards[3].textContent = safety;
+    // Use IDs for more reliable updates
+    const elTotal = document.getElementById('statTotalColleges');
+    const elReach = document.getElementById('statReachSchools');
+    const elTarget = document.getElementById('statTargetSchools');
+    const elSafety = document.getElementById('statSafetySchools');
+
+    if (elTotal) elTotal.textContent = total;
+    if (elReach) elReach.textContent = reach;
+    if (elTarget) elTarget.textContent = target;
+    if (elSafety) elSafety.textContent = safety;
+    
+    // Fallback if IDs aren't found (using old logic)
+    if (!elTotal) {
+        const cards = document.querySelectorAll('.grid-4 .card div:first-child');
+        if (cards.length >= 4) {
+            cards[0].textContent = total;
+            cards[1].textContent = reach;
+            cards[2].textContent = target;
+            cards[3].textContent = safety;
+        }
     }
 }
 

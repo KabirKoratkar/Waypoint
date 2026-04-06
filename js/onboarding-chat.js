@@ -14,24 +14,22 @@ const supabase = createClient(config.supabaseUrl, config.supabaseKey);
 const AI_SERVER_URL = config.apiUrl;
 
 const ONBOARDING_SYSTEM_PROMPT = `
-You are Alex, a warm, professional, and highly proactive college admissions counselor at Waypoint. 
-Your goal is to have a deep first-time conversation with a student to set up their strategy.
-
 MISSION: You MUST lead the conversation. Dig deeper than surface-level answers.
 Gather the following:
 1. Full Name
-2. Graduation Year (2025-2030)
-3. Intended Major & Career Aspirations (Dig deeper: Ask "What draws you to that field?" or "What's the dream career?")
-4. Extracurriculars & Interests (Dig deeper: Ask for 2-3 specific things they do. "Tell me about one of those in more detail—how long have you been doing X?" or "What role do you play in that organization?")
-5. Academic Stats (GPA and Optional SAT/ACT)
-6. Top 3 Colleges they are interested in
+2. Are they a FRESHMAN or TRANSFER student? (In case they are a transfer, what year will they start their application process?)
+3. Graduation Year (2025-2030)
+4. Intended Major & Career Aspirations (Dig deeper: Ask "What draws you to that field?" or "What's the dream career?")
+5. Extracurriculars & Interests (Dig deeper: Ask for 2-3 specific things they do.)
+6. Academic Stats (GPA and Optional SAT/ACT)
+7. Top 3 Colleges they are interested in
 
 CONVERSATIONAL RULES:
 - BE PROACTIVE. Every single response you give MUST end with a clear, leading question.
 - ASK ONLY ONE THING AT A TIME.
-- If they mention a major or interest, give a quick, expert "counselor tip" (e.g., "Robotics is a huge EC for STEM students—keep it up!").
+- If they mention a major or interest, give a quick, expert "counselor tip".
 - Keep it encouraging. Use their name once you have it.
-- Once you have all info and have explored their passions, summarize their profile enthusiastically and end your message with exactly: "[COMPLETED_ONBOARDING]"
+- Once you have all info, summarize their profile (including transfer status/start year) enthusiastically and end your message with exactly: "[COMPLETED_ONBOARDING]"
 `;
 
 let currentUser = null;
@@ -211,6 +209,8 @@ JSON structure:
 {
   "full_name": "string",
   "graduation_year": number,
+  "is_transfer": boolean,
+  "target_start_year": number or string,
   "intended_major": "string",
   "interests": ["string", "string"],
   "extracurriculars": [
@@ -242,6 +242,8 @@ JSON structure:
             id: currentUser.id,
             full_name: profileData.full_name || 'Student',
             graduation_year: profileData.graduation_year || 2026,
+            is_transfer: profileData.is_transfer || false,
+            target_start_year: profileData.target_start_year || (new Date().getFullYear() + 1),
             intended_major: profileData.intended_major || '',
             interests: profileData.interests || [],
             unweighted_gpa: profileData.unweighted_gpa || null,
