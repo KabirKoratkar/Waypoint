@@ -45,6 +45,20 @@ document.addEventListener('DOMContentLoaded', async () => {
         return;
     }
 
+    // CRITICAL: Create a minimal profile row immediately so the user is never
+    // stuck in the redirect loop, even if the extraction step crashes later.
+    fetch(`${AI_SERVER_URL}/api/profile/save`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            userId: currentUser.id,
+            email: currentUser.email,
+            full_name: currentUser.user_metadata?.full_name || currentUser.email?.split('@')[0] || 'Student'
+        })
+    }).then(r => r.json())
+      .then(d => console.log('[ONBOARDING] Seed profile created:', d.success))
+      .catch(e => console.warn('[ONBOARDING] Seed profile failed (non-fatal):', e));
+
     setupVoiceToggle();
     initChat();
 });
@@ -222,6 +236,38 @@ JSON structure:
 }
 `;
 
+    // Helper to save profile — always called, even in fallback
+    const saveProfile = async (profileData = {}) => {
+        const updates = {
+            userId: currentUser.id,
+            email: currentUser.email,
+            full_name: profileData.full_name || currentUser.user_metadata?.full_name || 'Student',
+            graduation_year: profileData.graduation_year || null,
+            intended_major: profileData.intended_major || '',
+            interests: profileData.interests || [],
+            unweighted_gpa: profileData.unweighted_gpa || null,
+            sat_score: profileData.sat_score || null
+        };
+        // Only include transfer fields if they exist (columns may not be in DB yet)
+        if (profileData.is_transfer !== undefined) updates.is_transfer = profileData.is_transfer;
+        if (profileData.target_start_year) updates.target_start_year = profileData.target_start_year;
+
+        console.log('[ONBOARDING] Saving profile:', updates);
+        try {
+            const res = await fetch(`${AI_SERVER_URL}/api/profile/save`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(updates)
+            });
+            const d = await res.json();
+            console.log('[ONBOARDING] Profile save result:', d);
+            return d.success;
+        } catch (e) {
+            console.error('[ONBOARDING] Profile save error:', e);
+            return false;
+        }
+    };
+
     try {
         const response = await fetch(`${AI_SERVER_URL}/api/chat`, {
             method: 'POST',
@@ -234,35 +280,21 @@ JSON structure:
             })
         });
         const data = await response.json();
-        const jsonStr = data.response.match(/\{[\s\S]*\}/)?.[0];
-        const profileData = JSON.parse(jsonStr);
-
-        // 1. Save Profile via backend (uses service key, bypasses RLS — guaranteed to work for new users)
-        const updates = {
-            userId: currentUser.id,
-            email: currentUser.email,
-            full_name: profileData.full_name || 'Student',
-            graduation_year: profileData.graduation_year || null,
-            is_transfer: profileData.is_transfer || false,
-            target_start_year: profileData.target_start_year || null,
-            intended_major: profileData.intended_major || '',
-            interests: profileData.interests || [],
-            unweighted_gpa: profileData.unweighted_gpa || null,
-            sat_score: profileData.sat_score || null
-        };
-
-        console.log('[ONBOARDING] Saving profile via backend:', updates);
-        const saveRes = await fetch(`${AI_SERVER_URL}/api/profile/save`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(updates)
-        });
-        const saveData = await saveRes.json();
-        if (!saveData.success) {
-            console.error('[ONBOARDING] Profile save failed:', saveData.error);
-        } else {
-            console.log('[ONBOARDING] Profile saved successfully!');
+        
+        // Strip markdown code fences if AI wrapped the JSON in ```json ... ```
+        const rawText = data.response || '';
+        const stripped = rawText.replace(/```json\s*/gi, '').replace(/```\s*/gi, '').trim();
+        const jsonStr = stripped.match(/\{[\s\S]*\}/)?.[0];
+        
+        let profileData = {};
+        try {
+            profileData = jsonStr ? JSON.parse(jsonStr) : {};
+        } catch (parseErr) {
+            console.warn('[ONBOARDING] JSON parse failed, using empty profile:', parseErr);
         }
+
+        // 1. Save Profile
+        await saveProfile(profileData);
 
         // 2. Add Colleges
         if (profileData.top_colleges && Array.isArray(profileData.top_colleges)) {
@@ -283,7 +315,7 @@ JSON structure:
                 years_active: ec.years_active || []
             }));
             if (activities.length > 0) {
-                await supabase.from('activities').insert(activities);
+                await supabase.from('activities').insert(activities).catch(e => console.warn('Activities insert error:', e));
             }
         }
 
@@ -294,7 +326,7 @@ JSON structure:
             body: JSON.stringify({
                 userId: currentUser.id,
                 colleges: profileData.top_colleges || [],
-                profile: updates
+                profile: { full_name: profileData.full_name, graduation_year: profileData.graduation_year, intended_major: profileData.intended_major }
             })
         });
 
@@ -307,7 +339,9 @@ JSON structure:
         }
 
     } catch (e) {
-        console.error('Finalization failed:', e);
+        console.error('[ONBOARDING] Finalization failed:', e);
+        // ALWAYS save a minimal profile before giving up
+        await saveProfile({});
         removeTyping();
         showFinishButton();
     }
