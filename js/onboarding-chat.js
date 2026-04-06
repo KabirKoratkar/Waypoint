@@ -1,7 +1,7 @@
 
 import {
     getCurrentUser,
-    updateProfile,
+    upsertProfile,
     addCollege,
     getUserProfile
 } from './supabase-config.js';
@@ -237,20 +237,22 @@ JSON structure:
         const jsonStr = data.response.match(/\{[\s\S]*\}/)?.[0];
         const profileData = JSON.parse(jsonStr);
 
-        // 1. Update Profile
+        // 1. Upsert Profile (INSERT if new user, UPDATE if existing)
         const updates = {
             id: currentUser.id,
+            email: currentUser.email,
             full_name: profileData.full_name || 'Student',
-            graduation_year: profileData.graduation_year || 2026,
+            graduation_year: profileData.graduation_year || null,
             is_transfer: profileData.is_transfer || false,
-            target_start_year: profileData.target_start_year || (new Date().getFullYear() + 1),
+            target_start_year: profileData.target_start_year || null,
             intended_major: profileData.intended_major || '',
             interests: profileData.interests || [],
             unweighted_gpa: profileData.unweighted_gpa || null,
             sat_score: profileData.sat_score || null
         };
 
-        await updateProfile(currentUser.id, updates);
+        console.log('[ONBOARDING] Saving profile:', updates);
+        await upsertProfile(updates);
 
         // 2. Add Colleges
         if (profileData.top_colleges && Array.isArray(profileData.top_colleges)) {
