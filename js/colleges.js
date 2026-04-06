@@ -3,6 +3,21 @@ import { updateNavbarUser } from './ui.js';
 import config from './config.js';
 import { calculateSmartProgress, formatAIMessage } from './utils.js';
 
+// Use global showNotification from main.js if available, otherwise use a local fallback
+function showNotification(message, type = 'info') {
+    if (typeof window.showNotification === 'function') {
+        window.showNotification(message, type);
+        return;
+    }
+    // Fallback: simple toast
+    const toast = document.createElement('div');
+    const colors = { success: '#22c55e', error: '#ef4444', info: '#5b8dee', warning: '#f59e0b' };
+    toast.style.cssText = `position:fixed;bottom:24px;right:24px;z-index:9999;padding:12px 20px;border-radius:12px;background:${colors[type]||colors.info};color:white;font-weight:600;font-size:14px;box-shadow:0 4px 20px rgba(0,0,0,0.2);transition:opacity 0.3s;`;
+    toast.textContent = message;
+    document.body.appendChild(toast);
+    setTimeout(() => { toast.style.opacity = '0'; setTimeout(() => toast.remove(), 300); }, 3500);
+}
+
 let currentUser = null;
 let colleges = [];
 

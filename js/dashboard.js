@@ -17,6 +17,7 @@ let currentUser = null;
 let userProfile = null;
 let conversationHistory = [];
 let allMessages = [];
+let isLoading = false;
 // ─── Boot ───────────────────────────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', async function () {
     // SECURITY: Force-clear any legacy mock/dev sessions that might cause ghosting

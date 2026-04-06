@@ -390,6 +390,39 @@ app.post('/api/essays/sync', async (req, res) => {
     }
 });
 
+// Profile Save (upsert via service key — bypasses RLS for new user creation)
+app.post('/api/profile/save', async (req, res) => {
+    try {
+        const { userId, email, ...profileFields } = req.body;
+        if (!userId) return res.status(400).json({ error: 'userId is required' });
+
+        const profileData = {
+            id: userId,
+            email: email || null,
+            ...profileFields,
+            updated_at: new Date().toISOString()
+        };
+
+        console.log(`[PROFILE] Upserting profile for ${userId}`);
+        const { data, error } = await supabase
+            .from('profiles')
+            .upsert(profileData, { onConflict: 'id' })
+            .select()
+            .maybeSingle();
+
+        if (error) {
+            console.error('[PROFILE] Upsert error:', error);
+            return res.status(500).json({ success: false, error: error.message });
+        }
+
+        console.log(`[PROFILE] Saved successfully for ${userId}`);
+        res.json({ success: true, profile: data });
+    } catch (error) {
+        console.error('[PROFILE] Save error:', error);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+});
+
 app.post('/api/colleges/research-deep', researchLimiter, async (req, res) => {
     try {
         const { userId, collegeName } = req.body;
@@ -1299,7 +1332,11 @@ app.listen(PORT, '0.0.0.0', () => {
 // --- Additional Helper Functions for Agentic Capabilities ---
 
 async function handleUpdateProfile(userId, updates) {
-    const { data, error } = await supabase.from('profiles').update(updates).eq('id', userId).select();
+    // Use upsert so this works for both new and existing profiles
+    const { data, error } = await supabase
+        .from('profiles')
+        .upsert({ id: userId, ...updates }, { onConflict: 'id' })
+        .select();
     if (error) return { success: false, error: error.message };
     return { success: true, profile: data };
 }

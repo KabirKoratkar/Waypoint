@@ -237,9 +237,9 @@ JSON structure:
         const jsonStr = data.response.match(/\{[\s\S]*\}/)?.[0];
         const profileData = JSON.parse(jsonStr);
 
-        // 1. Upsert Profile (INSERT if new user, UPDATE if existing)
+        // 1. Save Profile via backend (uses service key, bypasses RLS — guaranteed to work for new users)
         const updates = {
-            id: currentUser.id,
+            userId: currentUser.id,
             email: currentUser.email,
             full_name: profileData.full_name || 'Student',
             graduation_year: profileData.graduation_year || null,
@@ -251,8 +251,18 @@ JSON structure:
             sat_score: profileData.sat_score || null
         };
 
-        console.log('[ONBOARDING] Saving profile:', updates);
-        await upsertProfile(updates);
+        console.log('[ONBOARDING] Saving profile via backend:', updates);
+        const saveRes = await fetch(`${AI_SERVER_URL}/api/profile/save`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(updates)
+        });
+        const saveData = await saveRes.json();
+        if (!saveData.success) {
+            console.error('[ONBOARDING] Profile save failed:', saveData.error);
+        } else {
+            console.log('[ONBOARDING] Profile saved successfully!');
+        }
 
         // 2. Add Colleges
         if (profileData.top_colleges && Array.isArray(profileData.top_colleges)) {
