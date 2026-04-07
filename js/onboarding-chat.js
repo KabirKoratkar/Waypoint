@@ -245,38 +245,46 @@ JSON structure:
 }
 `;
 
-    // Helper to save profile — uses direct Supabase write (RLS is off on profiles)
+    // Helper to save profile — ONLY use columns confirmed in the schema screenshot
     const saveProfile = async (profileData = {}) => {
-        // Only include columns that definitely exist in the schema
-        const updates = {
+        // Absolute minimum — only id, email, full_name are 100% confirmed to exist
+        const coreUpdate = {
             id: currentUser.id,
             email: currentUser.email || '',
-            full_name: profileData.full_name || currentUser.user_metadata?.full_name || 'Student',
-            graduation_year: profileData.graduation_year || null,
-            intended_major: profileData.intended_major || ''
+            full_name: profileData.full_name || currentUser.user_metadata?.full_name || currentUser.user_metadata?.name || 'Student'
         };
 
-        console.log('[ONBOARDING] Saving profile (direct):', updates);
+        console.log('[ONBOARDING] Saving core profile (direct Supabase):', coreUpdate);
 
-        // PRIMARY: Direct Supabase upsert (works because RLS is disabled)
+        // PRIMARY: Direct upsert with known-safe columns only
         const { error: directErr } = await supabase
             .from('profiles')
-            .upsert(updates, { onConflict: 'id' });
+            .upsert(coreUpdate, { onConflict: 'id' });
 
         if (directErr) {
-            console.error('[ONBOARDING] Direct save error:', directErr);
+            console.error('[ONBOARDING] Direct save error:', directErr.message, directErr.details);
         } else {
-            console.log('[ONBOARDING] Profile saved directly to Supabase ✓');
+            console.log('[ONBOARDING] Core profile saved to Supabase ✓');
+            // Try to update optional fields separately — if these columns don't exist, it just fails quietly
+            const extras = {};
+            if (profileData.graduation_year) extras.graduation_year = profileData.graduation_year;
+            if (profileData.intended_major) extras.intended_major = profileData.intended_major;
+            if (Object.keys(extras).length > 0) {
+                await supabase.from('profiles').update(extras).eq('id', currentUser.id)
+                    .catch(e => console.warn('[ONBOARDING] Optional fields update failed (non-fatal):', e.message));
+            }
         }
 
-        // SECONDARY: Also try backend to save extended fields (is_transfer, etc.)
-        // Non-blocking — don't await, don't let failure affect the flow
+        // SECONDARY: Backend call for extended fields (non-blocking)
         fetch(`${AI_SERVER_URL}/api/profile/save`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-                ...updates,
                 userId: currentUser.id,
+                email: currentUser.email || '',
+                full_name: coreUpdate.full_name,
+                graduation_year: profileData.graduation_year || null,
+                intended_major: profileData.intended_major || '',
                 interests: profileData.interests || [],
                 unweighted_gpa: profileData.unweighted_gpa || null,
                 sat_score: profileData.sat_score || null,
@@ -285,34 +293,27 @@ JSON structure:
             })
         }).then(r => r.json())
           .then(d => console.log('[ONBOARDING] Backend profile save:', d.success))
-          .catch(e => console.warn('[ONBOARDING] Backend save failed (non-fatal):', e));
+          .catch(e => console.warn('[ONBOARDING] Backend save failed (non-fatal):', e.message));
 
         return !directErr;
     };
 
     try {
-        const response = await fetch(`${AI_SERVER_URL}/api/chat`, {
+        const response = await fetch(`${AI_SERVER_URL}/api/onboarding/extract`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-                message: extractionPrompt,
                 userId: currentUser.id,
-                conversationHistory: conversationHistory,
-                saveToHistory: false
+                conversationHistory: conversationHistory
             })
         });
         const data = await response.json();
         
-        // Strip markdown code fences if AI wrapped the JSON in ```json ... ```
-        const rawText = data.response || '';
-        const stripped = rawText.replace(/```json\s*/gi, '').replace(/```\s*/gi, '').trim();
-        const jsonStr = stripped.match(/\{[\s\S]*\}/)?.[0];
-        
         let profileData = {};
-        try {
-            profileData = jsonStr ? JSON.parse(jsonStr) : {};
-        } catch (parseErr) {
-            console.warn('[ONBOARDING] JSON parse failed, using empty profile:', parseErr);
+        if (data.success && data.profile) {
+            profileData = data.profile;
+        } else {
+            console.warn('[ONBOARDING] Extraction API failed or returned empty profile.', data.error);
         }
 
         // 1. Save Profile
@@ -327,17 +328,24 @@ JSON structure:
             }
         }
 
-        // 3. Add Activities
-        if (profileData.extracurriculars && Array.isArray(profileData.extracurriculars)) {
-            const activities = profileData.extracurriculars.map(ec => ({
-                user_id: currentUser.id,
-                title: ec.title,
-                organization: ec.organization,
-                description: ec.description,
-                years_active: ec.years_active || []
-            }));
+        // 3. Add Activities (clear old ones first to avoid duplicates from retries)
+        if (profileData.extracurriculars && Array.isArray(profileData.extracurriculars) && profileData.extracurriculars.length > 0) {
+            // Delete any previous activities from failed onboarding attempts
+            await supabase.from('activities').delete().eq('user_id', currentUser.id)
+                .catch(e => console.warn('Activity cleanup error:', e));
+            
+            const activities = profileData.extracurriculars
+                .filter(ec => ec && ec.title)
+                .map(ec => ({
+                    user_id: currentUser.id,
+                    title: ec.title,
+                    organization: ec.organization || '',
+                    description: ec.description || '',
+                    years_active: ec.years_active || []
+                }));
             if (activities.length > 0) {
-                await supabase.from('activities').insert(activities).catch(e => console.warn('Activities insert error:', e));
+                await supabase.from('activities').insert(activities)
+                    .catch(e => console.warn('Activities insert error:', e));
             }
         }
 

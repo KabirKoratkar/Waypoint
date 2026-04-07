@@ -602,6 +602,49 @@ app.post('/api/tts', async (req, res) => {
         res.status(500).json({ error: 'Text-to-speech failed', details: error.message });
     }
 });
+// Dedicated JSON extraction for onboarding (guaranteed JSON object)
+app.post('/api/onboarding/extract', async (req, res) => {
+    try {
+        const { conversationHistory = [], userId } = req.body;
+        
+        const systemPrompt = `You are a strict data extraction AI. Read the following conversation between a student and an AI counselor, and extract the student's profile into a valid JSON object.
+        If a piece of information is missing or not mentioned, use null for that field, do not make it up. DO NOT include conversational text or markdown code fences outside the JSON object.
+        
+        JSON structure REQUIRED:
+        {
+          "full_name": "string",
+          "graduation_year": number,
+          "is_transfer": boolean,
+          "target_start_year": number or string,
+          "intended_major": "string",
+          "interests": ["string", "string"],
+          "extracurriculars": [
+            {"title": "string", "organization": "string", "description": "string", "years_active": [number]}
+          ],
+          "unweighted_gpa": number or null,
+          "sat_score": number or null,
+          "top_colleges": ["string", "string", "string"]
+        }`;
+
+        const messages = [
+            { role: 'system', content: systemPrompt },
+            ...conversationHistory.map(msg => ({ role: msg.role, content: msg.content }))
+        ];
+
+        const completion = await openai.chat.completions.create({
+            model: "gpt-4o",
+            messages: messages,
+            temperature: 0.1, // low temperature for consistent extraction
+            response_format: { type: "json_object" }
+        });
+
+        const jsonData = JSON.parse(completion.choices[0].message.content);
+        res.json({ success: true, profile: jsonData });
+    } catch (e) {
+        console.error('[ONBOARDING-EXTRACT] Error:', e);
+        res.status(500).json({ success: false, error: e.message });
+    }
+});
 
 // Main AI chat endpoint
 app.post('/api/chat', async (req, res) => {
