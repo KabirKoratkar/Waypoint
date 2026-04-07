@@ -204,14 +204,17 @@ app.post('/api/chat/claude', async (req, res) => {
 
         const { data: profile } = await supabase.from('profiles').select('*').eq('id', userId).single();
 
+        const aiProfileStr = profile?.ai_profile ? JSON.stringify(profile.ai_profile, null, 2) : 'No extensive profile data gathered yet.';
+        
         const systemPrompt = `You are the High Intelligence Strategic Center for ${profile?.full_name || 'this student'}.
         Your goal is to provide high-level reasoning and deep essay analysis using GPT-4o.
         Be sophisticated, insightful, and proactive.
         
         Student Context:
         Name: ${profile?.full_name || 'Unknown'}
-        Major: ${profile?.intended_major || 'Undecided'}
-        Grad Year: ${profile?.graduation_year || 'Unknown'}`;
+        High School: ${profile?.high_school_name || 'Unknown'}
+        Grad Year: ${profile?.graduation_year || 'Unknown'}
+        Detailed Profile Context: ${aiProfileStr}`;
 
         const messages = conversationHistory
             .filter(msg => msg.role !== 'system')
@@ -332,11 +335,10 @@ app.get('/api/app-status/:userId', async (req, res) => {
         const { userId } = req.params;
         console.log(`📡 Fetching app status for user: ${userId}`);
 
-        const [collegesResult, tasksResult, essaysResult, activitiesResult, awardsResult] = await Promise.all([
+        const [collegesResult, tasksResult, essaysResult, awardsResult] = await Promise.all([
             supabase.from('colleges').select('*').eq('user_id', userId),
             supabase.from('tasks').select('*').eq('user_id', userId),
             supabase.from('essays').select('*').eq('user_id', userId),
-            supabase.from('activities').select('*').eq('user_id', userId),
             supabase.from('awards').select('*').eq('user_id', userId)
         ]);
 
@@ -360,7 +362,6 @@ app.get('/api/app-status/:userId', async (req, res) => {
                 colleges,
                 tasks: tasksResult.data || [],
                 essays,
-                activities: activitiesResult.data || [],
                 awards: awardsResult.data || []
             }
         });
@@ -664,25 +665,24 @@ app.post('/api/chat', async (req, res) => {
             .eq('id', userId)
             .single();
 
+        const aiProfileStr = profile?.ai_profile ? JSON.stringify(profile.ai_profile, null, 2) : 'No extensive profile data gathered yet.';
         const profileContext = profile ?
             `You are talking to ${profile.full_name || 'a student'}.
              Graduation Year: ${profile.graduation_year || 'Unknown'}
-             Intended Major: ${profile.intended_major || 'Undecided'}
-             Academic Stats: GPA: ${profile.unweighted_gpa || 'N/A'} (UW) / ${profile.weighted_gpa || 'N/A'} (W). SAT: ${profile.sat_score || 'N/A'}. ACT: ${profile.act_score || 'N/A'}.
-             Location: ${profile.location || 'Unknown'}` : '';
+             High School: ${profile.high_school_name || 'Unknown'}
+             Detailed Profile Context (Major, GPA, Extracurriculars, etc.):
+             ${aiProfileStr}` : '';
 
         // Fetch user app state for deep context using SUPABASE
         const { data: colleges } = await supabase.from('colleges').select('*').eq('user_id', userId);
         const { data: tasks } = await supabase.from('tasks').select('*').eq('user_id', userId).eq('completed', false);
         const { data: essays } = await supabase.from('essays').select('id, title, college_id, word_count, is_completed').eq('user_id', userId);
-        const { data: activities } = await supabase.from('activities').select('*').eq('user_id', userId).order('position', { ascending: true });
         const { data: awards } = await supabase.from('awards').select('*').eq('user_id', userId).order('position', { ascending: true });
 
         const appStateContext = `
             CURRENT COLLEGE LIST: ${colleges?.map(c => `${c.name} (${c.type})`).join(', ') || 'None'}
             ACTIVE TASKS: ${tasks?.length || 0} tasks pending.
             ESSAYS: ${essays?.map(e => `${e.title} (${e.word_count} words)`).join(', ') || 'None'}
-            ACTIVITIES (ECs): ${activities?.map(a => `${a.title} @ ${a.organization}`).join(', ') || 'None'}
             AWARDS/HONORS: ${awards?.map(aw => `${aw.title} (${aw.level})`).join(', ') || 'None'}
         `;
 

@@ -271,12 +271,38 @@ JSON structure REQUIRED:
             // Try to update optional fields separately — if these columns don't exist, it just fails quietly
             const extras = {};
             if (profileData.graduation_year) extras.graduation_year = profileData.graduation_year;
-            if (profileData.intended_major) extras.intended_major = profileData.intended_major;
+            if (profileData.high_school_name) extras.high_school_name = profileData.high_school_name;
+            
+            // Build the dynamic ai_profile document
+            const aiProfileDoc = {
+                intended_major: profileData.intended_major || null,
+                interests: profileData.interests || [],
+                unweighted_gpa: profileData.unweighted_gpa || null,
+                weighted_gpa: profileData.weighted_gpa || null,
+                sat_score: profileData.sat_score || null,
+                is_transfer: profileData.is_transfer || false,
+                target_start_year: profileData.target_start_year || null,
+                extracurriculars: profileData.extracurriculars || []
+            };
+            extras.ai_profile = aiProfileDoc;
+
             if (Object.keys(extras).length > 0) {
                 await supabase.from('profiles').update(extras).eq('id', currentUser.id)
                     .catch(e => console.warn('[ONBOARDING] Optional fields update failed (non-fatal):', e.message));
             }
         }
+
+        // Build the identical ai_profile for the backend save call
+        const aiProfileDoc = {
+            intended_major: profileData.intended_major || null,
+            interests: profileData.interests || [],
+            unweighted_gpa: profileData.unweighted_gpa || null,
+            weighted_gpa: profileData.weighted_gpa || null,
+            sat_score: profileData.sat_score || null,
+            is_transfer: profileData.is_transfer || false,
+            target_start_year: profileData.target_start_year || null,
+            extracurriculars: profileData.extracurriculars || []
+        };
 
         // SECONDARY: Backend call for extended fields (non-blocking)
         fetch(`${AI_SERVER_URL}/api/profile/save`, {
@@ -288,13 +314,7 @@ JSON structure REQUIRED:
                 full_name: coreUpdate.full_name,
                 high_school_name: profileData.high_school_name || null,
                 graduation_year: profileData.graduation_year || null,
-                intended_major: profileData.intended_major || '',
-                interests: profileData.interests || [],
-                unweighted_gpa: profileData.unweighted_gpa || null,
-                weighted_gpa: profileData.weighted_gpa || null,
-                sat_score: profileData.sat_score || null,
-                is_transfer: profileData.is_transfer || false,
-                target_start_year: profileData.target_start_year || null
+                ai_profile: aiProfileDoc
             })
         }).then(r => r.json())
           .then(d => console.log('[ONBOARDING] Backend profile save:', d.success))
@@ -333,26 +353,7 @@ JSON structure REQUIRED:
             }
         }
 
-        // 3. Add Activities (clear old ones first to avoid duplicates from retries)
-        if (profileData.extracurriculars && Array.isArray(profileData.extracurriculars) && profileData.extracurriculars.length > 0) {
-            // Delete any previous activities from failed onboarding attempts
-            await supabase.from('activities').delete().eq('user_id', currentUser.id)
-                .catch(e => console.warn('Activity cleanup error:', e));
-            
-            const activities = profileData.extracurriculars
-                .filter(ec => ec && ec.title)
-                .map(ec => ({
-                    user_id: currentUser.id,
-                    title: ec.title,
-                    organization: ec.organization || '',
-                    description: ec.description || '',
-                    years_active: ec.years_active || []
-                }));
-            if (activities.length > 0) {
-                await supabase.from('activities').insert(activities)
-                    .catch(e => console.warn('Activities insert error:', e));
-            }
-        }
+        // 3. (Activities table insert removed: Extracurriculars now live purely in the ai_profile document)
 
         // 4. Generate Strategy Plan
         const planRes = await fetch(`${AI_SERVER_URL}/api/onboarding/plan`, {
