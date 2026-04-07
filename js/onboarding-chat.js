@@ -17,12 +17,13 @@ const ONBOARDING_SYSTEM_PROMPT = `
 MISSION: You MUST lead the conversation. Dig deeper than surface-level answers.
 Gather the following:
 1. Full Name
-2. Are they a FRESHMAN or TRANSFER student? (In case they are a transfer, what year will they start their application process?)
-3. Graduation Year (2025-2030)
-4. Intended Major & Career Aspirations (Dig deeper: Ask "What draws you to that field?" or "What's the dream career?")
-5. Extracurriculars & Interests (Dig deeper: Ask for 2-3 specific things they do.)
-6. Academic Stats (GPA and Optional SAT/ACT)
-7. Top 3 Colleges they are interested in
+2. High School Name
+3. Are they a FRESHMAN or TRANSFER student? (If transfer, what year will they start the application process?)
+4. Graduation Year (2025-2030)
+5. Intended Major & Career Aspirations (Ask "What draws you to that field?" or "What's the dream career?")
+6. Academic Stats (Must explicitly ask for BOTH Unweighted and Weighted GPA, and Optional SAT/ACT)
+7. Extracurriculars & Interests (Ask for 2-3 specific things they do)
+8. Top 3 Colleges they are interested in
 
 CONVERSATIONAL RULES:
 - BE PROACTIVE. Every single response you give MUST end with a clear, leading question.
@@ -228,9 +229,10 @@ async function extractAndFinish() {
     appendAIMessage("I'm setting up your profile and roadmap now...");
 
     const extractionPrompt = `Extract the student's profile into JSON. If a piece of info is missing, use null.
-JSON structure:
+JSON structure REQUIRED:
 {
   "full_name": "string",
+  "high_school_name": "string",
   "graduation_year": number,
   "is_transfer": boolean,
   "target_start_year": number or string,
@@ -240,6 +242,7 @@ JSON structure:
     {"title": "string", "organization": "string", "description": "string", "years_active": [number]}
   ],
   "unweighted_gpa": number or null,
+  "weighted_gpa": number or null,
   "sat_score": number or null,
   "top_colleges": ["string", "string", "string"]
 }
@@ -283,10 +286,12 @@ JSON structure:
                 userId: currentUser.id,
                 email: currentUser.email || '',
                 full_name: coreUpdate.full_name,
+                high_school_name: profileData.high_school_name || null,
                 graduation_year: profileData.graduation_year || null,
                 intended_major: profileData.intended_major || '',
                 interests: profileData.interests || [],
                 unweighted_gpa: profileData.unweighted_gpa || null,
+                weighted_gpa: profileData.weighted_gpa || null,
                 sat_score: profileData.sat_score || null,
                 is_transfer: profileData.is_transfer || false,
                 target_start_year: profileData.target_start_year || null

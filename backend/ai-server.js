@@ -613,6 +613,7 @@ app.post('/api/onboarding/extract', async (req, res) => {
         JSON structure REQUIRED:
         {
           "full_name": "string",
+          "high_school_name": "string",
           "graduation_year": number,
           "is_transfer": boolean,
           "target_start_year": number or string,
@@ -622,6 +623,7 @@ app.post('/api/onboarding/extract', async (req, res) => {
             {"title": "string", "organization": "string", "description": "string", "years_active": [number]}
           ],
           "unweighted_gpa": number or null,
+          "weighted_gpa": number or null,
           "sat_score": number or null,
           "top_colleges": ["string", "string", "string"]
         }`;
