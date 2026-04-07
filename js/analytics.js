@@ -46,11 +46,8 @@ document.addEventListener('DOMContentLoaded', async () => {
             renderActivity(activityData);
             renderEssayProgress(essays);
         } else {
-            console.log('No user found, using default view');
-            renderCollegeBreakdown([]);
-            renderAppStatus([], [], []);
-            renderActivity({});
-            renderEssayProgress([]);
+            console.warn('No user found on Analytics, redirecting to login');
+            window.location.assign('login.html');
         }
 
     } catch (error) {
