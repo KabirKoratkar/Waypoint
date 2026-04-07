@@ -32,23 +32,22 @@
 
 <body>
     <!-- Navigation -->
-    <nav class="navbar">
+        <nav class="navbar">
         <div class="navbar-container">
             <a href="dashboard.html" class="navbar-logo">
                 <img src="assets/logo.png" alt="Waypoint Logo" style="height: 24px;">
-
+                <span class="badge" style="background: var(--primary-purple); color: white; padding: 2px 6px; border-radius: 4px; font-size: 10px; font-weight: 800; letter-spacing: 1px;">BETA</span>
             </a>
-            <ul class="navbar-links">
+            <ul class="navbar-links" id="navLinks">
                 <li><a href="dashboard.html" class="navbar-link">Home</a></li>
-                <li><a href="calendar.html" class="navbar-link active">Calendar</a></li>
+                <li><a href="calendar.html" class="navbar-link">Calendar</a></li>
                 <li><a href="analytics.html" class="navbar-link">Analytics</a></li>
-
                 <li><a href="colleges.html" class="navbar-link">Colleges</a></li>
                 <li><a href="essays.html" class="navbar-link">Essays</a></li>
                 <li><a href="documents.html" class="navbar-link">Documents</a></li>
                 <li><a href="resources.html" class="navbar-link">Research</a></li>
-                
-                <li id="user-nav-item"><span class="badge badge-primary" id="user-badge">User</span></li>
+                <li><a href="settings.html" class="navbar-link">Settings</a></li>
+                <li id="user-nav-item"><span class="badge badge-primary" id="user-badge" style="cursor: pointer;" onclick="window.location.assign('settings.html')">User</span></li>
             </ul>
             <button class="mobile-menu-toggle" id="mobileToggle">☰</button>
         </div>
