@@ -66,6 +66,26 @@ ALTER TABLE public.colleges ENABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS "Users can manage own colleges" ON public.colleges;
 CREATE POLICY "Users can manage own colleges" ON public.colleges FOR ALL USING (auth.uid()::text = user_id::text);
 
--- 7. Trigger to keep schema cache updated for PostgREST
+-- 7. Ensure Tasks Table
+CREATE TABLE IF NOT EXISTS public.tasks (
+    id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+    user_id UUID REFERENCES public.profiles(id) ON DELETE CASCADE NOT NULL,
+    college_id UUID REFERENCES public.colleges(id) ON DELETE CASCADE,
+    title TEXT NOT NULL,
+    description TEXT,
+    due_date DATE,
+    category TEXT DEFAULT 'General',
+    priority TEXT DEFAULT 'Medium',
+    completed BOOLEAN DEFAULT false,
+    completed_at TIMESTAMP WITH TIME ZONE,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+ALTER TABLE public.tasks ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Users can manage own tasks" ON public.tasks;
+CREATE POLICY "Users can manage own tasks" ON public.tasks FOR ALL USING (auth.uid()::text = user_id::text);
+
+-- 8. Trigger to keep schema cache updated for PostgREST
 NOTIFY pgrst, 'reload schema';
  

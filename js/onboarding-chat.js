@@ -356,21 +356,33 @@ JSON structure REQUIRED:
         // 3. (Activities table insert removed: Extracurriculars now live purely in the ai_profile document)
 
         // 4. Generate Strategy Plan
-        const planRes = await fetch(`${AI_SERVER_URL}/api/onboarding/plan`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                userId: currentUser.id,
-                colleges: profileData.top_colleges || [],
-                profile: { full_name: profileData.full_name, graduation_year: profileData.graduation_year, intended_major: profileData.intended_major }
-            })
-        });
+        try {
+            const planRes = await fetch(`${AI_SERVER_URL}/api/onboarding/plan`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    userId: currentUser.id,
+                    colleges: profileData.top_colleges || [],
+                    profile: { 
+                        full_name: profileData.full_name, 
+                        graduation_year: profileData.graduation_year, 
+                        intended_major: profileData.intended_major,
+                        ai_profile: profileData // Pass the full extracted profile
+                    }
+                })
+            });
 
-        removeTyping();
-        if (planRes.ok) {
-            const planData = await planRes.json();
-            renderRoadmap(planData.plan);
-        } else {
+            removeTyping();
+            if (planRes.ok) {
+                const planData = await planRes.json();
+                renderRoadmap(planData.plan);
+            } else {
+                console.warn('[ONBOARDING] Plan API returned error status:', planRes.status);
+                showFinishButton();
+            }
+        } catch (planErr) {
+            console.error('[ONBOARDING] Strategy Plan generation failed:', planErr);
+            removeTyping();
             showFinishButton();
         }
 
