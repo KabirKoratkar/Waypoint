@@ -29,6 +29,7 @@ const LOCAL_CATALOG_PATH = path.join(__dirname, 'college_catalog.json');
 dotenv.config({ path: path.join(__dirname, '.env') });
 
 const app = express();
+app.set('trust proxy', 1); // Trust Railway/cloud proxy for rate limiting
 const PORT = process.env.PORT || 3001;
 
 // PRE-FLIGHT DIAGNOSTICS
