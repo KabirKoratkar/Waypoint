@@ -267,16 +267,21 @@ app.post('/api/onboarding/plan', async (req, res) => {
         }
 
         console.log(`🧠 Generating Admissions Action Plan for student...`);
-
-        const interests = Array.isArray(profile.interests) ? profile.interests.join(', ') : (profile.interests || profile.intended_major || 'Undecided');
+        
+        // Robust interests extraction from the new ai_profile structure
+        const aiProf = profile.ai_profile || {};
+        const interests = Array.isArray(aiProf.interests) ? aiProf.interests.join(', ') : 
+                         (aiProf.interests || aiProf.intended_major || profile.intended_major || 'Undecided');
 
         const systemPrompt = `You are an elite college admissions strategist. Generate a focused "Admissions Action Plan" for a student.
 
         Student Profile:
-        - Name: ${profile.full_name}
+        - Name: ${profile.full_name || 'Student'}
         - Interests: ${interests}
-        - Graduation Year: ${profile.graduation_year}
-        - Colleges: ${colleges.join(', ') || 'General Search'}
+        - Graduation Year: ${profile.graduation_year || 'Unknown'}
+        - GPA: ${aiProf.unweighted_gpa || 'N/A'}
+        - Major: ${aiProf.intended_major || 'Undecided'}
+        - Colleges: ${Array.isArray(colleges) ? colleges.join(', ') : 'General Search'}
         - Submission Target: ${profile.submission_leeway || 3} days before deadlines.
 
         Return a strictly valid JSON object:
