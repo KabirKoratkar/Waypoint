@@ -14,6 +14,13 @@
 
 // Mobile Menu Toggle
 document.addEventListener('DOMContentLoaded', function () {
+    // INSTANT NAME LOAD: Check cache for user name to prevent flickers
+    const cachedName = localStorage.getItem('waypoint_user_name');
+    const userBadge = document.getElementById('user-badge');
+    if (userBadge && cachedName) {
+        userBadge.textContent = cachedName;
+    }
+
     // Theme consistency check (ensure system preference changes update live if no manual override)
     window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
         if (!localStorage.getItem('theme')) {

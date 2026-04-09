@@ -15,6 +15,11 @@ export function updateNavbarUser(user, profile = null) {
         user.user_metadata?.name ||
         (user.email ? user.email.split('@')[0] : 'Student');
 
+    // CACHE: Save name to localStorage for instant loading on next page
+    if (name && name !== 'User' && name !== 'Student') {
+        localStorage.setItem('waypoint_user_name', name);
+    }
+
     // Check for premium/beta status
     let statusBadge = '';
     if (profile) {
@@ -48,6 +53,18 @@ export function updateNavbarUser(user, profile = null) {
         });
     }
 }
+
+// Mobile Menu Toggle
+document.addEventListener('DOMContentLoaded', function () {
+    // INSTANT NAME LOAD: Check cache for user name to prevent flickers
+    const cachedName = localStorage.getItem('waypoint_user_name');
+    const userBadge = document.getElementById('user-badge');
+    if (userBadge && cachedName) {
+        userBadge.textContent = cachedName;
+    }
+
+    // Theme consistency check (ensure system preference changes update live if no manual override);
+});
 
 export function showLoading(message = 'Loading...') {
     if (window.showLoading) {
