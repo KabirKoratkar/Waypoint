@@ -77,9 +77,11 @@ document.addEventListener('DOMContentLoaded', async function () {
         return;
     }
     
-    // Clear the flag after we are safely in
+    // Clear the flag after we've used it to confirm they are safe to stay here
     if (hasJustOnboarded) {
-        sessionStorage.setItem('just_onboarded', 'true'); // Keep it until we truly land
+        console.log('[DEBUG] First landing after onboarding — ensuring data sync...');
+        // We leave the flag in session storage for one more second just in case of race conditions
+        setTimeout(() => sessionStorage.removeItem('just_onboarded'), 1000);
     }
 
     window.currentUserProfile = userProfile;
@@ -141,6 +143,18 @@ function renderSessions(messages) {
 
     // Render sessions (reverse chronological)
     listEl.innerHTML = '';
+    
+    // Add "Current Session" if there are any current messages not yet in history
+    if (conversationHistory.length > 0) {
+        const item = document.createElement('div');
+        item.className = 'session-item active';
+        item.innerHTML = `
+            <div class="session-title">Current Session</div>
+            <div class="session-date">Just Now</div>
+        `;
+        listEl.appendChild(item);
+    }
+
     sessions.reverse().forEach((session, idx) => {
         const firstUserMsg = session.find(m => m.role === 'user')?.content || 'Counseling Session';
         const date = new Date(session[0].created_at).toLocaleDateString();

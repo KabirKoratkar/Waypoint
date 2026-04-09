@@ -331,13 +331,19 @@
         }
 
         .settings-tab:hover {
-            background: var(--gray-100);
+            background: var(--surface-soft);
+            color: var(--primary-blue);
         }
 
         .settings-tab.active {
-            background: var(--primary-blue);
-            color: white;
-            box-shadow: var(--shadow-md);
+            background: var(--primary-blue) !important;
+            color: white !important;
+            box-shadow: 0 4px 12px rgba(91, 141, 238, 0.25);
+            font-weight: 700;
+        }
+
+        .settings-tab.active span {
+            filter: brightness(0) invert(1);
         }
 
         .tab-pane {

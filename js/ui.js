@@ -9,10 +9,10 @@ export function updateNavbarUser(user, profile = null) {
     const userBadge = document.getElementById('user-badge');
     if (!userBadge || !user) return;
 
-    // Get name from profile metadata or use email
-    const name = user.user_metadata?.full_name ||
+    // Get name from profile first (source of truth), then metadata
+    const name = profile?.full_name ||
+        user.user_metadata?.full_name ||
         user.user_metadata?.name ||
-        profile?.full_name ||
         (user.email ? user.email.split('@')[0] : 'Student');
 
     // Check for premium/beta status
@@ -43,13 +43,8 @@ export function updateNavbarUser(user, profile = null) {
         userNavItem.dataset.listener = 'true';
         userNavItem.title = 'Account Options';
 
-        userNavItem.addEventListener('click', async () => {
-            if (confirm('Navigate to settings? (Cancel to Sign Out)')) {
-                window.location.assign('settings.html');
-            } else {
-                await signOut();
-                window.location.assign('login.html');
-            }
+        userNavItem.addEventListener('click', () => {
+             window.location.assign('settings.html');
         });
     }
 }
