@@ -357,7 +357,8 @@ JSON structure REQUIRED:
         for (const col of profileData.top_colleges) {
             try {
                 if (col && col.toLowerCase() !== 'null') {
-                    await addCollege({ user_id: currentUser.id, name: col, type: 'Target' });
+                    // Use the positional arguments matching the supabase-config.js definition
+                    await addCollege(currentUser.id, col, 'Target', profileData.intended_major || '');
                 }
             } catch (e) {
                 console.warn(`[ONBOARDING] Failed to add college ${col}:`, e);
