@@ -323,6 +323,9 @@ JSON structure REQUIRED:
         return !directErr;
     };
 
+    let profileData = {};
+    
+    // --- STEP 1: Extraction ---
     try {
         const response = await fetch(`${AI_SERVER_URL}/api/onboarding/extract`, {
             method: 'POST',
@@ -332,67 +335,66 @@ JSON structure REQUIRED:
                 conversationHistory: conversationHistory
             })
         });
-        const data = await response.json();
-        
-        let profileData = {};
-        if (data.success && data.profile) {
-            profileData = data.profile;
-        } else {
-            console.warn('[ONBOARDING] Extraction API failed or returned empty profile.', data.error);
+        if (response.ok) {
+            const data = await response.json();
+            if (data.success && data.profile) {
+                profileData = data.profile;
+            }
         }
+    } catch (e) {
+        console.error('[ONBOARDING] Extraction failed:', e);
+    }
 
-        // 1. Save Profile
+    // --- STEP 2: Save Profile (Non-blocking) ---
+    try {
         await saveProfile(profileData);
+    } catch (e) {
+        console.error('[ONBOARDING] Profile save failed:', e);
+    }
 
-        // 2. Add Colleges
-        if (profileData.top_colleges && Array.isArray(profileData.top_colleges)) {
-            for (const col of profileData.top_colleges) {
+    // --- STEP 3: Add Colleges (Non-blocking) ---
+    if (profileData.top_colleges && Array.isArray(profileData.top_colleges)) {
+        for (const col of profileData.top_colleges) {
+            try {
                 if (col && col.toLowerCase() !== 'null') {
                     await addCollege({ user_id: currentUser.id, name: col, type: 'Target' });
                 }
+            } catch (e) {
+                console.warn(`[ONBOARDING] Failed to add college ${col}:`, e);
             }
         }
-
-        // 3. (Activities table insert removed: Extracurriculars now live purely in the ai_profile document)
-
-        // 4. Generate Strategy Plan
-        try {
-            const planRes = await fetch(`${AI_SERVER_URL}/api/onboarding/plan`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    userId: currentUser.id,
-                    colleges: profileData.top_colleges || [],
-                    profile: { 
-                        full_name: profileData.full_name, 
-                        graduation_year: profileData.graduation_year, 
-                        intended_major: profileData.intended_major,
-                        ai_profile: profileData // Pass the full extracted profile
-                    }
-                })
-            });
-
-            removeTyping();
-            if (planRes.ok) {
-                const planData = await planRes.json();
-                renderRoadmap(planData.plan);
-            } else {
-                console.warn('[ONBOARDING] Plan API returned error status:', planRes.status);
-                showFinishButton();
-            }
-        } catch (planErr) {
-            console.error('[ONBOARDING] Strategy Plan generation failed:', planErr);
-            removeTyping();
-            showFinishButton();
-        }
-
-    } catch (e) {
-        console.error('[ONBOARDING] Finalization failed:', e);
-        // ALWAYS save a minimal profile before giving up
-        await saveProfile({});
-        removeTyping();
-        showFinishButton();
     }
+
+    // --- STEP 4: Generate Strategy Plan ---
+    try {
+        const planRes = await fetch(`${AI_SERVER_URL}/api/onboarding/plan`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                userId: currentUser.id,
+                colleges: profileData.top_colleges || [],
+                profile: { 
+                    full_name: profileData.full_name, 
+                    graduation_year: profileData.graduation_year, 
+                    intended_major: profileData.intended_major,
+                    ai_profile: profileData
+                }
+            })
+        });
+
+        removeTyping();
+        if (planRes.ok) {
+            const planData = await planRes.json();
+            renderRoadmap(planData.plan);
+            return; // Success!
+        }
+    } catch (e) {
+        console.error('[ONBOARDING] Strategy Plan failed:', e);
+    }
+
+    // --- FALLBACK: If Plan fails, always show finish button ---
+    removeTyping();
+    showFinishButton();
 }
 
 function renderRoadmap(plan) {
