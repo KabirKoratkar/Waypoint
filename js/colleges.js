@@ -51,6 +51,7 @@ document.addEventListener('DOMContentLoaded', async function () {
     }
 
     const profile = await getUserProfile(currentUser.id);
+    // Explicitly update navbar again with profile to ensure name sticks
     updateNavbarUser(currentUser, profile);
     await loadAndRenderColleges();
 

@@ -14,6 +14,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     const profile = await getUserProfile(user.id);
+    // Explicitly update navbar again with profile to ensure name sticks
     updateNavbarUser(user, profile);
 
     await loadLeeway(user.id, profile);
