@@ -69,21 +69,18 @@ document.addEventListener('DOMContentLoaded', async function () {
 
     // 3. Profile Completion Check
     // LENIENT: If a profile row exists in Supabase at all, the user has completed onboarding.
-    // We only redirect brand-new users who have NO profile row yet.
-    // Do NOT gate on specific fields (graduation_year, is_transfer, etc.) — these may not all
-    // save perfectly but the user is still a valid, onboarded member.
     const hasProfile = !!userProfile && !!userProfile.id;
 
     if (!hasProfile && !hasJustOnboarded) {
         console.warn('[AUTH] No profile found for user. Redirecting to onboarding...');
-        if (!window.location.pathname.includes('onboarding.html')) {
-            window.location.assign('onboarding.html');
-            return;
-        }
+        window.location.assign('onboarding.html');
+        return;
     }
     
-    // Clear the flag after use
-    sessionStorage.removeItem('just_onboarded');
+    // Clear the flag after we are safely in
+    if (hasJustOnboarded) {
+        sessionStorage.setItem('just_onboarded', 'true'); // Keep it until we truly land
+    }
 
     window.currentUserProfile = userProfile;
     updateNavbarUser(currentUser, userProfile);
