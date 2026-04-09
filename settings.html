@@ -320,26 +320,33 @@
             width: 100%;
             padding: var(--space-md) var(--space-xl);
             border: none;
-            background: none;
+            background: transparent;
             text-align: left;
             font-size: var(--text-sm);
             font-weight: 600;
-            color: var(--gray-700);
+            color: var(--gray-800);
             cursor: pointer;
             border-radius: var(--radius-lg);
             transition: all var(--transition-base);
+            position: relative;
+            z-index: 5;
+        }
+
+        [data-theme="dark"] .settings-tab {
+            color: #ffffff;
         }
 
         .settings-tab:hover {
-            background: var(--surface-soft);
+            background: rgba(91, 141, 238, 0.1);
             color: var(--primary-blue);
         }
 
         .settings-tab.active {
             background: var(--primary-blue) !important;
             color: white !important;
-            box-shadow: 0 4px 12px rgba(91, 141, 238, 0.25);
+            box-shadow: 0 4px 12px rgba(91, 141, 238, 0.35);
             font-weight: 700;
+            z-index: 10;
         }
 
         .settings-tab.active span {

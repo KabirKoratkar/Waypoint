@@ -68,17 +68,22 @@ document.addEventListener('DOMContentLoaded', async function () {
     const hasJustOnboarded = urlParams.has('onboarded') || sessionStorage.getItem('just_onboarded') === 'true';
 
     // 3. Profile Completion Check
-    // LENIENT: If a profile row exists in Supabase at all, the user has completed onboarding.
+    // VERY LENIENT: If user has a profile, NEVER redirect.
     const hasProfile = !!userProfile && !!userProfile.id;
 
     if (!hasProfile && !hasJustOnboarded) {
-        console.warn('[AUTH] No profile found for user. Redirecting to onboarding...');
-        window.location.assign('onboarding.html');
+        console.warn('[AUTH] No profile found. Redirecting...');
+        window.location.replace('onboarding.html');
         return;
     }
     
-    // Clear the flag after we've used it to confirm they are safe to stay here
+    // Clear the flag after we've confirmed they are in
     if (hasJustOnboarded) {
+        sessionStorage.setItem('just_onboarded', 'true'); 
+        // Remove 'onboarded' from URL to prevent accidental loops
+        if (urlParams.has('onboarded')) {
+            window.history.replaceState({}, document.title, window.location.pathname);
+        }
         console.log('[DEBUG] First landing after onboarding — ensuring data sync...');
         // We leave the flag in session storage for one more second just in case of race conditions
         setTimeout(() => sessionStorage.removeItem('just_onboarded'), 1000);
