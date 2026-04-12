@@ -37,7 +37,10 @@ const config = {
 
     // Auth0 Enterprise SSO Config
     auth0Domain: 'dev-n13i1lem6bavwrux.us.auth0.com',
-    auth0ClientId: 'Qa6ucqRUQu3xZfQvZ30DI0xkWQfq54Ul'
+    auth0ClientId: 'Qa6ucqRUQu3xZfQvZ30DI0xkWQfq54Ul',
+
+    // Admin Whitelist (Legacy fallback)
+    adminEmails: ['admin@waypointedu.org']
 };
 
 export default config;

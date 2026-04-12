@@ -65,9 +65,9 @@ async function getUserProfile(userId) {
         console.warn(`No profile found for UID: ${userId}. This is expected for new users.`);
     }
 
-    // ADMIN WHITELIST: Check environment variable for admin email
-    const adminEmail = import.meta.env.VITE_ADMIN_EMAILS?.split(',') || [];
-    if (data && adminEmail.includes(data.email)) {
+    // ADMIN WHITELIST: Check central config for admin email
+    const adminEmails = config.adminEmails || [];
+    if (data && adminEmails.includes(data.email)) {
         data.is_premium = true;
         data.is_beta = true;
     }
@@ -141,9 +141,9 @@ function isPremiumUser(profile) {
     if (!profile) return false;
     // Admin or moderator always has premium
     if (profile.role === 'admin' || profile.role === 'moderator') return true;
-    // Fallback: check environment variable for admin email (legacy support)
-    const adminEmail = import.meta.env.VITE_ADMIN_EMAILS?.split(',').map(e => e.trim()) || [];
-    if (adminEmail.includes(profile.email)) return true;
+    // Fallback: check central config for admin email (legacy support)
+    const adminEmails = config.adminEmails || [];
+    if (adminEmails.includes(profile.email)) return true;
     // Paid subscribers or beta testers bypass trial check
     if (profile.is_premium || profile.is_beta || profile.role === 'beta_tester') return true;
 
