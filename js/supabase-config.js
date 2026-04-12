@@ -62,7 +62,29 @@ async function getUserProfile(userId) {
     }
 
     if (!data && userId) {
-        console.warn(`No profile found for UID: ${userId}. This is expected for new users.`);
+        console.warn(`No profile found for UID: ${userId}. Attempting to create recovery profile...`);
+        // RECOVERY: Create basic profile so FKs don't break
+        const { data: { user } } = await awsClient.auth.getUser();
+        if (user && user.id === userId) {
+            const newProfile = {
+                id: userId,
+                email: user.email,
+                full_name: user.user_metadata?.full_name || user.email.split('@')[0],
+                created_at: new Date().toISOString()
+            };
+            const { data: created, error: createError } = await awsClient
+                .from('profiles')
+                .insert(newProfile)
+                .select()
+                .single();
+            
+            if (!createError) {
+                console.log('Recovery profile created successfully.');
+                return created;
+            } else {
+                console.error('Failed to create recovery profile:', createError);
+            }
+        }
     }
 
     // ADMIN WHITELIST: Check central config for admin email
@@ -258,8 +280,13 @@ async function addCollege(userIdOrObject, name = null, type = null, major = null
                 if (!result.success && result.error) throw new Error(result.error);
                 return result.collegeId ? { id: result.collegeId, ...result.college } : result;
             } else {
-                const err = await response.json();
-                throw new Error(err.error || 'AWS AI Proxy error');
+                let errorMsg = 'AWS AI Proxy error';
+                try {
+                    const err = await response.json();
+                    errorMsg = err.error || errorMsg;
+                } catch (e) {}
+                console.error('Backend failed:', errorMsg);
+                throw new Error(errorMsg);
             }
         } catch (e) {
             // CRITICAL: If this is an external auth user (Auth0/Dev), the fallback WILL fail due to RLS.
@@ -293,8 +320,8 @@ async function addCollege(userIdOrObject, name = null, type = null, major = null
         .single();
 
     if (error) {
-        console.error('Error adding college:', error);
-        return null;
+        console.error('Error adding college to DB:', error);
+        throw new Error(error.message || 'Database error occurred while adding college');
     }
     return data;
 }
