@@ -65,6 +65,7 @@ async function loadSettings(profile = null) {
     const proHero = document.getElementById('proHero');
 
     const trialInfo = getTrialInfo(profile);
+    const proGlow = document.getElementById('proGlow');
 
     if (profile.is_beta) {
         membershipTier.textContent = 'Beta Tester (VIP)';
@@ -75,30 +76,36 @@ async function loadSettings(profile = null) {
         upgradeBtn.style.display = 'none';
         document.getElementById('subscriptionStatus').style.border = '1px solid var(--accent-purple)';
         if (proHero) proHero.style.display = 'none';
+        if (proGlow) proGlow.style.display = 'block';
     } else if (profile.is_premium) {
-        membershipTier.textContent = 'Pro Member';
-        membershipDesc.textContent = 'Next-gen tools unlocked. Good luck with apps!';
+        membershipTier.innerHTML = 'Pro Member <span style="font-size: 10px; background: var(--warning); color: var(--gray-800); padding: 2px 6px; border-radius: 4px; margin-left: 5px;">ACTIVE</span>';
+        
+        const sinceDate = profile.premium_since ? new Date(profile.premium_since).toLocaleDateString('en-US', { month: 'long', year: 'numeric' }) : 'recently';
+        membershipDesc.textContent = `Member since ${sinceDate}`;
+        
         membershipIcon.textContent = '💎';
         membershipIcon.style.background = 'var(--warning)';
-        upgradeBtn.textContent = 'Manage Plan';
+        upgradeBtn.textContent = 'Manage Billing';
+        upgradeBtn.className = 'btn btn-sm btn-outline';
         if (proHero) proHero.style.display = 'none';
+        if (proGlow) proGlow.style.display = 'block';
     } else if (trialInfo.inTrial) {
-        membershipTier.textContent = `Free Trial (${trialInfo.daysRemaining} days left)`;
-        membershipDesc.textContent = 'Full Pro access enabled for your trial period.';
+        membershipTier.textContent = `Free Trial`;
+        membershipDesc.textContent = `${trialInfo.daysRemaining} days remaining in your pro trial.`;
         membershipIcon.textContent = '⏳';
         membershipIcon.style.background = 'var(--primary-blue)';
         membershipIcon.style.color = 'white';
-        upgradeBtn.textContent = 'Upgrade Now';
-        // Show pro hero but maybe with different text or hidden?
-        // Let's keep it visible to encourage upgrading
-        if (proHero) proHero.style.display = 'block';
-    } else {
-        membershipTier.textContent = 'Trial Expired';
-        membershipDesc.textContent = 'Your free trial has ended. Upgrade to keep using Pro tools.';
-        membershipIcon.textContent = '🔒';
-        membershipIcon.style.background = 'var(--gray-300)';
         upgradeBtn.textContent = 'Upgrade to Pro';
         if (proHero) proHero.style.display = 'block';
+        if (proGlow) proGlow.style.display = 'none';
+    } else {
+        membershipTier.textContent = 'Trial Expired';
+        membershipDesc.textContent = 'Upgrade to Pro to keep your edge.';
+        membershipIcon.textContent = '🔒';
+        membershipIcon.style.background = 'var(--gray-300)';
+        upgradeBtn.textContent = 'Upgrade Now';
+        if (proHero) proHero.style.display = 'block';
+        if (proGlow) proGlow.style.display = 'none';
     }
 }
 
@@ -191,35 +198,8 @@ function setupEventListeners() {
         }
     });
 
-    // Seed Demo Data
-    const seedBtn = document.getElementById('seedDemoDataBtn');
-    if (seedBtn) {
-        seedBtn.addEventListener('click', async () => {
-            if (!currentUser) return;
-            const originalText = seedBtn.innerHTML;
-            seedBtn.disabled = true;
-            seedBtn.innerHTML = '<span class="loading-spinner"></span> Seeding... DO NOT CLOSE';
+    // Demo data seeding removed
 
-            try {
-                showNotification('Adding Stanford University...', 'info');
-                await addCollege(currentUser.id, 'Stanford University', 'Reach');
-
-                showNotification('Adding University of Michigan...', 'info');
-                await addCollege(currentUser.id, 'University of Michigan', 'Target');
-
-                showNotification('Adding UC Berkeley...', 'info');
-                await addCollege(currentUser.id, 'University of California, Berkeley', 'Reach');
-
-                showNotification('✅ Demo data populated! Refreshing...', 'success');
-                setTimeout(() => window.location.reload(), 2000);
-            } catch (e) {
-                console.error(e);
-                showNotification('Error seeding: ' + e.message, 'error');
-                seedBtn.disabled = false;
-                seedBtn.innerHTML = originalText;
-            }
-        });
-    }
 
     // Theme Toggle
     document.getElementById('darkModeToggle').addEventListener('change', (e) => {

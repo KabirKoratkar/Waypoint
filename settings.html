@@ -260,22 +260,48 @@
                 </div>
                 <!-- Account Tab -->
                 <div id="accountTab" class="tab-pane">
-                    <div class="card mb-xl" style="padding: var(--space-xl);">
+                    <!-- Membership Status Card -->
+                    <div class="card mb-xl" style="padding: var(--space-xl); position: relative; overflow: hidden;">
+                        <div id="proGlow" style="position: absolute; top: -50px; right: -50px; width: 150px; height: 150px; background: radial-gradient(circle, rgba(139, 123, 247, 0.15) 0%, transparent 70%); border-radius: 50%; display: none;"></div>
+                        
                         <h3 class="mb-lg">Membership & Status</h3>
                         <div id="subscriptionStatus"
-                            style="padding: var(--space-lg); background: var(--gray-50); border-radius: var(--radius-lg); border: 1px solid var(--gray-200); display: flex; align-items: center; justify-content: space-between;">
+                            style="padding: var(--space-lg); background: var(--gray-50); border-radius: var(--radius-lg); border: 1px solid var(--gray-200); display: flex; align-items: center; justify-content: space-between; position: relative; z-index: 1;">
                             <div style="display: flex; align-items: center; gap: var(--space-md);">
                                 <div id="membershipIcon"
-                                    style="width: 48px; height: 48px; background: var(--gray-200); border-radius: var(--radius-md); display: flex; align-items: center; justify-content: center; font-size: 24px;">
+                                    style="width: 56px; height: 56px; background: var(--gray-200); border-radius: var(--radius-xl); display: flex; align-items: center; justify-content: center; font-size: 28px; transition: all 0.3s ease;">
                                     👤</div>
                                 <div>
-                                    <div style="font-size: var(--text-sm); font-weight: 700; color: var(--gray-900);"
+                                    <div style="font-size: var(--text-base); font-weight: 800; color: var(--gray-900); display: flex; align-items: center; gap: 8px;"
                                         id="membershipTier">Free Account</div>
-                                    <div style="font-size: var(--text-xs); color: var(--gray-500);"
+                                    <div style="font-size: var(--text-sm); color: var(--gray-500); margin-top: 2px;"
                                         id="membershipDescription">Limited access to AI features</div>
                                 </div>
                             </div>
-                            <button class="btn btn-sm btn-outline" id="upgradeBtn">Upgrade to Pro</button>
+                            <button class="btn btn-sm btn-primary" id="upgradeBtn" style="border-radius: 99px; padding: 0.6rem 1.4rem;">Upgrade to Pro</button>
+                        </div>
+
+                        <!-- Premium Benefits Checklist -->
+                        <div style="margin-top: var(--space-xl);">
+                            <h4 style="font-size: var(--text-sm); font-weight: 700; color: var(--gray-500); text-transform: uppercase; letter-spacing: 1px; margin-bottom: var(--space-md);">Pro Plan Includes</h4>
+                            <div class="grid" style="grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: var(--space-md);">
+                                <div style="display: flex; align-items: flex-start; gap: 10px;">
+                                    <span style="color: var(--success); font-weight: 900;">✓</span>
+                                    <div style="font-size: var(--text-sm); color: var(--gray-700);">Unlimited AI Counselor Chat</div>
+                                </div>
+                                <div style="display: flex; align-items: flex-start; gap: 10px;">
+                                    <span style="color: var(--success); font-weight: 900;">✓</span>
+                                    <div style="font-size: var(--text-sm); color: var(--gray-700);">Personalized 12-Month Strategy</div>
+                                </div>
+                                <div style="display: flex; align-items: flex-start; gap: 10px;">
+                                    <span style="color: var(--success); font-weight: 900;">✓</span>
+                                    <div style="font-size: var(--text-sm); color: var(--gray-700);">Automated Task & Deadline Sync</div>
+                                </div>
+                                <div style="display: flex; align-items: flex-start; gap: 10px;">
+                                    <span style="color: var(--success); font-weight: 900;">✓</span>
+                                    <div style="font-size: var(--text-sm); color: var(--gray-700);">Essay Review & Brainstorming</div>
+                                </div>
+                            </div>
                         </div>
                     </div>
 
@@ -293,13 +319,7 @@
                         </div>
                     </div>
 
-                    <div class="card mb-xl" style="padding: var(--space-xl); border: 1px dashed var(--primary-blue);">
-                        <h3 class="mb-lg" style="color: var(--primary-blue);">💎 Hackathon Demo Tools</h3>
-                        <p style="color: var(--gray-600); margin-bottom: var(--space-md);">Quickly populate your account
-                            with sample data for demonstration purposes.</p>
-                        <button id="seedDemoDataBtn" class="btn btn-primary" style="width: 100%;">⚡ Populate Demo
-                            Colleges & Schedule</button>
-                    </div>
+                    <!-- Removed Hackathon Demo Tools -->
 
                     <div class="card" style="padding: var(--space-xl);">
                         <h3 class="mb-lg" style="color: var(--error);">Danger Zone</h3>
