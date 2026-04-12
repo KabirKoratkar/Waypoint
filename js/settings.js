@@ -11,11 +11,16 @@ document.addEventListener('DOMContentLoaded', async function () {
         return;
     }
 
-    const profile = await getUserProfile(currentUser.id);
-    updateNavbarUser(currentUser, profile);
-    await loadSettings(profile);
-    setupEventListeners();
-    checkPaymentStatus();
+    try {
+        const profile = await getUserProfile(currentUser.id);
+        updateNavbarUser(currentUser, profile);
+        await loadSettings(profile);
+    } catch (e) {
+        console.error('Error loading settings:', e);
+    } finally {
+        setupEventListeners();
+        checkPaymentStatus();
+    }
 });
 
 async function loadSettings(profile = null) {
@@ -101,8 +106,16 @@ function setupEventListeners() {
     // Tab Switching
     const tabs = document.querySelectorAll('.settings-tab');
     tabs.forEach(tab => {
-        tab.addEventListener('click', () => {
+        tab.addEventListener('click', (e) => {
+            e.preventDefault();
             const target = tab.dataset.tab;
+            if (!target) return;
+
+            const targetPane = document.getElementById(`${target}Tab`);
+            if (!targetPane) {
+                console.error(`Tab pane not found: ${target}Tab`);
+                return;
+            }
 
             // Update buttons
             tabs.forEach(t => t.classList.remove('active'));
@@ -110,7 +123,7 @@ function setupEventListeners() {
 
             // Update content
             document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
-            document.getElementById(`${target}Tab`).classList.add('active');
+            targetPane.classList.add('active');
         });
     });
 
