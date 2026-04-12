@@ -215,16 +215,16 @@ function setupEventListeners() {
         window.location.assign('index.html');
     });
 
-    // Upgrade to Pro
-    const upgradeBtn = document.getElementById('upgradeBtn');
-    if (upgradeBtn) {
-        upgradeBtn.addEventListener('click', handleUpgrade);
-    }
-
-    const mainUpgradeBtn = document.getElementById('mainUpgradeBtn');
-    if (mainUpgradeBtn) {
-        mainUpgradeBtn.addEventListener('click', handleUpgrade);
-    }
+    // Upgrade to Pro (Main Content & Sidebar)
+    ['upgradeBtn', 'mainUpgradeBtn'].forEach(id => {
+        const btn = document.getElementById(id);
+        if (btn) {
+            btn.addEventListener('click', () => {
+                console.log(`[STRIPE] ${id} clicked, identifying user...`);
+                handleUpgrade(id);
+            });
+        }
+    });
 
     // Theme Watcher (Sync with other tabs)
     window.addEventListener('storage', (e) => {
@@ -235,17 +235,26 @@ function setupEventListeners() {
     });
 }
 
-async function handleUpgrade() {
-    const upgradeBtn = document.getElementById('upgradeBtn');
+async function handleUpgrade(btnId = 'upgradeBtn') {
+    const upgradeBtn = document.getElementById(btnId);
+    if (!upgradeBtn) return;
+    
     const originalText = upgradeBtn.textContent;
+
+    if (!currentUser || !currentUser.id) {
+        showNotification('Session expired. Please log in again.', 'error');
+        return;
+    }
 
     // Fetch latest profile to be sure
     const profile = await getUserProfile(currentUser.id);
     const isPremium = profile?.is_premium;
 
+    console.log(`[STRIPE] Initiating session for ${currentUser.email} (Type: ${isPremium ? 'Portal' : 'Checkout'})`);
+
     try {
         upgradeBtn.disabled = true;
-        upgradeBtn.innerHTML = `<span class="loading-spinner"></span> ${isPremium ? 'Opening portal...' : 'Securely connecting...'}`;
+        upgradeBtn.innerHTML = `<span class="loading-spinner"></span> ${isPremium ? 'Opening portal...' : 'Connecting...'}`;
 
         const endpoint = isPremium ? 'create-portal-session' : 'create-checkout-session';
 
@@ -260,16 +269,22 @@ async function handleUpgrade() {
             })
         });
 
+        if (!response.ok) {
+            const errData = await response.json();
+            throw new Error(errData.error || 'The billing server is currently offline. Check environment variables.');
+        }
+
         const data = await response.json();
 
         if (data.url) {
+            console.log('[STRIPE] Redirecting to:', data.url);
             window.location.href = data.url;
         } else {
             throw new Error(data.error || 'Failed to connect to billing provider');
         }
     } catch (error) {
         console.error('Upgrade/Portal error:', error);
-        showNotification('Billing error: ' + error.message, 'error');
+        showNotification('Billing Error: ' + error.message, 'error');
         upgradeBtn.disabled = false;
         upgradeBtn.textContent = originalText;
     }
