@@ -1,4 +1,4 @@
-import { getCurrentUser, getUserProfile, getUserColleges, addCollege, updateCollege, searchCollegeCatalog, getUserEssays, getUserTasks } from './supabase-config.js';
+import { getCurrentUser, getUserProfile, getUserColleges, addCollege, updateCollege, searchCollegeCatalog, getUserEssays, getUserTasks, getTierLimits, createTask } from './supabase-config.js';
 import { updateNavbarUser } from './ui.js';
 import config from './config.js';
 import { calculateSmartProgress, formatAIMessage } from './utils.js';
@@ -173,6 +173,20 @@ async function performAddCollege(collegeName, type = 'Target', intendedMajor = '
     const originalText = btn ? btn.innerHTML : '+ Add College';
 
     try {
+        const profile = await getUserProfile(currentUser.id);
+        const limits = getTierLimits(profile);
+
+        if (colleges.length >= limits.maxColleges) {
+            showNotification(`You've reached the ${limits.maxColleges} college limit for ${limits.tierName} users. Upgrade to Pro for unlimited tracking!`, 'warning');
+            const upgradeBtn = document.getElementById('addCollegeBtn');
+            if (upgradeBtn) {
+                upgradeBtn.disabled = false;
+                upgradeBtn.innerHTML = '+ Upgrade to Pro';
+                upgradeBtn.onclick = () => window.location.assign('settings.html');
+            }
+            return;
+        }
+
         if (btn) {
             btn.disabled = true;
             btn.innerHTML = '<span class="loading-spinner"></span> Adding...';
@@ -193,6 +207,35 @@ async function performAddCollege(collegeName, type = 'Target', intendedMajor = '
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ userId: currentUser.id })
             }).catch(e => console.warn('Sync delayed:', e));
+
+            // TIER FEATURE: Auto-generate AI Targets for Pro users
+            if (limits.hasAiTargets && newCollege.deadline) {
+                console.log('Pro User detected: Generating AI targets (Drafts & LORs)...');
+                const deadline = new Date(newCollege.deadline);
+                
+                // Draft 1: 4 weeks before deadline
+                const d1 = new Date(deadline);
+                d1.setDate(d1.getDate() - 28);
+                
+                // Draft 2: 2 weeks before deadline
+                const d2 = new Date(deadline);
+                d2.setDate(d2.getDate() - 14);
+
+                // LOR Requests: 6 weeks before deadline
+                const lor = new Date(deadline);
+                lor.setDate(lor.getDate() - 42);
+
+                const autoTasks = [
+                    { title: `${collegeName}: Draft 1`, due_date: d1.toISOString().split('T')[0], category: 'Essay', priority: 'High', college_id: newCollege.id, user_id: currentUser.id },
+                    { title: `${collegeName}: Final Draft`, due_date: d2.toISOString().split('T')[0], category: 'Essay', priority: 'High', college_id: newCollege.id, user_id: currentUser.id },
+                    { title: `${collegeName}: LOR Confirmation`, due_date: lor.toISOString().split('T')[0], category: 'General', priority: 'Medium', college_id: newCollege.id, user_id: currentUser.id }
+                ];
+
+                for (const t of autoTasks) {
+                    await createTask(t);
+                }
+                showNotification(`AI Smart Targets generated for ${collegeName}!`, 'info');
+            }
 
             await loadAndRenderColleges();
         } else {

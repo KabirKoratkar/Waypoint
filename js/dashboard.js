@@ -8,6 +8,7 @@ import {
     saveMessage
 } from './supabase-config.js';
 import { updateNavbarUser, showLoading, hideLoading } from './ui.js';
+import { getTierLimits, isPremiumUser, updateProfile } from './supabase-config.js';
 import { formatAIMessage } from './utils.js';
 import config from './config.js';
 
@@ -436,6 +437,37 @@ function getOfflineGreeting(name, pendingTasks, upcoming, daysUntil) {
 
 // ─── AI Communication ────────────────────────────────────────────────────────
 async function sendToAI(message) {
+    const limits = getTierLimits(window.currentUserProfile);
+    
+    // TIER CHECK: Limit free users to 5 prompts/week
+    if (!isPremiumUser(window.currentUserProfile)) {
+        const aiProfile = window.currentUserProfile.ai_profile || {};
+        const now = new Date();
+        const lastReset = aiProfile.prompt_reset_date ? new Date(aiProfile.prompt_reset_date) : null;
+        
+        // Reset count if it's a new week (7 days)
+        const isNewWeek = !lastReset || (now - lastReset > 7 * 24 * 60 * 60 * 1000);
+        
+        if (isNewWeek) {
+            aiProfile.prompt_count = 0;
+            aiProfile.prompt_reset_date = now.toISOString();
+        }
+
+        if (aiProfile.prompt_count >= limits.maxPrompts) {
+            if (typeof window.showNotification === 'function') {
+                window.showNotification(`You've reached your ${limits.maxPrompts} prompts/week limit for ${limits.tierName} users. Upgrade to Pro for unlimited research!`, 'warning');
+            } else {
+                alert(`You've reached your ${limits.maxPrompts} prompts/week limit for ${limits.tierName} users. Upgrade to Pro for unlimited research!`);
+            }
+            return;
+        }
+
+        // Increment count
+        aiProfile.prompt_count = (aiProfile.prompt_count || 0) + 1;
+        await updateProfile(currentUser.id, { ai_profile: aiProfile });
+        window.currentUserProfile.ai_profile = aiProfile; 
+    }
+
     isLoading = true;
     document.getElementById('sendBtn').disabled = true;
 

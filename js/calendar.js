@@ -1,4 +1,4 @@
-import { supabase, getCurrentUser, getUserProfile, upsertProfile } from './supabase-config.js';
+import { supabase, getCurrentUser, getUserProfile, upsertProfile, getTierLimits } from './supabase-config.js';
 import { updateNavbarUser } from './ui.js';
 
 let currentDate = new Date();
@@ -652,6 +652,19 @@ async function handleAddTask(e) {
     const priority = document.getElementById('taskPriority').value;
     const collegeName = document.getElementById('taskCollege').value;
     const description = document.getElementById('taskDescription').value;
+
+    // TIER CHECK: Limit free users to 10 tasks/events
+    const profile = await getUserProfile(user.id);
+    const limits = getTierLimits(profile);
+    if (!editingId && allEvents.length >= limits.maxTasks) {
+        if (typeof window.showNotification === 'function') {
+            window.showNotification(`You've reached the ${limits.maxTasks} event limit for ${limits.tierName} users. Upgrade to Pro for unlimited planning!`, 'warning');
+        } else {
+            alert(`You've reached the ${limits.maxTasks} event limit for ${limits.tierName} users. Upgrade to Pro for unlimited planning!`);
+        }
+        closeAddModal();
+        return;
+    }
 
     try {
         let collegeId = null;

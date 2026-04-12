@@ -26,7 +26,8 @@ import {
     deleteActivity,
     deleteAward,
     isPremiumUser,
-    getUserColleges
+    getUserColleges,
+    getTierLimits
 } from './supabase-config.js';
 import config from './config.js';
 import { updateNavbarUser } from './ui.js';
@@ -70,6 +71,13 @@ document.addEventListener('DOMContentLoaded', async function () {
 
     const profile = await getUserProfile(currentUser.id);
     updateNavbarUser(currentUser, profile);
+
+    const limits = getTierLimits(profile);
+    if (!limits.hasEssays) {
+        console.warn('Essays is a Pro feature, redirecting user...');
+        window.location.assign('settings.html?upgrade_needed=essays');
+        return;
+    }
 
     // Load essays immediately
     await loadEssays();

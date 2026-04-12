@@ -1,4 +1,4 @@
-import { getCurrentUser, getUserProfile, getUserDocuments, uploadDocument, getDocumentUrl, deleteDocument } from './supabase-config.js';
+import { getCurrentUser, getUserProfile, getUserDocuments, uploadDocument, getDocumentUrl, deleteDocument, getTierLimits } from './supabase-config.js';
 import { updateNavbarUser } from './ui.js';
 import config from './config.js';
 
@@ -23,6 +23,14 @@ document.addEventListener('DOMContentLoaded', async function () {
 
     const profile = await getUserProfile(currentUser.id);
     updateNavbarUser(currentUser, profile);
+
+    const limits = getTierLimits(profile);
+    if (!limits.hasDocs) {
+        console.warn('Documents is a Pro feature, redirecting user...');
+        window.location.assign('settings.html?upgrade_needed=documents');
+        return;
+    }
+
     await loadAndRenderDocuments();
 
     const fileInput = document.getElementById('fileInput');

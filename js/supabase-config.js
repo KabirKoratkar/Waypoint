@@ -144,19 +144,44 @@ function isPremiumUser(profile) {
     // Fallback: check central config for admin email (legacy support)
     const adminEmails = config.adminEmails || [];
     if (adminEmails.includes(profile.email)) return true;
-    // Paid subscribers or beta testers bypass trial check
+    
+    // Explicit paid or beta status
     if (profile.is_premium || profile.is_beta || profile.role === 'beta_tester') return true;
 
-    // Free Trial Logic (7 days)
-    if (profile.created_at) {
-        const createdAt = new Date(profile.created_at);
-        const now = new Date();
-        const diffTime = Math.max(0, now - createdAt);
-        const diffDays = diffTime / (1000 * 60 * 60 * 24);
-        return diffDays <= 7;
-    }
-
+    // NO MORE 7-DAY FREE TRIAL FOR EVERYTHING. 
+    // ALL USERS NOW FOLLOW TIERED LIMITS.
     return false;
+}
+
+/**
+ * Returns the feature limits for the current user's tier.
+ * @param {Object} profile The user profile object
+ * @returns {Object} { maxColleges: number, maxTasks: number, maxPrompts: number, hasEssays: boolean, hasDocs: boolean }
+ */
+function getTierLimits(profile) {
+    const isPro = isPremiumUser(profile);
+    
+    if (isPro) {
+        return {
+            maxColleges: Infinity,
+            maxTasks: Infinity,
+            maxPrompts: Infinity,
+            hasEssays: true,
+            hasDocs: true,
+            hasAiTargets: true,
+            tierName: 'Pro'
+        };
+    }
+    
+    return {
+        maxColleges: 10,
+        maxTasks: 10,
+        maxPrompts: 5, // Per week - we'll need to track this
+        hasEssays: false,
+        hasDocs: false,
+        hasAiTargets: false,
+        tierName: 'Free'
+    };
 }
 
 /**
