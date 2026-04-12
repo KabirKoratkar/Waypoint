@@ -52,6 +52,9 @@ router.post('/create-checkout-session', async (req, res) => {
             });
         }
 
+        // Infer the base URL for redirects (Priority: Environment Var -> Request Origin -> Default)
+        const baseUrl = process.env.APP_URL || req.headers.origin || 'http://localhost:5500';
+
         // Create Checkout Session
         const session = await stripe.checkout.sessions.create({
             customer_email: email,
@@ -62,10 +65,10 @@ router.post('/create-checkout-session', async (req, res) => {
                     quantity: 1,
                 },
             ],
-            mode: 'subscription', // or 'payment' for one-time
-            success_url: `${APP_URL}/settings.html?session_id={CHECKOUT_SESSION_ID}&payment=success`,
-            cancel_url: `${APP_URL}/settings.html?payment=cancel`,
-            client_reference_id: userId, // Pass Supabase User ID to identify the user in the webhook
+            mode: 'subscription',
+            success_url: `${baseUrl}/settings.html?session_id={CHECKOUT_SESSION_ID}&payment=success`,
+            cancel_url: `${baseUrl}/settings.html?payment=cancel`,
+            client_reference_id: userId,
             metadata: {
                 userId: userId
             }
@@ -123,10 +126,11 @@ router.post('/create-portal-session', async (req, res) => {
             return res.status(404).json({ error: 'No Stripe customer found for this account. Please contact support or upgrade first.' });
         }
 
-        // 3. Create Portal Session
+        // Create Portal Session
+        const baseUrl = process.env.APP_URL || req.headers.origin || 'http://localhost:5500';
         const session = await stripe.billingPortal.sessions.create({
             customer: customerId,
-            return_url: `${APP_URL}/settings.html`,
+            return_url: `${baseUrl}/settings.html`,
         });
 
         res.json({ url: session.url });

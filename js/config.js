@@ -8,6 +8,7 @@ const config = {
         const prodDomains = [
             'waypointedu.org',
             'www.waypointedu.org',
+            'collegeapps-ai.vercel.app',
             'waypoint-app.vercel.app',
             'waypoint-ai.vercel.app'
         ];
