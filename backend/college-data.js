@@ -402,6 +402,20 @@ const collegeDatabase = {
         essays_required: [
             { title: "Common App Personal Statement", essay_type: "Common App", prompt: "Common App Prompt", word_limit: 650 }
         ]
+    },
+    "Indiana University Bloomington": {
+        name: "Indiana University Bloomington",
+        application_platform: "Common App",
+        deadline: "2025-01-05",
+        deadline_type: "RD",
+        test_policy: "Test Optional",
+        lors_required: 1,
+        portfolio_required: false,
+        acceptance_rate: 0.82,
+        essays_required: [
+            { title: "Common App Personal Statement", essay_type: "Common App", prompt: "Common App Prompt", word_limit: 650 },
+            { title: "IU Specific Question", essay_type: "Supplement", prompt: "Describe your academic and career goals...", word_limit: 400 }
+        ]
     }
 };
 

@@ -1114,7 +1114,7 @@ async function handleResearchCollege(collegeName, forceResearch = false) {
                   "location": "...",
                   "website": "...",
                   "application_platform": "Common App" | "Coalition App" | "UC App",
-                  "acceptance_rate": 0.0,
+                  "acceptance_rate": 0.82, // Use decimal format (e.g., 0.82 for 82%)
                   "median_sat": 0,
                   "median_act": 0,
                   "avg_gpa": 0.0,
