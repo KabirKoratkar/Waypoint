@@ -437,11 +437,11 @@ function getOfflineGreeting(name, pendingTasks, upcoming, daysUntil) {
 
 // ─── AI Communication ────────────────────────────────────────────────────────
 async function sendToAI(message) {
-    const limits = getTierLimits(window.currentUserProfile);
+    const limits = getTierLimits(userProfile);
     
     // TIER CHECK: Limit free users to 5 prompts/week
-    if (!isPremiumUser(window.currentUserProfile)) {
-        const aiProfile = window.currentUserProfile.ai_profile || {};
+    if (!isPremiumUser(userProfile)) {
+        const aiProfile = userProfile.ai_profile || {};
         const now = new Date();
         const lastReset = aiProfile.prompt_reset_date ? new Date(aiProfile.prompt_reset_date) : null;
         
@@ -465,7 +465,7 @@ async function sendToAI(message) {
         // Increment count
         aiProfile.prompt_count = (aiProfile.prompt_count || 0) + 1;
         await updateProfile(currentUser.id, { ai_profile: aiProfile });
-        window.currentUserProfile.ai_profile = aiProfile; 
+        userProfile.ai_profile = aiProfile; 
     }
 
     isLoading = true;
