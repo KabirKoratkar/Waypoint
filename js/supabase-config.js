@@ -38,7 +38,7 @@ async function getCurrentUser() {
 async function getUserProfile(userId) {
     if (!userId) return null;
 
-    if (userId.startsWith('dev-user-') || userId.startsWith('auth0-')) {
+    if (userId.startsWith('dev-user-') || userId.startsWith('auth0') || userId.includes('|')) {
         const userInfo = localStorage.getItem('dev_user') ? JSON.parse(localStorage.getItem('dev_user')) : {};
         return {
             id: userId,
@@ -80,7 +80,7 @@ async function getUserProfile(userId) {
             
             if (!createError) {
                 console.log('Recovery profile created successfully.');
-                return created;
+                data = created; // Ensure the rest of the function operates on the new profile
             } else {
                 console.error('Failed to create recovery profile:', createError);
             }
@@ -172,7 +172,8 @@ function isPremiumUser(profile) {
 
     // NO MORE 7-DAY FREE TRIAL FOR EVERYTHING. 
     // ALL USERS NOW FOLLOW TIERED LIMITS.
-    return false;
+    // EMERGENCY UNLOCK: During migration/fixes, everyone has Pro access
+    return true; 
 }
 
 /**
