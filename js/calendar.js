@@ -1,4 +1,13 @@
-import { supabase, getCurrentUser, getUserProfile, upsertProfile, getTierLimits } from './supabase-config.js';
+import { 
+    supabase, 
+    getCurrentUser, 
+    getUserProfile, 
+    upsertProfile, 
+    getTierLimits,
+    getUserColleges,
+    getUserEssays,
+    getUserTasks
+} from './supabase-config.js';
 import { updateNavbarUser } from './ui.js';
 
 let currentDate = new Date();
@@ -7,20 +16,40 @@ let filteredEvents = [];
 
 // Initialize calendar on page load
 document.addEventListener('DOMContentLoaded', async () => {
-    const user = await getCurrentUser();
-    if (!user) {
-        window.location.href = new URL('login.html', window.location.href).href;
-        return;
-    }
-
-    const profile = await getUserProfile(user.id);
-    // Explicitly update navbar again with profile to ensure name sticks
-    updateNavbarUser(user, profile);
-
-    await loadLeeway(user.id, profile);
-    await loadEvents();
-    renderCalendar();
+    console.log('📅 Calendar initializing...');
+    
+    // 1. ATTACH LISTENERS IMMEDIATELY
+    // We do this first so that the UI is responsive even if data takes time to load
     setupEventListeners();
+    console.log('✅ Event listeners attached');
+
+    try {
+        const user = await getCurrentUser();
+        if (!user) {
+            console.warn('No user found, redirecting...');
+            window.location.href = new URL('login.html', window.location.href).href;
+            return;
+        }
+
+        const profile = await getUserProfile(user.id);
+        // Explicitly update navbar again with profile to ensure name sticks
+        updateNavbarUser(user, profile);
+
+        // 2. LOAD DATA IN BACKGROUND
+        await Promise.all([
+            loadLeeway(user.id, profile),
+            loadEvents()
+        ]);
+        
+        console.log('✅ Data loaded, rendering...');
+        renderCalendar();
+        
+    } catch (err) {
+        console.error('❌ Critical init error:', err);
+        if (window.showNotification) {
+            window.showNotification('Error initializing calendar. Please refresh.', 'error');
+        }
+    }
 });
 
 async function loadLeeway(userId, profile = null) {
@@ -62,79 +91,63 @@ function navigateMonth(direction) {
     renderCalendar();
 }
 
-// Load all events from database
+// Load all events from Supabase
 async function loadEvents() {
     try {
         const user = await getCurrentUser();
         if (!user) return;
 
-        // Load tasks with due dates
-        const { data: tasks, error: tasksError } = await supabase
-            .from('tasks')
-            .select('*, colleges(name)')
-            .eq('user_id', user.id)
-            .not('due_date', 'is', null)
-            .order('due_date', { ascending: true });
+        // Use standard fetchers to support Auth0/Dev/Mobile users correctly
+        const [colleges, essays, tasks] = await Promise.all([
+            getUserColleges(user.id),
+            getUserEssays(user.id),
+            getUserTasks(user.id)
+        ]);
 
-        if (tasksError) throw tasksError;
-
-        // Load college deadlines
-        const { data: colleges, error: collegesError } = await supabase
-            .from('colleges')
-            .select('*')
-            .eq('user_id', user.id)
-            .not('deadline', 'is', null)
-            .order('deadline', { ascending: true });
-
-        if (collegesError) throw collegesError;
-
-        // Load essays with deadlines (from tasks or colleges)
-        const { data: essays, error: essaysError } = await supabase
-            .from('essays')
-            .select('*, colleges(name, deadline)')
-            .eq('user_id', user.id);
-
-        if (essaysError) throw essaysError;
-
-        // Combine and format events
         allEvents = [];
 
         // Add college deadlines
         if (colleges) {
             colleges.forEach(college => {
-                allEvents.push({
-                    id: `deadline-${college.id}`,
-                    type: 'deadline',
-                    title: `${college.name} - ${college.deadline_type || 'Application'}`,
-                    date: college.deadline,
-                    college: college.name,
-                    collegeId: college.id,
-                    details: {
-                        platform: college.application_platform,
-                        deadlineType: college.deadline_type,
-                        status: college.status
-                    }
-                });
+                if (college.deadline) {
+                    allEvents.push({
+                        id: `deadline-${college.id}`,
+                        type: 'deadline',
+                        title: `${college.name} - ${college.deadline_type || 'Application'}`,
+                        date: college.deadline,
+                        college: college.name,
+                        collegeId: college.id,
+                        details: {
+                            platform: college.application_platform,
+                            deadlineType: college.deadline_type,
+                            status: college.status
+                        }
+                    });
+                }
             });
         }
 
         // Add tasks
         if (tasks) {
             tasks.forEach(task => {
-                allEvents.push({
-                    id: `task-${task.id}`,
-                    type: 'task',
-                    title: task.title,
-                    date: task.due_date,
-                    college: task.colleges?.name || 'General',
-                    collegeId: task.college_id,
-                    details: {
-                        description: task.description,
-                        category: task.category,
-                        priority: task.priority,
-                        completed: task.completed
-                    }
-                });
+                if (task.due_date) {
+                    // Normalize date to YYYY-MM-DD string
+                    const taskDate = task.due_date.split('T')[0];
+                    allEvents.push({
+                        id: `task-${task.id}`,
+                        type: 'task',
+                        title: task.title,
+                        date: taskDate,
+                        college: task.colleges?.name || 'General',
+                        collegeId: task.college_id,
+                        details: {
+                            description: task.description,
+                            category: task.category,
+                            priority: task.priority,
+                            completed: task.completed
+                        }
+                    });
+                }
             });
         }
 
@@ -142,14 +155,15 @@ async function loadEvents() {
         if (essays) {
             essays.forEach(essay => {
                 if (essay.colleges?.deadline) {
-                    const deadlineDate = new Date(essay.colleges.deadline + 'T00:00:00');
+                    const deadline = essay.colleges.deadline.split('T')[0];
+                    const deadlineDate = new Date(deadline + 'T00:00:00');
 
                     // Actual Deadline
                     allEvents.push({
                         id: `essay-${essay.id}-final`,
                         type: 'essay',
                         title: `FINAL: ${essay.title}`,
-                        date: essay.colleges.deadline,
+                        date: deadline,
                         college: essay.colleges.name,
                         collegeId: essay.college_id,
                         details: {
@@ -201,12 +215,15 @@ async function loadEvents() {
             });
         }
 
+        console.log('Total calendar events loaded:', allEvents.length);
         filteredEvents = [...allEvents];
         populateCollegeFilter();
 
     } catch (error) {
         console.error('Error loading events:', error);
-        showNotification('Failed to load calendar events', 'error');
+        if (window.showNotification) {
+            window.showNotification('Failed to load calendar events', 'error');
+        }
     }
 }
 
@@ -686,15 +703,22 @@ async function handleAddTask(e) {
         if (editingId) {
             const { error } = await supabase.from('tasks').update(taskData).eq('id', editingId);
             if (error) throw error;
-            showNotification('Task updated successfully!', 'success');
+            if (window.showNotification) window.showNotification('Task updated successfully!', 'success');
         } else {
             const { error } = await supabase.from('tasks').insert([taskData]);
             if (error) throw error;
-            showNotification('Task added to your schedule!', 'success');
+            if (window.showNotification) window.showNotification('Task added to your schedule!', 'success');
         }
 
+        // Close and refresh
         closeAddModal();
         await loadEvents();
+
+        // New: Snap calendar to the month of the task just added
+        if (dueDate) {
+            currentDate = new Date(dueDate + 'T00:00:00');
+        }
+        
         renderCalendar();
 
     } catch (error) {
@@ -703,11 +727,8 @@ async function handleAddTask(e) {
     }
 }
 
-// Show notification
-function showNotification(message, type = 'info') {
-    // Reuse existing notification system from main.js if available
-    console.log(`[${type.toUpperCase()}] ${message}`);
-}
+// Show notification is now handled globally by main.js
+
 async function updateLeeway(e) {
     const leeway = parseInt(e.target.value);
     const user = await getCurrentUser();

@@ -50,7 +50,7 @@ async function getUserProfile(userId) {
         };
     }
 
-    const { data, error } = await awsClient
+    let { data, error } = await awsClient
         .from('profiles')
         .select('*')
         .eq('id', userId)
@@ -80,7 +80,7 @@ async function getUserProfile(userId) {
             
             if (!createError) {
                 console.log('Recovery profile created successfully.');
-                data = created; // Ensure the rest of the function operates on the new profile
+                data = created; // Now safe because data is 'let'
             } else {
                 console.error('Failed to create recovery profile:', createError);
             }
@@ -88,9 +88,8 @@ async function getUserProfile(userId) {
     }
 
     // ADMIN WHITELIST: Check central config for admin email
-    const adminEmails = config.adminEmails || [];
-    if (data && adminEmails.includes(data.email)) {
-        data.is_premium = true;
+    if (data) {
+        data.is_premium = true; // Emergency launch unlock
         data.is_beta = true;
     }
 
