@@ -69,10 +69,16 @@ document.addEventListener('DOMContentLoaded', async function () {
     const hasJustOnboarded = urlParams.has('onboarded') || sessionStorage.getItem('just_onboarded') === 'true';
 
     // 3. Profile Completion Check
-    // DISABLED REDIRECT: We are currently allowing all signed-in users into the dashboard
-    // to prevent the onboarding loop. The AI Greeting will handle any missing data.
+    // If we have a profile but it's missing critical data (like graduation year),
+    // it means they haven't finished onboarding yet.
     const hasProfile = !!userProfile && !!userProfile.id;
-    console.log('[DEBUG] Dashboard Landing - User Profile exists:', hasProfile);
+    const isComplete = hasProfile && !!userProfile.graduation_year;
+    
+    if (hasProfile && !isComplete && !hasJustOnboarded) {
+        console.log('[DEBUG] Profile incomplete, redirecting to onboarding...');
+        window.location.assign('onboarding.html');
+        return;
+    }
     
     // Clear the flag after we've confirmed they are in
     if (hasJustOnboarded) {
