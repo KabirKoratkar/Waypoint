@@ -66,13 +66,19 @@ document.addEventListener('DOMContentLoaded', async function () {
     
     // Check if we just onboarded to bypass the redirect loop
     const urlParams = new URLSearchParams(window.location.search);
-    const hasJustOnboarded = urlParams.has('onboarded') || sessionStorage.getItem('just_onboarded') === 'true';
+    const hasJustOnboarded = urlParams.has('onboarded') || 
+                            sessionStorage.getItem('just_onboarded') === 'true' ||
+                            localStorage.getItem('waypoint_onboarding_completed') === 'true';
 
     // 3. Profile Completion Check
-    // If we have a profile but it's missing critical data (like graduation year),
-    // it means they haven't finished onboarding yet.
+    // A profile is complete if it has a direct DB flag OR a graduation year OR high school OR some AI profile entries.
     const hasProfile = !!userProfile && !!userProfile.id;
-    const isComplete = hasProfile && !!userProfile.graduation_year;
+    const isComplete = hasProfile && (
+        userProfile.ai_profile?.onboarding_completed === true ||
+        !!userProfile.graduation_year || 
+        !!userProfile.high_school_name || 
+        (userProfile.ai_profile && (userProfile.ai_profile.interests?.length > 0 || userProfile.ai_profile.intended_major))
+    );
     
     if (hasProfile && !isComplete && !hasJustOnboarded) {
         console.log('[DEBUG] Profile incomplete, redirecting to onboarding...');
@@ -82,14 +88,12 @@ document.addEventListener('DOMContentLoaded', async function () {
     
     // Clear the flag after we've confirmed they are in
     if (hasJustOnboarded) {
-        sessionStorage.setItem('just_onboarded', 'true'); 
-        // Remove 'onboarded' from URL to prevent accidental loops
+        // Keep it in localStorage for this browser permanently
+        localStorage.setItem('waypoint_onboarding_completed', 'true'); 
+        // Remove 'onboarded' from URL to prevent clutter
         if (urlParams.has('onboarded')) {
             window.history.replaceState({}, document.title, window.location.pathname);
         }
-        console.log('[DEBUG] First landing after onboarding — ensuring data sync...');
-        // We leave the flag in session storage for one more second just in case of race conditions
-        setTimeout(() => sessionStorage.removeItem('just_onboarded'), 1000);
     }
 
     window.currentUserProfile = userProfile;
@@ -275,6 +279,52 @@ function renderStats(tasks, essays, colleges) {
     } else {
         if (statDeadline) statDeadline.textContent = '—';
         if (statDeadlineSub) statDeadlineSub.textContent = 'Add colleges to track deadlines';
+    }
+
+    // New: Schedule Rendering
+    const scheduleContainer = document.getElementById('scheduleContainer');
+    if (scheduleContainer) {
+        // Combine tasks with due dates and college deadlines
+        const events = [
+            ...pendingTasks.filter(t => t.due_date).map(t => ({
+                title: t.title,
+                date: new Date(t.due_date),
+                desc: t.description,
+                category: t.category || 'General'
+            })),
+            ...colleges.filter(c => c.deadline).map(c => ({
+                title: `${c.name} Deadline`,
+                date: new Date(c.deadline),
+                desc: c.deadline_type || 'Final Application',
+                category: 'Deadline'
+            }))
+        ];
+
+        // Sort by date (nearest first)
+        events.sort((a, b) => a.date - b.date);
+
+        // Filter out past events
+        const futureEvents = events.filter(e => e.date >= today).slice(0, 3);
+
+        if (futureEvents.length === 0) {
+            scheduleContainer.innerHTML = '<div class="empty-state">No upcoming tasks scheduled</div>';
+        } else {
+            scheduleContainer.innerHTML = futureEvents.map(e => `
+                <div class="schedule-item">
+                    <div class="schedule-date-box">
+                        <div class="schedule-month">${e.date.toLocaleDateString('en-US', { month: 'short' })}</div>
+                        <div class="schedule-day">${e.date.getDate()}</div>
+                    </div>
+                    <div class="schedule-info">
+                        <div class="schedule-title">${e.title}</div>
+                        <div class="schedule-desc">${e.desc || ''}</div>
+                        <div class="schedule-meta">
+                            <span class="cat-badge cat-${(e.category || 'general').toLowerCase()}">${e.category}</span>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
     }
 }
 
@@ -496,6 +546,14 @@ async function sendToAI(message) {
             const data = await response.json();
             const reply = data.response || 'Sorry, I had trouble with that. Try again?';
             appendAIMessage(reply);
+
+            // If the AI performed an action, refresh the UI data
+            if (data.functionCalled) {
+                console.log('AI performed action:', data.functionCalled, '- Refreshing data...');
+                fetchData(currentUser.id).then(fresh => {
+                    renderStats(fresh.tasks, fresh.essays, fresh.colleges);
+                });
+            }
 
             // Persist locally for session and globally for DB
             conversationHistory.push({ role: 'user', content: message });

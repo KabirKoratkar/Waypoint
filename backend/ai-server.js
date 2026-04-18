@@ -709,7 +709,7 @@ app.post('/api/chat', async (req, res) => {
 
                 YOUR POWERS:
                 1. PROFILE CONTROL: Use 'updateProfile' to refine their strategy.
-                2. SCHEDULE MANAGEMENT: Use 'modifyTask' to manage their time.
+                2. SCHEDULE MANAGEMENT: Use 'createTasks' to add items to their calendar, or 'modifyTask' to manage existing ones.
                 3. ESSAY ACCESS: Use 'getEssay' to read their drafts. If they ask about a specific essay, GO READ IT first.
                 4. ESSAY WRITING: Use 'updateEssay' to save content.
                 5. COLLEGE STRATEGY: Use 'updateCollege' or 'addCollege'.
@@ -775,7 +775,7 @@ app.post('/api/chat', async (req, res) => {
             },
             {
                 name: 'createTasks',
-                description: 'Create important tasks for the user\'s college applications.',
+                description: 'Create important tasks and events for the user\'s college applications and calendar. Use this when the user wants to add something to their schedule or calendar.',
                 parameters: {
                     type: 'object',
                     properties: {
@@ -784,10 +784,10 @@ app.post('/api/chat', async (req, res) => {
                             items: {
                                 type: 'object',
                                 properties: {
-                                    title: { type: 'string' },
+                                    title: { type: 'string', description: 'Headline of the task/event' },
                                     description: { type: 'string' },
-                                    dueDate: { type: 'string', description: 'Due date in YYYY-MM-DD format' },
-                                    category: { type: 'string', enum: ['Essay', 'Document', 'LOR', 'General'] },
+                                    dueDate: { type: 'string', description: 'The date for the calendar event in YYYY-MM-DD format.' },
+                                    category: { type: 'string', enum: ['Essay', 'Document', 'LOR', 'General', 'Meeting', 'Deadline'] },
                                     priority: { type: 'string', enum: ['High', 'Medium', 'Low'] }
                                 }
                             }
@@ -955,7 +955,7 @@ app.post('/api/chat', async (req, res) => {
             },
             {
                 name: 'researchLive',
-                description: 'USE THIS FOR REAL-TIME DATA. Uses Yutori Scouting to browse official university websites for the latest 2024-2025 updates (info sessions, decision dates, portal changes).',
+                description: 'USE THIS FOR REAL-TIME DATA. Uses Yutori Scouting to browse official university websites for the latest 2026-2027 updates (info sessions, decision dates, portal changes).',
                 parameters: {
                     type: 'object',
                     properties: {
@@ -1099,10 +1099,10 @@ async function handleResearchCollege(collegeName, forceResearch = false) {
             messages: [{
                 role: 'system',
                 content: `You are a world-class college admissions researcher.
-                Provide accurate, comprehensive 2024-2025 admissions data for ${collegeName}.
+                Provide accurate, comprehensive 2026-2027 admissions data for ${collegeName}.
                 
                 CRITICAL INSTRUCTION FOR ESSAYS:
-                - Find EVERY supplemental essay required for 2024-2025.
+                - Find EVERY supplemental essay required for 2026-2027.
                 - Most top schools (like Stanford, Harvard, etc.) have 3-5+ short questions or long essays.
                 - For Stanford specifically, include the "Roommate" essay, "What is meaningful to you", and "Letter to your future roommate".
                 - Include the specific prompts and word limits (usually 50, 100, or 250 words).
@@ -1423,7 +1423,16 @@ async function handleUpdateProfile(userId, updates) {
 }
 
 async function handleCreateTasks(userId, tasks) {
-    const toInsert = tasks.map(t => ({ user_id: userId, ...t, completed: false, status: 'Todo' }));
+    const toInsert = tasks.map(t => ({
+        user_id: userId,
+        title: t.title,
+        description: t.description,
+        due_date: t.due_date || t.dueDate,
+        category: t.category,
+        priority: t.priority,
+        completed: false,
+        status: 'Todo'
+    }));
     const { data, error } = await supabase.from('tasks').insert(toInsert).select();
     if (error) return { success: false, error: error.message };
     return { success: true, count: data.length };

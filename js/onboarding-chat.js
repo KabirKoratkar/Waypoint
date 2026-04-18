@@ -19,7 +19,7 @@ Gather the following:
 1. Full Name
 2. High School Name
 3. Are they a FRESHMAN or TRANSFER student? (If transfer, what year will they start the application process?)
-4. Graduation Year (2025-2030)
+4. Graduation Year (2026-2032)
 5. Intended Major & Career Aspirations (Ask "What draws you to that field?" or "What's the dream career?")
 6. Academic Stats (Must explicitly ask for BOTH Unweighted and Weighted GPA, and Optional SAT/ACT)
 7. Extracurriculars & Interests (Ask for 2-3 specific things they do)
@@ -46,32 +46,37 @@ document.addEventListener('DOMContentLoaded', async () => {
         return;
     }
 
-    // CRITICAL: Create a minimal profile row immediately via direct Supabase write.
-    // RLS is disabled on profiles table so anon key works. This guarantees a profile
-    // row exists BEFORE the conversation even starts — no backend dependency.
+    // CRITICAL: Ensure a profile row exists. 
+    // We check first to avoid overwriting existing graduation_year/high_school data with a 'seed'.
     try {
-        const { error: seedErr } = await supabase
-            .from('profiles')
-            .upsert({
+        const profile = await getUserProfile(currentUser.id);
+        if (!profile) {
+            console.log('[ONBOARDING] No profile found, creating seed...');
+            await supabase.from('profiles').insert({
                 id: currentUser.id,
                 email: currentUser.email || '',
                 full_name: currentUser.user_metadata?.full_name || 
                            currentUser.user_metadata?.name ||
                            currentUser.email?.split('@')[0] || 'Student'
-            }, { onConflict: 'id' });
-
-        if (seedErr) {
-            console.error('[ONBOARDING] Seed profile error:', seedErr);
-        } else {
-            console.log('[ONBOARDING] Seed profile created successfully ✓');
+            });
         }
     } catch (e) {
-        console.error('[ONBOARDING] Seed profile exception:', e);
+        console.error('[ONBOARDING] Profile check/seed exception:', e);
     }
 
     setupVoiceToggle();
+    setupSkipButton();
     initChat();
 });
+
+function setupSkipButton() {
+    const skipBtn = document.getElementById('skipOnboardingBtn');
+    if (!skipBtn) return;
+    skipBtn.onclick = () => {
+        localStorage.setItem('waypoint_onboarding_completed', 'true');
+        window.location.assign('dashboard.html?onboarded=true');
+    };
+}
 
 function setupVoiceToggle() {
     const toggle = document.getElementById('voiceToggle');
@@ -282,7 +287,8 @@ JSON structure REQUIRED:
                 sat_score: profileData.sat_score || null,
                 is_transfer: profileData.is_transfer || false,
                 target_start_year: profileData.target_start_year || null,
-                extracurriculars: profileData.extracurriculars || []
+                extracurriculars: profileData.extracurriculars || [],
+                onboarding_completed: true // Persistent flag in DB
             };
             extras.ai_profile = aiProfileDoc;
 
@@ -301,7 +307,8 @@ JSON structure REQUIRED:
             sat_score: profileData.sat_score || null,
             is_transfer: profileData.is_transfer || false,
             target_start_year: profileData.target_start_year || null,
-            extracurriculars: profileData.extracurriculars || []
+            extracurriculars: profileData.extracurriculars || [],
+            onboarding_completed: true // Persistent flag in DB
         };
 
         // SECONDARY: Backend call for extended fields (non-blocking)
@@ -424,7 +431,8 @@ function renderRoadmap(plan) {
         const b = document.getElementById('finalDashboardBtn');
         b.textContent = "Saving your profile...";
         b.disabled = true;
-        sessionStorage.setItem('just_onboarded', 'true');
+        // Use localStorage instead of sessionStorage so it persists across page navigations better
+        localStorage.setItem('waypoint_onboarding_completed', 'true');
         setTimeout(() => {
             window.location.assign('dashboard.html?onboarded=true');
         }, 1200);
@@ -438,7 +446,7 @@ function showFinishButton() {
     btn.style.cssText = 'width: 100%; margin-top: 20px; height: 50px; border-radius: 99px;';
     btn.textContent = "CONTINUE TO DASHBOARD";
     btn.onclick = () => {
-        sessionStorage.setItem('just_onboarded', 'true');
+        localStorage.setItem('waypoint_onboarding_completed', 'true');
         window.location.assign('dashboard.html?onboarded=true');
     };
     container.appendChild(btn);

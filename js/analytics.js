@@ -88,7 +88,7 @@ function updateSummaryStats(colleges, essays, tasks) {
     }
 
     if (essaysCard) {
-        const drafted = essays.filter(e => e.word_count > 100).length;
+        const drafted = essays.filter(e => e.word_count > 50).length;
         essaysCard.textContent = `${drafted} / ${essays.length || 0}`;
     }
 

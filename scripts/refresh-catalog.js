@@ -29,10 +29,10 @@ async function refreshCatalog() {
                 messages: [{
                     role: 'system',
                     content: `You are a world-class college admissions researcher. 
-                    Provide accurate, comprehensive 2024-2025 admissions data for ${entry.name}.
+                    Provide accurate, comprehensive 2026-2027 admissions data for ${entry.name}.
                     
                     CRITICAL INSTRUCTION FOR ESSAYS:
-                    - Find EVERY supplemental essay required for 2024-2025.
+                    - Find EVERY supplemental essay required for 2026-2027.
                     - Most top schools (like Stanford, Harvard, etc.) have 3-5+ short questions or long essays.
                     - Include specific prompts and word limits.
                     

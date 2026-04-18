@@ -5,7 +5,7 @@ const collegeDatabase = {
     "Stanford University": {
         name: "Stanford University",
         application_platform: "Common App",
-        deadline: "2025-01-05",
+        deadline: "2027-01-05",
         deadline_type: "RD",
         test_policy: "Test Optional",
         lors_required: 2,
@@ -20,7 +20,7 @@ const collegeDatabase = {
     "Harvard University": {
         name: "Harvard University",
         application_platform: "Common App",
-        deadline: "2025-01-01",
+        deadline: "2027-01-01",
         deadline_type: "RD",
         test_policy: "Test Optional",
         lors_required: 2,
@@ -35,7 +35,7 @@ const collegeDatabase = {
     "Yale University": {
         name: "Yale University",
         application_platform: "Common App",
-        deadline: "2025-01-02",
+        deadline: "2027-01-02",
         deadline_type: "RD",
         test_policy: "Test Flexible",
         lors_required: 2,
@@ -49,7 +49,7 @@ const collegeDatabase = {
     "Princeton University": {
         name: "Princeton University",
         application_platform: "Common App",
-        deadline: "2025-01-01",
+        deadline: "2027-01-01",
         deadline_type: "RD",
         test_policy: "Test Optional",
         lors_required: 2,
@@ -63,7 +63,7 @@ const collegeDatabase = {
     "MIT": {
         name: "Massachusetts Institute of Technology",
         application_platform: "MIT Application",
-        deadline: "2025-01-01",
+        deadline: "2027-01-01",
         deadline_type: "RD",
         test_policy: "Test Required",
         lors_required: 2,
@@ -77,7 +77,7 @@ const collegeDatabase = {
     "Columbia University": {
         name: "Columbia University",
         application_platform: "Common App",
-        deadline: "2025-01-01",
+        deadline: "2027-01-01",
         deadline_type: "RD",
         test_policy: "Test Optional",
         lors_required: 2,
@@ -91,7 +91,7 @@ const collegeDatabase = {
     "University of Pennsylvania": {
         name: "University of Pennsylvania",
         application_platform: "Common App",
-        deadline: "2025-01-05",
+        deadline: "2027-01-05",
         deadline_type: "RD",
         test_policy: "Test Optional",
         lors_required: 2,
@@ -105,7 +105,7 @@ const collegeDatabase = {
     "Brown University": {
         name: "Brown University",
         application_platform: "Common App",
-        deadline: "2025-01-03",
+        deadline: "2027-01-03",
         deadline_type: "RD",
         test_policy: "Test Required",
         lors_required: 2,
@@ -119,7 +119,7 @@ const collegeDatabase = {
     "Cornell University": {
         name: "Cornell University",
         application_platform: "Common App",
-        deadline: "2025-01-02",
+        deadline: "2027-01-02",
         deadline_type: "RD",
         test_policy: "Test Optional",
         lors_required: 2,
@@ -132,7 +132,7 @@ const collegeDatabase = {
     "Dartmouth College": {
         name: "Dartmouth College",
         application_platform: "Common App",
-        deadline: "2025-01-01",
+        deadline: "2027-01-01",
         deadline_type: "RD",
         test_policy: "Test Required",
         lors_required: 2,
@@ -146,7 +146,7 @@ const collegeDatabase = {
     "New York University": {
         name: "New York University",
         application_platform: "Common App",
-        deadline: "2025-01-01",
+        deadline: "2027-01-01",
         deadline_type: "RD",
         test_policy: "Test Optional",
         lors_required: 2,
@@ -159,7 +159,7 @@ const collegeDatabase = {
     "UC Berkeley": {
         name: "University of California, Berkeley",
         application_platform: "UC Application",
-        deadline: "2024-11-30",
+        deadline: "2026-11-30",
         deadline_type: "UC",
         test_policy: "Test Blind",
         lors_required: 0,
@@ -178,7 +178,7 @@ const collegeDatabase = {
     "UCLA": {
         name: "University of California, Los Angeles",
         application_platform: "UC Application",
-        deadline: "2024-11-30",
+        deadline: "2026-11-30",
         deadline_type: "UC",
         test_policy: "Test Blind",
         lors_required: 0,
@@ -197,7 +197,7 @@ const collegeDatabase = {
     "University of Michigan": {
         name: "University of Michigan",
         application_platform: "Common App",
-        deadline: "2025-02-01",
+        deadline: "2027-02-01",
         deadline_type: "RD",
         test_policy: "Test Optional",
         lors_required: 1,
@@ -211,7 +211,7 @@ const collegeDatabase = {
     "Duke University": {
         name: "Duke University",
         application_platform: "Common App",
-        deadline: "2025-01-02",
+        deadline: "2027-01-02",
         deadline_type: "RD",
         test_policy: "Test Optional",
         lors_required: 2,
@@ -224,7 +224,7 @@ const collegeDatabase = {
     "Northwestern University": {
         name: "Northwestern University",
         application_platform: "Common App",
-        deadline: "2025-01-02",
+        deadline: "2027-01-02",
         deadline_type: "RD",
         test_policy: "Test Optional",
         lors_required: 1,
@@ -237,7 +237,7 @@ const collegeDatabase = {
     "Johns Hopkins University": {
         name: "Johns Hopkins University",
         application_platform: "Common App",
-        deadline: "2025-01-02",
+        deadline: "2027-01-02",
         deadline_type: "RD",
         test_policy: "Test Optional",
         lors_required: 2,
@@ -250,7 +250,7 @@ const collegeDatabase = {
     "Caltech": {
         name: "California Institute of Technology",
         application_platform: "Common App",
-        deadline: "2025-01-03",
+        deadline: "2027-01-03",
         deadline_type: "RD",
         test_policy: "Test Required",
         lors_required: 2,
@@ -263,7 +263,7 @@ const collegeDatabase = {
     "Rice University": {
         name: "Rice University",
         application_platform: "Common App",
-        deadline: "2025-01-04",
+        deadline: "2027-01-04",
         deadline_type: "RD",
         test_policy: "Test Optional",
         lors_required: 2,
@@ -277,7 +277,7 @@ const collegeDatabase = {
     "Georgetown University": {
         name: "Georgetown University",
         application_platform: "Georgetown Application",
-        deadline: "2025-01-10",
+        deadline: "2027-01-10",
         deadline_type: "RD",
         test_policy: "Test Required",
         lors_required: 1,
@@ -290,7 +290,7 @@ const collegeDatabase = {
     "University of Southern California": {
         name: "University of Southern California",
         application_platform: "Common App",
-        deadline: "2025-01-15",
+        deadline: "2027-01-15",
         deadline_type: "RD",
         test_policy: "Test Optional",
         lors_required: 1,
@@ -304,7 +304,7 @@ const collegeDatabase = {
     "Northeastern University": {
         name: "Northeastern University",
         application_platform: "Common App",
-        deadline: "2025-01-01",
+        deadline: "2027-01-01",
         deadline_type: "RD",
         test_policy: "Test Optional",
         lors_required: 1,
@@ -316,7 +316,7 @@ const collegeDatabase = {
     "Boston University": {
         name: "Boston University",
         application_platform: "Common App",
-        deadline: "2025-01-01",
+        deadline: "2027-01-01",
         deadline_type: "RD",
         test_policy: "Test Optional",
         lors_required: 1,
@@ -329,7 +329,7 @@ const collegeDatabase = {
     "Georgia Institute of Technology": {
         name: "Georgia Institute of Technology",
         application_platform: "Common App",
-        deadline: "2025-01-04",
+        deadline: "2027-01-04",
         deadline_type: "RD",
         test_policy: "Test Required",
         lors_required: 1,
@@ -342,7 +342,7 @@ const collegeDatabase = {
     "University of Texas at Austin": {
         name: "University of Texas at Austin",
         application_platform: "Common App",
-        deadline: "2024-12-01",
+        deadline: "2026-12-01",
         deadline_type: "RD",
         test_policy: "Test Required",
         lors_required: 1,
@@ -355,7 +355,7 @@ const collegeDatabase = {
     "University of North Carolina at Chapel Hill": {
         name: "University of North Carolina at Chapel Hill",
         application_platform: "Common App",
-        deadline: "2025-01-15",
+        deadline: "2027-01-15",
         deadline_type: "RD",
         test_policy: "Test Optional",
         lors_required: 1,
@@ -368,7 +368,7 @@ const collegeDatabase = {
     "University of Virginia": {
         name: "University of Virginia",
         application_platform: "Common App",
-        deadline: "2025-01-05",
+        deadline: "2027-01-05",
         deadline_type: "RD",
         test_policy: "Test Optional",
         lors_required: 1,
@@ -381,7 +381,7 @@ const collegeDatabase = {
     "Carnegie Mellon University": {
         name: "Carnegie Mellon University",
         application_platform: "Common App",
-        deadline: "2025-01-03",
+        deadline: "2027-01-03",
         deadline_type: "RD",
         test_policy: "Test Optional",
         lors_required: 2,
@@ -394,7 +394,7 @@ const collegeDatabase = {
     "Arizona State University": {
         name: "Arizona State University",
         application_platform: "Common App",
-        deadline: "2025-02-01",
+        deadline: "2027-02-01",
         deadline_type: "RD",
         test_policy: "Test Optional",
         lors_required: 0,
@@ -406,7 +406,7 @@ const collegeDatabase = {
     "Indiana University Bloomington": {
         name: "Indiana University Bloomington",
         application_platform: "Common App",
-        deadline: "2025-01-05",
+        deadline: "2027-01-05",
         deadline_type: "RD",
         test_policy: "Test Optional",
         lors_required: 1,

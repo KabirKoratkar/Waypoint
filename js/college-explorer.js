@@ -711,7 +711,7 @@ function showResearchModal(findings) {
 
                 <div style="margin-top: var(--space-xl); text-align: center;">
                     <button class="btn btn-primary" style="height: 50px; width: 100%;" onclick="this.closest('.modal-overlay').remove()">Download Intelligence to Brain</button>
-                    <p style="font-size: 10px; color: var(--gray-400); margin-top: var(--space-md);">Verified against 2024-2025 Admissions Data • AI-Generated Insight</p>
+                    <p style="font-size: 10px; color: var(--gray-400); margin-top: var(--space-md);">Verified against 2026-2027 Admissions Data • AI-Generated Insight</p>
                 </div>
             </div>
         </div>

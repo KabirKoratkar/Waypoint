@@ -39,14 +39,7 @@ async function loadSettings(profile = null) {
     }
 
     // Theme Setting
-    // Theme Setting
-    const localTheme = localStorage.getItem('theme');
-    const systemDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-    const currentAttribute = document.documentElement.getAttribute('data-theme');
-
-    // logic: if explicitly 'dark' in storage OR attribute, OR nosave+system=dark
-    const isDark = (localTheme === 'dark') || (currentAttribute === 'dark') || (!localTheme && systemDark);
-
+    const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
     document.getElementById('darkModeToggle').checked = isDark;
 
     // Profile Settings
