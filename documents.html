@@ -107,7 +107,7 @@
                     <h3 class="modal-title" id="reviewModalTitle">AI Document Analysis</h3>
                     <p style="font-size: var(--text-xs); color: var(--gray-500); margin: 0;" id="reviewDocInfo"></p>
                 </div>
-                <button class="btn btn-ghost" onclick="closeReviewModal()">×</button>
+                <button class="modal-close" onclick="closeReviewModal()">×</button>
             </div>
             <div class="modal-body" id="reviewModalBody">
                 <div id="reviewLoading" style="text-align: center; padding: var(--space-2xl);">
@@ -132,7 +132,7 @@
         <div class="modal-content">
             <div class="modal-header">
                 <h3 class="modal-title">Upload Document</h3>
-                <button class="btn btn-ghost" onclick="closeUploadModal()">×</button>
+                <button class="modal-close" onclick="closeUploadModal()">×</button>
             </div>
             <div class="modal-body">
                 <p style="margin-bottom: var(--space-md);">Selected File: <strong id="selectedFileName"></strong></p>
