@@ -787,6 +787,7 @@ app.post('/api/chat', async (req, res) => {
                                     title: { type: 'string', description: 'Headline of the task/event' },
                                     description: { type: 'string' },
                                     dueDate: { type: 'string', description: 'The date for the calendar event in YYYY-MM-DD format.' },
+                                    collegeId: { type: 'string', description: 'The UUID of the college to link this task to (optional).' },
                                     category: { type: 'string', enum: ['Essay', 'Document', 'LOR', 'General', 'Meeting', 'Deadline'] },
                                     priority: { type: 'string', enum: ['High', 'Medium', 'Low'] }
                                 }
@@ -1423,19 +1424,53 @@ async function handleUpdateProfile(userId, updates) {
 }
 
 async function handleCreateTasks(userId, tasks) {
-    const toInsert = tasks.map(t => ({
-        user_id: userId,
-        title: t.title,
-        description: t.description,
-        due_date: t.due_date || t.dueDate,
-        category: t.category,
-        priority: t.priority,
-        completed: false,
-        status: 'Todo'
-    }));
+    const toInsert = tasks.map(t => {
+        // Defensive date normalization for AI inputs
+        let finalDate = t.due_date || t.dueDate;
+        if (finalDate && typeof finalDate === 'string') {
+            const lower = finalDate.toLowerCase();
+            if (lower === 'tomorrow') {
+                const d = new Date();
+                d.setDate(d.getDate() + 1);
+                finalDate = d.toISOString().split('T')[0];
+            } else if (lower.includes('next week')) {
+                const d = new Date();
+                d.setDate(d.getDate() + 7);
+                finalDate = d.toISOString().split('T')[0];
+            } else {
+                // Try to parse standard date strings
+                try {
+                    const parsed = new Date(finalDate);
+                    if (!isNaN(parsed.getTime())) {
+                        finalDate = parsed.toISOString().split('T')[0];
+                    }
+                } catch (e) {
+                    console.warn('[AI-SERVER] Failed to parse date:', finalDate);
+                }
+            }
+        }
+
+        return {
+            user_id: userId,
+            college_id: t.college_id || t.collegeId || null,
+            title: t.title,
+            description: t.description || '',
+            due_date: finalDate || null,
+            category: t.category || 'General',
+            priority: t.priority || 'Medium',
+            completed: false
+            // Note: 'status' column does not exist in the public.tasks table schema
+        };
+    });
+
+    console.log(`[AI-SERVER] Inserting ${toInsert.length} tasks for user ${userId}`);
     const { data, error } = await supabase.from('tasks').insert(toInsert).select();
-    if (error) return { success: false, error: error.message };
-    return { success: true, count: data.length };
+    
+    if (error) {
+        console.error('[AI-SERVER] Task insertion error:', error);
+        return { success: false, error: error.message };
+    }
+    return { success: true, count: data ? data.length : 0 };
 }
 
 async function handleModifyTask(userId, action, taskId, taskData) {
