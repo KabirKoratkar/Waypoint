@@ -690,14 +690,20 @@ async function handleAddTask(e) {
             if (col) collegeId = col.id;
         }
 
+        // Ensure date is in YYYY-MM-DD format for Supabase
+        let dateToSave = dueDate;
+        if (dueDate && dueDate.includes('T')) {
+            dateToSave = dueDate.split('T')[0];
+        }
+
         const taskData = {
             user_id: user.id,
-            college_id: collegeId,
+            college_id: collegeId || null,
             title,
-            due_date: dueDate,
-            category,
-            priority,
-            description
+            due_date: dateToSave,
+            category: category || 'General',
+            priority: priority || 'Medium',
+            description: description || ''
         };
 
         if (editingId) {

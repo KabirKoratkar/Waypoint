@@ -6,12 +6,13 @@ const SUPABASE_ANON_KEY = config.supabaseKey;
 // Import Supabase client from CDN
 import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
 
-// Initialize AWS Native Data Client (Powered by Waypoint Infrastructure)
-const awsClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+// Initialize Supabase Client
+export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+const awsClient = supabase; // Maintain internal reference
 
-// Verification check for AWS access
-if (awsClient) {
-    console.log('🚀 AWS Data Services: Connected to Cloud Native Storage (v2.x)');
+// Verification check
+if (supabase) {
+    console.log('🚀 Supabase Data Services: Connected (v2.x)');
 }
 
 // Helper Functions
