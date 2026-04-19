@@ -540,12 +540,21 @@ async function sendToAI(message) {
             const reply = data.response || 'Sorry, I had trouble with that. Try again?';
             appendAIMessage(reply);
 
-            // If the AI performed an action, refresh the UI data
+            // If the AI performed an action, refresh the UI data instantly
             if (data.functionCalled) {
                 console.log('AI performed action:', data.functionCalled, '- Refreshing data...');
-                fetchData(currentUser.id).then(fresh => {
-                    renderStats(fresh.tasks, fresh.essays, fresh.colleges);
-                });
+                
+                // Refresh all dashboard data
+                if (typeof fetchData === 'function') {
+                    fetchData(currentUser.id).then(fresh => {
+                        // Update stats
+                        if (typeof renderStats === 'function') renderStats(fresh.tasks, fresh.essays, fresh.colleges);
+                        // Update calendar if we're on the dashboard or calendar page
+                        if (typeof loadEvents === 'function') loadEvents();
+                        // Update other components if they exist
+                        if (typeof renderTasks === 'function') renderTasks(fresh.tasks);
+                    });
+                }
             }
 
             // Persist locally for session
