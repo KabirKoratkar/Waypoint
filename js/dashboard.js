@@ -242,7 +242,13 @@ function renderStats(tasks, essays, colleges) {
     // Stat pills (top bar)
     const pillsEl = document.getElementById('statPills');
     if (pillsEl) {
+        const majorPill = userProfile && userProfile.intended_major ? `
+            <div class="stat-pill" style="border-color: var(--primary-blue-soft); background: var(--surface-soft);">
+                <span class="pill-val" style="color: var(--primary-blue); font-weight: 800;">Major:</span> ${userProfile.intended_major}
+            </div>` : '';
+
         pillsEl.innerHTML = `
+            ${majorPill}
             <div class="stat-pill">
                 <span class="pill-val">${pendingTasks.length}</span> tasks left
             </div>
@@ -254,6 +260,9 @@ function renderStats(tasks, essays, colleges) {
             </div>
         `;
     }
+
+    // Render Submitted Schools
+    renderSubmittedColleges(colleges);
 
     // Panel cards
     const statTasks = document.getElementById('statTasks');
@@ -646,6 +655,39 @@ function appendSystemMessage(text) {
     div.textContent = text;
     container.appendChild(div);
     container.scrollTop = container.scrollHeight;
+}
+
+function renderSubmittedColleges(colleges) {
+    const container = document.getElementById('submittedCollegesContainer');
+    if (!container) return;
+
+    const submitted = colleges.filter(c => c.status === 'Completed' || c.status === 'Submitted');
+
+    if (submitted.length === 0) {
+        container.innerHTML = '<div class="empty-state">No schools submitted yet. Keep going! 🚀</div>';
+        return;
+    }
+
+    container.innerHTML = submitted.map(college => {
+        const platform = college.application_platform || 'Digital App';
+        const type = college.deadline_type || 'Regular';
+        
+        return `
+            <div class="schedule-item" style="border-left: 4px solid var(--success);">
+                <div class="schedule-date-box" style="background: rgba(16, 185, 129, 0.1); border-color: rgba(16, 185, 129, 0.2);">
+                    <div class="schedule-month" style="color: var(--success);">DONE</div>
+                    <div class="schedule-day">✅</div>
+                </div>
+                <div class="schedule-info">
+                    <div class="schedule-title">${college.name}</div>
+                    <div class="schedule-desc">${platform} • ${type} Decision</div>
+                    <div class="schedule-meta">
+                        <span class="cat-badge" style="background: var(--success); color: white;">SUBMITTED</span>
+                    </div>
+                </div>
+            </div>
+        `;
+    }).join('');
 }
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
