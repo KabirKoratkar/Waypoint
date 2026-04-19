@@ -131,22 +131,34 @@ async function loadEvents() {
         if (tasks) {
             tasks.forEach(task => {
                 if (task.due_date) {
-                    // Normalize date to YYYY-MM-DD string
-                    const taskDate = task.due_date.split('T')[0];
-                    allEvents.push({
-                        id: `task-${task.id}`,
-                        type: 'task',
-                        title: task.title,
-                        date: taskDate,
-                        college: task.colleges?.name || 'General',
-                        collegeId: task.college_id,
-                        details: {
-                            description: task.description,
-                            category: task.category,
-                            priority: task.priority,
-                            completed: task.completed
+                    // Defensive check: handle both ISO strings and YYYY-MM-DD
+                    const taskDate = typeof task.due_date === 'string' ? task.due_date.split('T')[0] : '';
+                    
+                    if (taskDate) {
+                        // Resolve the college name from the ID if the join is missing
+                        let collegeName = 'General';
+                        if (task.colleges?.name) {
+                            collegeName = task.colleges.name;
+                        } else if (task.college_id && colleges) {
+                            const matched = colleges.find(c => c.id === task.college_id);
+                            if (matched) collegeName = matched.name;
                         }
-                    });
+
+                        allEvents.push({
+                            id: `task-${task.id}`,
+                            type: 'task',
+                            title: task.title,
+                            date: taskDate,
+                            college: collegeName,
+                            collegeId: task.college_id,
+                            details: {
+                                description: task.description,
+                                category: task.category,
+                                priority: task.priority,
+                                completed: task.completed
+                            }
+                        });
+                    }
                 }
             });
         }
