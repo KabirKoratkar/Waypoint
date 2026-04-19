@@ -377,13 +377,6 @@ async function handleSend() {
 
     appendUserMessage(text);
 
-    // Save to DB
-    try {
-        await saveMessage(currentUser.id, 'user', text);
-    } catch (e) {
-        console.error('Failed to save user message:', e);
-    }
-
     // Hide ask chips after first user message
     const chipsRow = document.getElementById('askChips');
     if (chipsRow) chipsRow.style.display = 'none';
@@ -555,15 +548,9 @@ async function sendToAI(message) {
                 });
             }
 
-            // Persist locally for session and globally for DB
+            // Persist locally for session
             conversationHistory.push({ role: 'user', content: message });
             conversationHistory.push({ role: 'assistant', content: reply });
-
-            try {
-                await saveMessage(currentUser.id, 'assistant', reply);
-            } catch (e) {
-                console.error('Failed to save AI reply:', e);
-            }
         } else {
             appendAIMessage('I\'m having trouble reaching the server right now. Try again in a moment.');
         }
