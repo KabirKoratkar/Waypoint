@@ -1429,12 +1429,18 @@ async function handleCreateTasks(userId, tasks) {
         let finalDate = t.due_date || t.dueDate;
         if (finalDate && typeof finalDate === 'string') {
             const lower = finalDate.toLowerCase();
+            
+            // Adjust for user's timezone (PDT = UTC-7)
+            // This ensures "tomorrow" is calculated relative to where the user is
+            const now = new Date();
+            const userTime = new Date(now.getTime() - (7 * 60 * 60 * 1000)); // PDT Offset
+            
             if (lower === 'tomorrow') {
-                const d = new Date();
+                const d = new Date(userTime);
                 d.setDate(d.getDate() + 1);
                 finalDate = d.toISOString().split('T')[0];
             } else if (lower.includes('next week')) {
-                const d = new Date();
+                const d = new Date(userTime);
                 d.setDate(d.getDate() + 7);
                 finalDate = d.toISOString().split('T')[0];
             } else {

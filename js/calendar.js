@@ -104,6 +104,9 @@ async function loadEvents() {
             getUserTasks(user.id)
         ]);
 
+        console.log('🔍 [CALENDAR-DIAGNOSTIC] Raw tasks found:', tasks);
+        console.log('🔍 [CALENDAR-DIAGNOSTIC] Raw colleges found:', colleges);
+
         allEvents = [];
 
         // Add college deadlines
