@@ -277,7 +277,16 @@ app.post('/api/onboarding/plan', async (req, res) => {
         const interests = Array.isArray(aiProf.interests) ? aiProf.interests.join(', ') : 
                          (aiProf.interests || aiProf.intended_major || profile.intended_major || 'Undecided');
 
-        const systemPrompt = `You are an elite college admissions strategist. Generate a focused "Admissions Action Plan" for a student.
+        const today = new Date();
+        const pdtToday = new Date(today.getTime() - (7 * 60 * 60 * 1000)).toISOString().split('T')[0];
+
+        const systemPrompt = `You are an elite AI college admissions counselor. 
+        The current date is ${pdtToday} (PDT). 
+        When users say "tomorrow" or "next week", use this date as your reference.
+        Ensure all years are 2026 unless specifically stated otherwise.
+        ${CONCISE_COUNSELOR_PROMPT}
+        
+        Generate a focused "Admissions Action Plan" for a student.
 
         Student Profile:
         - Name: ${profile.full_name || 'Student'}
@@ -696,13 +705,20 @@ app.post('/api/chat', async (req, res) => {
             AWARDS/HONORS: ${awards?.map(aw => `${aw.title} (${aw.level})`).join(', ') || 'None'}
         `;
 
-        // Build conversation messages for OpenAI
-        const messages = [
+                const today = new Date();
+                const pdtToday = new Date(today.getTime() - (7 * 60 * 60 * 1000)).toISOString().split('T')[0];
+
+                const messages = [
             {
                 role: 'system',
                 content: customSystemPrompt || `You are the central "Intelligence Command Center" for ${profile?.full_name || 'this student'}'s college application process. You have ABSOLUTE access to view and manipulate their entire application ecosystem.
                 
                 MISSION: Proactively manage their profile, schedule, and essays. YOU ARE AN ELITE ADMISSIONS COACH.
+
+                DATE CONTEXT:
+                The current date is ${pdtToday} (PDT). 
+                When users say "tomorrow" or "next week", use this date as your reference.
+                Ensure all years are 2026 unless specifically stated otherwise.
 
                 CONVERSATIONAL STYLE:
                 1. ASK ONLY ONE QUESTION AT A TIME. Never ask multiple questions in a single response.
@@ -1434,11 +1450,15 @@ async function handleCreateTasks(userId, tasks) {
         if (finalDate && typeof finalDate === 'string') {
             const lower = finalDate.toLowerCase();
             
-            // Adjust for user's timezone (PDT = UTC-7)
-            // This ensures "tomorrow" is calculated relative to where the user is
             const now = new Date();
             const userTime = new Date(now.getTime() - (7 * 60 * 60 * 1000)); // PDT Offset
             
+            // Safety Check: If the AI provides a year in the past (like 2023), 
+            // force it to the current year (2026).
+            if (finalDate.startsWith('2023') || finalDate.startsWith('2024') || finalDate.startsWith('2025')) {
+                finalDate = '2026' + finalDate.substring(4);
+            }
+
             if (lower === 'tomorrow') {
                 const d = new Date(userTime);
                 d.setDate(d.getDate() + 1);
