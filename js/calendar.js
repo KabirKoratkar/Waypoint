@@ -104,8 +104,12 @@ async function loadEvents() {
             getUserTasks(user.id)
         ]);
 
-        console.log('🔍 [CALENDAR-DIAGNOSTIC] Raw tasks found:', tasks);
-        console.log('🔍 [CALENDAR-DIAGNOSTIC] Raw colleges found:', colleges);
+        console.log('🔍 [CALENDAR-DIAGNOSTIC] Task List Summary:');
+        if (tasks) {
+            tasks.forEach((t, i) => console.log(`${i+1}. "${t.title}" - Due: ${t.due_date}`));
+        } else {
+            console.log('No tasks found.');
+        }
 
         allEvents = [];
 
