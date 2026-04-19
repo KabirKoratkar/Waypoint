@@ -11,6 +11,16 @@ CREATE TABLE public.profiles (
     full_name TEXT,
     graduation_year INTEGER,
     intended_major TEXT,
+    high_school_name TEXT,
+    unweighted_gpa NUMERIC,
+    weighted_gpa NUMERIC,
+    submission_leeway INTEGER DEFAULT 3,
+    intensity_level TEXT DEFAULT 'Balanced',
+    work_weekends BOOLEAN DEFAULT false,
+    is_premium BOOLEAN DEFAULT false,
+    is_beta BOOLEAN DEFAULT false,
+    premium_since TIMESTAMP WITH TIME ZONE,
+    ai_profile JSONB DEFAULT '{}'::jsonb,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
