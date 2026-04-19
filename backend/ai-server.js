@@ -98,14 +98,18 @@ app.use(cors({
             return callback(null, true);
         }
         
-        // Allow any Vercel subdomain and waypointedu.org
+        // Allow any Vercel subdomain and waypointedu.org variations
         const allowedPatterns = [
             /\.vercel\.app$/,
-            /^https:\/\/waypointedu\.org$/,
-            /^https:\/\/www\.waypointedu\.org$/
+            /waypointedu\.org$/
         ];
         
-        if (allowedPatterns.some(pattern => pattern.test(origin))) {
+        const isAllowed = !origin || 
+                         origin.includes('localhost') || 
+                         origin.includes('127.0.0.1') ||
+                         allowedPatterns.some(pattern => pattern.test(origin));
+
+        if (isAllowed) {
             callback(null, true);
         } else {
             console.warn('Blocked by CORS:', origin);
