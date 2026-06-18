@@ -1,0 +1,17 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "Frontend (live-server)",
+      "runtimeExecutable": "npx",
+      "runtimeArgs": ["-y", "live-server", ".", "--port=5500"],
+      "port": 5500
+    },
+    {
+      "name": "Backend (Express API)",
+      "runtimeExecutable": "npx",
+      "runtimeArgs": ["nodemon", "ai-server.js"],
+      "port": 3001
+    }
+  ]
+}
