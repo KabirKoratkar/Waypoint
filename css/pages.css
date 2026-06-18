@@ -2528,25 +2528,16 @@
     margin-bottom: var(--space-xs);
 }
 
-.settings-tab:hover {
-    background: rgba(255, 255, 255, 0.06);
-    color: var(--white);
-}
-
-.settings-tab.active {
-    background: rgba(139, 92, 246, 0.18);
-    color: var(--white);
-    box-shadow: none;
-}
-
+.settings-tab:hover,
 [data-theme="dark"] .settings-tab:hover {
     background: rgba(255, 255, 255, 0.06);
-    color: var(--white);
+    color: #ffffff;
 }
 
+.settings-tab.active,
 [data-theme="dark"] .settings-tab.active {
     background: rgba(139, 92, 246, 0.18);
-    color: var(--white);
+    color: #ffffff;
     box-shadow: none;
 }
 
