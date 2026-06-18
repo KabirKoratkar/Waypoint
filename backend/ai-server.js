@@ -78,6 +78,13 @@ const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KE
 // Initialize Cache
 const apiCache = new NodeCache({ stdTTL: 14400, checkperiod: 3600 });
 
+// Shared concise counselor instruction appended to onboarding plan prompts
+const CONCISE_COUNSELOR_PROMPT = `RESPONSE RULES:
+- Be direct and actionable. No filler phrases.
+- Ask only one question at a time.
+- When you can take an action (add college, create task, update profile), do it immediately — don't just say you will.
+- Keep responses under 150 words unless writing an essay or detailed plan.`;
+
 // Rate Limiting
 const globalLimiter = rateLimit({
     windowMs: 15 * 60 * 1000,
@@ -292,8 +299,9 @@ app.post('/api/onboarding/plan', async (req, res) => {
         - Name: ${profile.full_name || 'Student'}
         - Interests: ${interests}
         - Graduation Year: ${profile.graduation_year || 'Unknown'}
-        - GPA: ${aiProf.unweighted_gpa || 'N/A'}
-        - Major: ${aiProf.intended_major || 'Undecided'}
+        - GPA: ${profile.unweighted_gpa || aiProf.unweighted_gpa || 'N/A'} unweighted / ${profile.weighted_gpa || aiProf.weighted_gpa || 'N/A'} weighted
+        - SAT: ${profile.sat_score || 'Not provided'} | ACT: ${profile.act_score || 'Not provided'}
+        - Major: ${aiProf.intended_major || profile.intended_major || 'Undecided'}
         - Colleges: ${Array.isArray(colleges) ? colleges.join(', ') : 'General Search'}
         - Submission Target: ${profile.submission_leeway || 3} days before deadlines.
 

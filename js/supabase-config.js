@@ -168,10 +168,13 @@ function isPremiumUser(profile) {
     // Explicit paid or beta status
     if (profile.is_premium || profile.is_beta || profile.role === 'beta_tester') return true;
 
-    // NO MORE 7-DAY FREE TRIAL FOR EVERYTHING. 
-    // ALL USERS NOW FOLLOW TIERED LIMITS.
-    // EMERGENCY UNLOCK: During migration/fixes, everyone has Pro access
-    return true; 
+    // 7-day free trial
+    if (profile.created_at) {
+        const diffDays = (new Date() - new Date(profile.created_at)) / (1000 * 60 * 60 * 24);
+        if (diffDays <= 7) return true;
+    }
+
+    return false;
 }
 
 /**

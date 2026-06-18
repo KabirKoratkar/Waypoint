@@ -49,6 +49,8 @@ async function loadSettings(profile = null) {
     document.getElementById('profMajor').value = profile.intended_major || '';
     document.getElementById('profUwGpa').value = profile.unweighted_gpa || '';
     document.getElementById('profWGpa').value = profile.weighted_gpa || '';
+    document.getElementById('profSat').value = profile.sat_score || '';
+    document.getElementById('profAct').value = profile.act_score || '';
 
     // Membership Status
     const membershipTier = document.getElementById('membershipTier');
@@ -135,6 +137,8 @@ function setupEventListeners() {
         const gradYear = parseInt(document.getElementById('profGradYear').value) || null;
         const uwGpa = parseFloat(document.getElementById('profUwGpa').value) || null;
         const wGpa = parseFloat(document.getElementById('profWGpa').value) || null;
+        const satScore = parseInt(document.getElementById('profSat').value) || null;
+        const actScore = parseInt(document.getElementById('profAct').value) || null;
 
         try {
             await upsertProfile({
@@ -145,7 +149,9 @@ function setupEventListeners() {
                 high_school_name: hsName,
                 graduation_year: gradYear,
                 unweighted_gpa: uwGpa,
-                weighted_gpa: wGpa
+                weighted_gpa: wGpa,
+                sat_score: satScore,
+                act_score: actScore
             });
             showNotification('Profile updated successfully!', 'success');
         } catch (e) {
