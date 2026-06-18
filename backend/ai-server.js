@@ -283,7 +283,7 @@ app.post('/api/onboarding/plan', async (req, res) => {
         const systemPrompt = `You are an elite AI college admissions counselor. 
         The current date is ${pdtToday} (PDT). 
         When users say "tomorrow" or "next week", use this date as your reference.
-        Ensure all years are 2026 unless specifically stated otherwise.
+        Ensure all years are ${new Date().getFullYear()} unless specifically stated otherwise.
         ${CONCISE_COUNSELOR_PROMPT}
         
         Generate a focused "Admissions Action Plan" for a student.
@@ -718,7 +718,7 @@ app.post('/api/chat', async (req, res) => {
                 DATE CONTEXT:
                 The current date is ${pdtToday} (PDT). 
                 When users say "tomorrow" or "next week", use this date as your reference.
-                Ensure all years are 2026 unless specifically stated otherwise.
+                Ensure all years are ${new Date().getFullYear()} unless specifically stated otherwise.
 
                 CONVERSATIONAL STYLE:
                 1. ASK ONLY ONE QUESTION AT A TIME. Never ask multiple questions in a single response.
@@ -1453,10 +1453,12 @@ async function handleCreateTasks(userId, tasks) {
             const now = new Date();
             const userTime = new Date(now.getTime() - (7 * 60 * 60 * 1000)); // PDT Offset
             
-            // Safety Check: If the AI provides a year in the past (like 2023), 
-            // force it to the current year (2026).
-            if (finalDate.startsWith('2023') || finalDate.startsWith('2024') || finalDate.startsWith('2025')) {
-                finalDate = '2026' + finalDate.substring(4);
+            // Safety Check: If the AI provides a year in the past, 
+            // force it to the current year.
+            const currentYear = String(userTime.getFullYear());
+            const taskYear = finalDate.substring(0, 4);
+            if (parseInt(taskYear) < parseInt(currentYear)) {
+                finalDate = currentYear + finalDate.substring(4);
             }
 
             if (lower === 'tomorrow') {
