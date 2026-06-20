@@ -318,24 +318,68 @@ app.get('/api/colleges/research', researchLimiter, async (req, res) => {
 /**
  * Handle Claude Chat (Claude 3.5 Sonnet)
  */
+/**
+ * Auto-Sync: builds the AI's view of a student from live source-of-truth tables
+ * (profiles columns, activities, awards, colleges, tasks, essays) instead of the
+ * static ai_profile JSONB snapshot taken once at onboarding. This means any edit —
+ * a new activity, an updated GPA, a finished essay — is reflected on the very next
+ * AI message, with no separate sync step required.
+ *
+ * ai_profile is still consulted as a fallback for fields with no dedicated column
+ * (interests, is_transfer, target_start_year) since onboarding is the only place
+ * those are currently captured.
+ */
+async function buildLiveStudentContext(userId) {
+    const [profileRes, activitiesRes, awardsRes, collegesRes, tasksRes, essaysRes] = await Promise.all([
+        supabase.from('profiles').select('*').eq('id', userId).single(),
+        supabase.from('activities').select('*').eq('user_id', userId).order('position', { ascending: true }),
+        supabase.from('awards').select('*').eq('user_id', userId).order('position', { ascending: true }),
+        supabase.from('colleges').select('*').eq('user_id', userId),
+        supabase.from('tasks').select('*').eq('user_id', userId).eq('completed', false),
+        supabase.from('essays').select('id, title, college_id, word_count, is_completed').eq('user_id', userId)
+    ]);
+
+    const profile = profileRes.data || {};
+    const aiProf = profile.ai_profile || {};
+    const activities = activitiesRes.data || [];
+    const awards = awardsRes.data || [];
+    const colleges = collegesRes.data || [];
+    const tasks = tasksRes.data || [];
+    const essays = essaysRes.data || [];
+
+    const profileText = `Name: ${profile.full_name || 'Unknown'}
+High School: ${profile.high_school_name || 'Unknown'}
+Graduation Year: ${profile.graduation_year || 'Unknown'}
+Intended Major: ${profile.intended_major || aiProf.intended_major || 'Undecided'}
+Interests: ${Array.isArray(aiProf.interests) ? aiProf.interests.join(', ') : (aiProf.interests || 'Unknown')}
+GPA: ${profile.unweighted_gpa ?? 'N/A'} unweighted / ${profile.weighted_gpa ?? 'N/A'} weighted
+SAT: ${profile.sat_score ?? 'Not provided'} | ACT: ${profile.act_score ?? 'Not provided'}
+Activities: ${activities.length > 0 ? activities.map(a => `${a.title}${a.organization ? ` (${a.organization})` : ''}`).join(', ') : 'None logged yet'}
+Awards/Honors: ${awards.length > 0 ? awards.map(aw => `${aw.title} (${aw.level})`).join(', ') : 'None logged yet'}`;
+
+    const appStateText = `CURRENT COLLEGE LIST: ${colleges.map(c => `${c.name} (${c.type || 'Unspecified'})`).join(', ') || 'None'}
+ACTIVE TASKS: ${tasks.length} pending.
+ESSAYS: ${essays.map(e => `${e.title} (${e.word_count || 0} words${e.is_completed ? ', completed' : ''})`).join(', ') || 'None'}`;
+
+    return { profile, activities, awards, colleges, tasks, essays, profileText, appStateText };
+}
+
 app.post('/api/chat/claude', async (req, res) => {
     try {
         const { message, userId, conversationHistory = [] } = req.body;
         if (!message || !userId) return res.status(400).json({ error: 'Message and userId are required' });
 
-        const { data: profile } = await supabase.from('profiles').select('*').eq('id', userId).single();
+        const { profile, profileText, appStateText } = await buildLiveStudentContext(userId);
 
-        const aiProfileStr = profile?.ai_profile ? JSON.stringify(profile.ai_profile, null, 2) : 'No extensive profile data gathered yet.';
-        
-        const systemPrompt = `You are the High Intelligence Strategic Center for ${profile?.full_name || 'this student'}.
+        const systemPrompt = `You are the High Intelligence Strategic Center for ${profile.full_name || 'this student'}.
         Your goal is to provide high-level reasoning and deep essay analysis using GPT-4o.
         Be sophisticated, insightful, and proactive.
-        
-        Student Context:
-        Name: ${profile?.full_name || 'Unknown'}
-        High School: ${profile?.high_school_name || 'Unknown'}
-        Grad Year: ${profile?.graduation_year || 'Unknown'}
-        Detailed Profile Context: ${aiProfileStr}`;
+
+        Student Context (live, always current):
+        ${profileText}
+
+        Application State:
+        ${appStateText}`;
 
         const messages = conversationHistory
             .filter(msg => msg.role !== 'system')
@@ -865,33 +909,10 @@ app.post('/api/chat', async (req, res) => {
             return res.status(400).json({ error: 'Message and userId are required' });
         }
 
-        // Fetch user profile for personalization using SUPABASE
-        const { data: profile } = await supabase
-            .from('profiles')
-            .select('*')
-            .eq('id', userId)
-            .single();
-
-        const aiProfileStr = profile?.ai_profile ? JSON.stringify(profile.ai_profile, null, 2) : 'No extensive profile data gathered yet.';
-        const profileContext = profile ?
-            `You are talking to ${profile.full_name || 'a student'}.
-             Graduation Year: ${profile.graduation_year || 'Unknown'}
-             High School: ${profile.high_school_name || 'Unknown'}
-             Detailed Profile Context (Major, GPA, Extracurriculars, etc.):
-             ${aiProfileStr}` : '';
-
-        // Fetch user app state for deep context using SUPABASE
-        const { data: colleges } = await supabase.from('colleges').select('*').eq('user_id', userId);
-        const { data: tasks } = await supabase.from('tasks').select('*').eq('user_id', userId).eq('completed', false);
-        const { data: essays } = await supabase.from('essays').select('id, title, college_id, word_count, is_completed').eq('user_id', userId);
-        const { data: awards } = await supabase.from('awards').select('*').eq('user_id', userId).order('position', { ascending: true });
-
-        const appStateContext = `
-            CURRENT COLLEGE LIST: ${colleges?.map(c => `${c.name} (${c.type})`).join(', ') || 'None'}
-            ACTIVE TASKS: ${tasks?.length || 0} tasks pending.
-            ESSAYS: ${essays?.map(e => `${e.title} (${e.word_count} words)`).join(', ') || 'None'}
-            AWARDS/HONORS: ${awards?.map(aw => `${aw.title} (${aw.level})`).join(', ') || 'None'}
-        `;
+        // Auto-Sync: live context built from current source tables, not a stale snapshot
+        const { profile, profileText, appStateText } = await buildLiveStudentContext(userId);
+        const profileContext = `You are talking to ${profile.full_name || 'a student'}.\n${profileText}`;
+        const appStateContext = appStateText;
 
                 const today = new Date();
                 const pdtToday = new Date(today.getTime() - (7 * 60 * 60 * 1000)).toISOString().split('T')[0];
