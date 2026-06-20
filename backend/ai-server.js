@@ -527,6 +527,77 @@ app.post('/api/essays/sync', async (req, res) => {
     }
 });
 
+// Required Documents: backfill checklists for all of a user's colleges
+app.post('/api/documents/required/sync', async (req, res) => {
+    try {
+        const { userId } = req.body;
+        if (!userId) return res.status(400).json({ error: 'userId is required' });
+
+        const { data: colleges } = await supabase.from('colleges').select('*').eq('user_id', userId);
+        if (!colleges) return res.json({ success: true, count: 0 });
+
+        let totalCreated = 0;
+        for (const college of colleges) {
+            const result = await handleGenerateRequiredDocuments(userId, college.id, college);
+            if (result.success) totalCreated += (result.count || 0);
+        }
+
+        res.json({ success: true, count: totalCreated });
+    } catch (error) {
+        res.status(500).json({ error: 'Internal server error' });
+    }
+});
+
+// Required Documents: fetch checklist for a specific college
+app.get('/api/documents/required', async (req, res) => {
+    try {
+        const { userId, collegeId } = req.query;
+        if (!userId || !collegeId) return res.status(400).json({ error: 'userId and collegeId are required' });
+
+        const { data, error } = await supabase
+            .from('required_documents')
+            .select('*')
+            .eq('user_id', userId)
+            .eq('college_id', collegeId)
+            .order('created_at', { ascending: true });
+
+        if (error) throw error;
+        res.json({ success: true, items: data || [] });
+    } catch (error) {
+        console.error('Fetch required documents error:', error);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+});
+
+// Required Documents: update status of a single checklist item
+app.patch('/api/documents/required/:id', async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { userId, status, documentId } = req.body;
+        if (!userId || !status) return res.status(400).json({ error: 'userId and status are required' });
+        if (!['not_started', 'gathered', 'submitted'].includes(status)) {
+            return res.status(400).json({ error: 'Invalid status' });
+        }
+
+        const updates = { status, updated_at: new Date().toISOString() };
+        if (documentId !== undefined) updates.document_id = documentId;
+
+        const { data, error } = await supabase
+            .from('required_documents')
+            .update(updates)
+            .eq('id', id)
+            .eq('user_id', userId)
+            .select()
+            .single();
+
+        if (error) throw error;
+        res.json({ success: true, item: data });
+    } catch (error) {
+        console.error('Update required document error:', error);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+});
+
 // Profile Save (upsert via service key — bypasses RLS for new user creation)
 app.post('/api/profile/save', async (req, res) => {
     try {
@@ -1296,8 +1367,11 @@ async function handleAddCollege(userId, collegeName, type, intendedMajor) {
         .maybeSingle();
 
     if (existing) {
-        // Already exists — just sync essays in background and return
+        // Already exists — just sync essays + required docs in background and return
         handleCreateEssays(userId, collegeName).catch(e => console.warn('Essay sync error:', e));
+        supabase.from('colleges').select('*').eq('id', existing.id).single()
+            .then(({ data: col }) => col && handleGenerateRequiredDocuments(userId, existing.id, col))
+            .catch(e => console.warn('Required docs sync error:', e));
         return { success: true, collegeId: existing.id, message: 'Already in list' };
     }
 
@@ -1358,6 +1432,7 @@ async function handleAddCollege(userId, collegeName, type, intendedMajor) {
             }
 
             await handleCreateEssays(userId, collegeName);
+            await handleGenerateRequiredDocuments(userId, data.id, collegeData || {});
             console.log(`[ADD_COLLEGE] Background research + essay sync complete for ${collegeName}`);
         } catch (e) {
             console.warn(`[ADD_COLLEGE] Background research failed for ${collegeName}:`, e.message);
@@ -1365,6 +1440,59 @@ async function handleAddCollege(userId, collegeName, type, intendedMajor) {
     });
 
     return { success: true, collegeId: data.id };
+}
+
+/**
+ * Required Documents: generate a per-college checklist based on its requirements.
+ * Idempotent — skips colleges that already have a checklist.
+ */
+async function handleGenerateRequiredDocuments(userId, collegeId, collegeData = {}) {
+    const { data: existing } = await supabase
+        .from('required_documents')
+        .select('id')
+        .eq('user_id', userId)
+        .eq('college_id', collegeId)
+        .limit(1);
+
+    if (existing && existing.length > 0) {
+        return { success: true, message: 'Checklist already exists' };
+    }
+
+    const items = ['Official High School Transcript', 'Application Fee or Fee Waiver'];
+
+    const platform = (collegeData.application_platform || '').toLowerCase();
+    if (platform.includes('common app')) {
+        items.push('School Report (Counselor Form)');
+    }
+
+    const lorsRequired = collegeData.lors_required || 0;
+    for (let i = 1; i <= lorsRequired; i++) {
+        items.push(`Letter of Recommendation #${i}`);
+    }
+
+    const testPolicy = (collegeData.test_policy || '').toLowerCase();
+    if (testPolicy.includes('required')) {
+        items.push('SAT/ACT Test Scores');
+    }
+
+    if (collegeData.portfolio_required) {
+        items.push('Portfolio');
+    }
+
+    const rows = items.map(name => ({
+        user_id: userId,
+        college_id: collegeId,
+        name,
+        status: 'not_started'
+    }));
+
+    const { error } = await supabase.from('required_documents').insert(rows);
+    if (error) {
+        console.error('[DOCS-SYNC] Failed to generate required documents:', error);
+        return { success: false, error: error.message };
+    }
+
+    return { success: true, count: rows.length };
 }
 
 async function handleCreateEssays(userId, collegeName) {

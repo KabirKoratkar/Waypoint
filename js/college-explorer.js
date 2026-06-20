@@ -203,6 +203,7 @@ function setupTabs() {
                 loadWorkspace();
             } else if (target === 'requirements') {
                 renderTasks();
+                renderRequiredDocuments();
             } else if (target === 'documents') {
                 renderDocuments();
             }
@@ -309,6 +310,64 @@ function renderTasks() {
         </div>
     `).join('');
 }
+
+const STATUS_CYCLE = ['not_started', 'gathered', 'submitted'];
+const STATUS_LABELS = { not_started: 'Not Started', gathered: 'Gathered', submitted: 'Submitted' };
+const STATUS_COLORS = { not_started: 'var(--gray-500)', gathered: 'var(--warning)', submitted: 'var(--success)' };
+
+async function renderRequiredDocuments() {
+    const userCollege = userColleges.find(c => c.name.toLowerCase() === currentCollege.name.toLowerCase());
+    const listContainer = document.getElementById('requiredDocumentsList');
+    if (!listContainer) return;
+    if (!userCollege) {
+        listContainer.innerHTML = '<p style="color: var(--gray-500); font-size: var(--text-sm); font-style: italic;">Add this college to your list to generate a document checklist.</p>';
+        return;
+    }
+
+    listContainer.innerHTML = '<p style="color: var(--gray-500); font-size: var(--text-sm);">Loading checklist...</p>';
+
+    try {
+        const res = await fetch(`${config.apiUrl}/api/documents/required?userId=${encodeURIComponent(currentUser.id)}&collegeId=${encodeURIComponent(userCollege.id)}`);
+        const data = await res.json();
+        const items = data.items || [];
+
+        if (items.length === 0) {
+            listContainer.innerHTML = '<p style="color: var(--gray-500); font-size: var(--text-sm); font-style: italic;">Checklist is still generating — check back in a moment.</p>';
+            return;
+        }
+
+        listContainer.innerHTML = items.map(item => `
+            <div class="card card-compact" style="display: flex; align-items: center; gap: var(--space-md);">
+                <div style="flex: 1;">
+                    <div style="font-weight: 600; font-size: var(--text-sm); ${item.status === 'submitted' ? 'text-decoration: line-through; opacity: 0.7;' : ''}">${item.name}</div>
+                </div>
+                <button class="badge" style="font-size: 10px; cursor: pointer; border: none; background: ${STATUS_COLORS[item.status]}; color: white;"
+                    onclick="window.cycleDocStatus('${item.id}', '${item.status}')">${STATUS_LABELS[item.status]}</button>
+            </div>
+        `).join('');
+    } catch (error) {
+        console.error('Error loading required documents:', error);
+        listContainer.innerHTML = '<p style="color: var(--error); font-size: var(--text-sm);">Failed to load checklist.</p>';
+    }
+}
+
+window.cycleDocStatus = async (itemId, currentStatus) => {
+    const nextIndex = (STATUS_CYCLE.indexOf(currentStatus) + 1) % STATUS_CYCLE.length;
+    const nextStatus = STATUS_CYCLE[nextIndex];
+
+    try {
+        const res = await fetch(`${config.apiUrl}/api/documents/required/${itemId}`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ userId: currentUser.id, status: nextStatus })
+        });
+        if (!res.ok) throw new Error('Update failed');
+        renderRequiredDocuments();
+    } catch (error) {
+        console.error('Error updating document status:', error);
+        if (window.showNotification) window.showNotification('Could not update status.', 'error');
+    }
+};
 
 window.handleToggleTask = async (taskId, completed) => {
     try {
@@ -417,6 +476,13 @@ async function addCollegeToList(name) {
                 const userCollege = userColleges.find(c => c.name.toLowerCase() === currentCollege.name.toLowerCase());
                 renderApplicationStatus(userCollege);
             });
+
+            // Trigger required documents checklist generation
+            fetch(`${config.apiUrl}/api/documents/required/sync`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ userId: currentUser.id })
+            }).catch(e => console.warn('Required docs sync error:', e));
 
         } else {
             if (window.showNotification) window.showNotification('Could not add college: ' + result.error, 'error');
