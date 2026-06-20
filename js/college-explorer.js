@@ -62,6 +62,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         setupTabs();
         checkUserStatus();
         setupIntelligenceReport();
+        loadAdmissionChances(currentCollege.name, currentUser.id);
 
     } catch (error) {
         console.error('Error loading college data:', error);
@@ -89,7 +90,10 @@ function renderCollegeData(college) {
     safeSetText('collegeDescription', college.description || 'No description available.');
 
     // Stats
-    safeSetText('acceptanceRate', college.acceptance_rate ? `${college.acceptance_rate}%` : '--%');
+    // acceptance_rate is inconsistently stored as a 0-1 fraction or already-scaled percentage; normalize for display.
+    let displayRate = parseFloat(college.acceptance_rate);
+    if (!isNaN(displayRate) && displayRate <= 1) displayRate *= 100;
+    safeSetText('acceptanceRate', !isNaN(displayRate) ? `${displayRate}%` : '--%');
     safeSetText('medianSAT', college.median_sat || 'N/A');
     safeSetText('medianACT', college.median_act || 'N/A');
     safeSetText('avgGPA', college.avg_gpa || 'N/A');
@@ -584,6 +588,53 @@ function setupIntelligenceReport() {
 document.getElementById('essayEditor')?.addEventListener('input', updateEditorStats);
 document.getElementById('saveDraftBtn')?.addEventListener('click', saveCurrentEssay);
 
+// Order 67: Your Chances
+async function loadAdmissionChances(collegeName, userId) {
+    const card = document.getElementById('chancesCard');
+    if (!card) return;
+
+    try {
+        const res = await fetch(`${config.apiUrl}/api/colleges/chances?name=${encodeURIComponent(collegeName)}&userId=${encodeURIComponent(userId)}`);
+        if (!res.ok) return; // Silently skip if college not in catalog yet
+        const data = await res.json();
+        if (!data.success) return;
+
+        card.style.display = 'block';
+
+        const probEl = document.getElementById('chancesProbability');
+        const labelEl = document.getElementById('chancesLabel');
+        const breakdownEl = document.getElementById('chancesBreakdown');
+        const disclaimerEl = document.getElementById('chancesDisclaimer');
+
+        const labelColors = { Reach: 'var(--error)', Target: 'var(--warning)', Likely: 'var(--success)' };
+        if (probEl) {
+            probEl.textContent = `${data.probability}%`;
+            probEl.style.color = labelColors[data.label] || 'var(--primary-blue)';
+        }
+        if (labelEl) {
+            labelEl.textContent = data.label;
+            labelEl.style.background = labelColors[data.label] || 'var(--primary-blue)';
+            labelEl.style.color = 'white';
+        }
+
+        if (breakdownEl) {
+            breakdownEl.innerHTML = data.factors.map(f => {
+                const studentVal = f.student ?? 'N/A';
+                const compareVal = f.collegeAvg ?? f.collegeMedian ?? 'N/A';
+                const compareLabel = f.collegeAvg !== undefined ? 'school avg' : 'school median';
+                return `<div>• <strong>${f.factor}:</strong> You: ${studentVal} vs. ${compareLabel}: ${compareVal} — <em>${f.verdict}</em></div>`;
+            }).join('');
+        }
+
+        if (!data.dataComplete && disclaimerEl) {
+            disclaimerEl.textContent = 'Add your GPA and SAT/ACT score in Settings for a more accurate estimate.';
+            disclaimerEl.style.color = 'var(--warning)';
+        }
+    } catch (error) {
+        console.error('Error loading admission chances:', error);
+    }
+}
+
 // Shared UI Helpers
 function renderAIInsight(college) {
     const insights = [
@@ -604,12 +655,16 @@ function renderEnrollmentChart(college) {
         enrollmentChart.destroy();
     }
 
+    let rate = parseFloat(college.acceptance_rate);
+    if (isNaN(rate)) rate = 10;
+    else if (rate <= 1) rate *= 100;
+
     enrollmentChart = new Chart(ctx, {
         type: 'doughnut',
         data: {
             labels: ['Admitted', 'Waitlisted', 'Denied'],
             datasets: [{
-                data: [college.acceptance_rate || 10, 5, 100 - (college.acceptance_rate || 10) - 5],
+                data: [rate, 5, 100 - rate - 5],
                 backgroundColor: [
                     '#5B8DEE', // Admitted
                     '#8B7BF7', // Waitlisted

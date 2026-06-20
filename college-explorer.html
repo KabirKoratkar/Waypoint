@@ -321,6 +321,24 @@
                 <div class="stat-label">Average GPA</div>
             </div>
         </div>
+
+        <!-- Order 67: Your Chances -->
+        <div class="card mt-xl" id="chancesCard" style="display: none; padding: var(--space-xl);">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: var(--space-lg);">
+                <div style="flex: 1; min-width: 220px;">
+                    <h3 style="margin: 0 0 var(--space-sm); display: flex; align-items: center; gap: var(--space-sm);">
+                        🎯 Your Chances
+                        <span class="badge" id="chancesLabel" style="font-size: 11px;">--</span>
+                    </h3>
+                    <div id="chancesBreakdown" style="display: flex; flex-direction: column; gap: 6px; font-size: var(--text-sm); color: var(--gray-400);"></div>
+                    <p id="chancesDisclaimer" style="font-size: 11px; color: var(--gray-500); margin-top: var(--space-md);">Estimate based on your GPA/test scores vs. this school's admitted averages. Not a guarantee.</p>
+                </div>
+                <div style="text-align: center; min-width: 110px;">
+                    <div id="chancesProbability" style="font-size: 2.5rem; font-weight: 800; line-height: 1;">--%</div>
+                    <div style="font-size: 11px; color: var(--gray-500); text-transform: uppercase; letter-spacing: 0.05em;">Est. Probability</div>
+                </div>
+            </div>
+        </div>
     </div>
 
     <!-- Tabs Navigation -->

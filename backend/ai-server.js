@@ -188,6 +188,115 @@ app.post('/api/feedback', async (req, res) => {
     }
 });
 
+/**
+ * Order 67: Calculate admission chance by comparing student stats to college medians.
+ * Returns a probability (1-95%), a qualitative label, and a per-factor breakdown.
+ */
+function calculateAdmissionChance(profile, college) {
+    // acceptance_rate in the catalog is inconsistently stored as either a 0-1 fraction
+    // or an already-scaled percentage (e.g. 0.05 vs 5.0 both meaning "5%"). Normalize here.
+    let baseRate = parseFloat(college.acceptance_rate);
+    if (isNaN(baseRate)) baseRate = 25;
+    else if (baseRate <= 1) baseRate = baseRate * 100;
+
+    const factors = [];
+    let adjustments = [];
+
+    // GPA factor (unweighted, 4.0 scale)
+    const studentGpa = profile?.unweighted_gpa;
+    const collegeGpa = college?.avg_gpa;
+    if (studentGpa != null && collegeGpa != null) {
+        const diff = studentGpa - collegeGpa;
+        const gpaAdj = Math.max(-0.6, Math.min(0.6, diff * 1.2)); // each 0.5 GPA point ~ 0.6x swing
+        adjustments.push(gpaAdj);
+        factors.push({
+            factor: 'GPA',
+            student: studentGpa,
+            collegeAvg: collegeGpa,
+            verdict: diff >= 0.1 ? 'above average' : diff <= -0.1 ? 'below average' : 'on par'
+        });
+    } else {
+        factors.push({ factor: 'GPA', student: studentGpa ?? 'Not provided', collegeAvg: collegeGpa ?? 'N/A', verdict: 'insufficient data' });
+    }
+
+    // Test score factor — prefer SAT, fall back to ACT converted to SAT-equivalent scale
+    const studentSat = profile?.sat_score;
+    const studentAct = profile?.act_score;
+    const collegeSat = college?.median_sat;
+    const collegeAct = college?.median_act;
+
+    let testDiffRatio = null;
+    let testFactorInfo = null;
+    if (studentSat != null && collegeSat != null) {
+        testDiffRatio = (studentSat - collegeSat) / 1600;
+        testFactorInfo = { factor: 'SAT', student: studentSat, collegeMedian: collegeSat };
+    } else if (studentAct != null && collegeAct != null) {
+        testDiffRatio = (studentAct - collegeAct) / 36;
+        testFactorInfo = { factor: 'ACT', student: studentAct, collegeMedian: collegeAct };
+    }
+
+    if (testDiffRatio != null) {
+        const testAdj = Math.max(-0.6, Math.min(0.6, testDiffRatio * 3.5));
+        adjustments.push(testAdj);
+        testFactorInfo.verdict = testDiffRatio >= 0.02 ? 'above median' : testDiffRatio <= -0.02 ? 'below median' : 'on par';
+        factors.push(testFactorInfo);
+    } else {
+        factors.push({ factor: 'Test Score', student: studentSat ?? studentAct ?? 'Not provided', collegeMedian: collegeSat ?? collegeAct ?? 'N/A', verdict: 'insufficient data' });
+    }
+
+    // Combine adjustments into a multiplier on the base acceptance rate
+    const avgAdjustment = adjustments.length > 0 ? adjustments.reduce((a, b) => a + b, 0) / adjustments.length : 0;
+    const multiplier = 1 + avgAdjustment * 2; // -0.6..0.6 -> 0.0x..2.2x roughly, then clamp below
+    let probability = baseRate * Math.max(0.2, Math.min(3, multiplier));
+    probability = Math.max(1, Math.min(95, Math.round(probability)));
+
+    let label;
+    if (probability < 15) label = 'Reach';
+    else if (probability < 40) label = 'Target';
+    else label = 'Likely';
+
+    return {
+        probability,
+        label,
+        baseAcceptanceRate: baseRate,
+        factors,
+        dataComplete: adjustments.length === 2
+    };
+}
+
+// Order 67: Admission Chance Endpoint
+app.get('/api/colleges/chances', async (req, res) => {
+    try {
+        const { name, userId } = req.query;
+        if (!name || !userId) return res.status(400).json({ error: 'name and userId are required' });
+
+        const { data: profile, error: profileError } = await supabase
+            .from('profiles')
+            .select('unweighted_gpa, sat_score, act_score')
+            .eq('id', userId)
+            .single();
+
+        if (profileError) console.warn('Chance calc: profile fetch warning:', profileError.message);
+
+        const { data: college, error: collegeError } = await supabase
+            .from('college_catalog')
+            .select('name, acceptance_rate, median_sat, median_act, avg_gpa')
+            .ilike('name', `%${name}%`)
+            .limit(1)
+            .maybeSingle();
+
+        if (collegeError || !college) {
+            return res.status(404).json({ error: 'College not found in catalog' });
+        }
+
+        const result = calculateAdmissionChance(profile || {}, college);
+        res.json({ success: true, college: college.name, ...result });
+    } catch (error) {
+        console.error('Chance calculation error:', error);
+        res.status(500).json({ error: 'Failed to calculate admission chance' });
+    }
+});
+
 // College Research Endpoint
 app.get('/api/colleges/research', researchLimiter, async (req, res) => {
     try {
