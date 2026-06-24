@@ -369,10 +369,14 @@ app.post('/api/chat/claude', async (req, res) => {
         const { message, userId, conversationHistory = [] } = req.body;
         if (!message || !userId) return res.status(400).json({ error: 'Message and userId are required' });
 
+        if (!anthropic) {
+            console.warn('⚠️ Anthropic not configured — ANTHROPIC_API_KEY missing. Falling back to GPT-4o for /api/chat/claude.');
+        }
+
         const { profile, profileText, appStateText } = await buildLiveStudentContext(userId);
 
         const systemPrompt = `You are the High Intelligence Strategic Center for ${profile.full_name || 'this student'}.
-        Your goal is to provide high-level reasoning and deep essay analysis using GPT-4o.
+        Your goal is to provide high-level reasoning and deep essay analysis.
         Be sophisticated, insightful, and proactive.
 
         Student Context (live, always current):
@@ -388,20 +392,35 @@ app.post('/api/chat/claude', async (req, res) => {
                 content: msg.content
             }));
 
-        const response = await openai.chat.completions.create({
-            model: "gpt-4o",
-            max_tokens: 1536,
-            messages: [
-                { role: "system", content: systemPrompt },
-                ...messages,
-                { role: "user", content: message }
-            ]
-        });
+        let aiResponse, modelUsed;
 
-        const aiResponse = response.choices[0].message.content;
-        await saveConversation(userId, message, aiResponse, { model: 'gpt-4o-intelligence' });
+        if (anthropic) {
+            const response = await anthropic.messages.create({
+                model: 'claude-3-5-sonnet-20241022',
+                max_tokens: 1536,
+                system: systemPrompt,
+                messages: [...messages, { role: 'user', content: message }]
+            });
+            aiResponse = response.content[0]?.text || '';
+            modelUsed = 'claude-3-5-sonnet';
+        } else {
+            // Fallback so the feature still works end-to-end if the key isn't configured yet
+            const response = await openai.chat.completions.create({
+                model: "gpt-4o",
+                max_tokens: 1536,
+                messages: [
+                    { role: "system", content: systemPrompt },
+                    ...messages,
+                    { role: "user", content: message }
+                ]
+            });
+            aiResponse = response.choices[0].message.content;
+            modelUsed = 'gpt-4o-fallback';
+        }
 
-        res.json({ response: aiResponse });
+        await saveConversation(userId, message, aiResponse, { model: modelUsed });
+
+        res.json({ response: aiResponse, model: modelUsed });
     } catch (error) {
         console.error('Intelligence AI error:', error);
         res.status(500).json({ error: 'Internal server error' });
