@@ -253,52 +253,7 @@ JSON structure REQUIRED:
 }
 `;
 
-    // Helper to save profile — ONLY use columns confirmed in the schema screenshot
     const saveProfile = async (profileData = {}) => {
-        // Absolute minimum — only id, email, full_name are 100% confirmed to exist
-        const coreUpdate = {
-            id: currentUser.id,
-            email: currentUser.email || '',
-            full_name: profileData.full_name || currentUser.user_metadata?.full_name || currentUser.user_metadata?.name || 'Student'
-        };
-
-        console.log('[ONBOARDING] Saving core profile (direct Supabase):', coreUpdate);
-
-        // PRIMARY: Direct upsert with known-safe columns only
-        const { error: directErr } = await supabase
-            .from('profiles')
-            .upsert(coreUpdate, { onConflict: 'id' });
-
-        if (directErr) {
-            console.error('[ONBOARDING] Direct save error:', directErr.message, directErr.details);
-        } else {
-            console.log('[ONBOARDING] Core profile saved to Supabase ✓');
-            // Try to update optional fields separately — if these columns don't exist, it just fails quietly
-            const extras = {};
-            if (profileData.graduation_year) extras.graduation_year = profileData.graduation_year;
-            if (profileData.high_school_name) extras.high_school_name = profileData.high_school_name;
-            
-            // Build the dynamic ai_profile document
-            const aiProfileDoc = {
-                intended_major: profileData.intended_major || null,
-                interests: profileData.interests || [],
-                unweighted_gpa: profileData.unweighted_gpa || null,
-                weighted_gpa: profileData.weighted_gpa || null,
-                sat_score: profileData.sat_score || null,
-                is_transfer: profileData.is_transfer || false,
-                target_start_year: profileData.target_start_year || null,
-                extracurriculars: profileData.extracurriculars || [],
-                onboarding_completed: true // Persistent flag in DB
-            };
-            extras.ai_profile = aiProfileDoc;
-
-            if (Object.keys(extras).length > 0) {
-                await supabase.from('profiles').update(extras).eq('id', currentUser.id)
-                    .catch(e => console.warn('[ONBOARDING] Optional fields update failed (non-fatal):', e.message));
-            }
-        }
-
-        // Build the identical ai_profile for the backend save call
         const aiProfileDoc = {
             intended_major: profileData.intended_major || null,
             interests: profileData.interests || [],
@@ -308,26 +263,62 @@ JSON structure REQUIRED:
             is_transfer: profileData.is_transfer || false,
             target_start_year: profileData.target_start_year || null,
             extracurriculars: profileData.extracurriculars || [],
-            onboarding_completed: true // Persistent flag in DB
+            onboarding_completed: true
         };
 
-        // SECONDARY: Backend call for extended fields (non-blocking)
-        fetch(`${AI_SERVER_URL}/api/profile/save`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                userId: currentUser.id,
-                email: currentUser.email || '',
-                full_name: coreUpdate.full_name,
-                high_school_name: profileData.high_school_name || null,
-                graduation_year: profileData.graduation_year || null,
-                ai_profile: aiProfileDoc
-            })
-        }).then(r => r.json())
-          .then(d => console.log('[ONBOARDING] Backend profile save:', d.success))
-          .catch(e => console.warn('[ONBOARDING] Backend save failed (non-fatal):', e.message));
+        const payload = {
+            userId: currentUser.id,
+            email: currentUser.email || '',
+            full_name: profileData.full_name || currentUser.user_metadata?.full_name || currentUser.user_metadata?.name || 'Student',
+            high_school_name: profileData.high_school_name || null,
+            graduation_year: profileData.graduation_year || null,
+            sat_score: profileData.sat_score || null,
+            act_score: profileData.act_score || null,
+            weighted_gpa: profileData.weighted_gpa || null,
+            unweighted_gpa: profileData.unweighted_gpa || null,
+            ai_profile: aiProfileDoc
+        };
 
-        return !directErr;
+        console.log('[ONBOARDING] Saving profile via backend:', payload);
+
+        try {
+            const r = await fetch(`${AI_SERVER_URL}/api/profile/save`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+            const d = await r.json();
+            if (d.success) {
+                console.log('[ONBOARDING] Profile saved via backend ✓');
+                return true;
+            } else {
+                console.error('[ONBOARDING] Backend save failed:', d.error);
+            }
+        } catch (e) {
+            console.error('[ONBOARDING] Backend save exception:', e.message);
+        }
+
+        // Fallback: direct Supabase upsert with everything in one shot
+        console.log('[ONBOARDING] Falling back to direct Supabase upsert...');
+        const { error } = await supabase.from('profiles').upsert({
+            id: currentUser.id,
+            email: payload.email,
+            full_name: payload.full_name,
+            high_school_name: payload.high_school_name,
+            graduation_year: payload.graduation_year,
+            sat_score: payload.sat_score,
+            act_score: payload.act_score,
+            weighted_gpa: payload.weighted_gpa,
+            ai_profile: aiProfileDoc,
+            updated_at: new Date().toISOString()
+        }, { onConflict: 'id' });
+
+        if (error) {
+            console.error('[ONBOARDING] Direct upsert error:', error.message);
+            return false;
+        }
+        console.log('[ONBOARDING] Profile saved via direct Supabase ✓');
+        return true;
     };
 
     let profileData = {};
