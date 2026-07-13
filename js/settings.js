@@ -1,4 +1,4 @@
-import { getCurrentUser, getUserProfile, upsertProfile, supabase, addCollege, getTrialInfo } from './supabase-config.js';
+import { getCurrentUser, getUserProfile, upsertProfile, supabase, getTrialInfo } from './supabase-config.js';
 import { updateNavbarUser } from './ui.js';
 import config from './config.js';
 

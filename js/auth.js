@@ -1,4 +1,4 @@
-import { signUp, signIn, signInWithGoogle, resendConfirmationEmail } from './supabase-config.js';
+import { signUp, signIn, signInWithGoogle } from './supabase-config.js';
 
 document.addEventListener('DOMContentLoaded', function () {
     const signupForm = document.getElementById('signupForm');

@@ -15,6 +15,19 @@ const awsClient = window[_key];
 
 // Helper Functions
 
+function getDevUserSession() {
+    const devUser = localStorage.getItem('dev_user');
+    if (!devUser) return null;
+
+    try {
+        return JSON.parse(devUser);
+    } catch (error) {
+        console.error('[DEV MODE] Invalid mock user session:', error);
+        localStorage.removeItem('dev_user');
+        return null;
+    }
+}
+
 // Get current user
 async function getCurrentUser() {
     // 1. Try to get real Supabase user first
@@ -24,10 +37,10 @@ async function getCurrentUser() {
     }
 
     // 2. Fallback to mock dev session if no real user found
-    const devUser = localStorage.getItem('dev_user');
+    const devUser = getDevUserSession();
     if (devUser) {
         console.log('[DEV MODE] Using mock user session');
-        return JSON.parse(devUser);
+        return devUser;
     }
 
     return null;
@@ -38,7 +51,7 @@ async function getUserProfile(userId) {
     if (!userId) return null;
 
     if (userId.startsWith('dev-user-') || userId.startsWith('auth0') || userId.includes('|')) {
-        const userInfo = localStorage.getItem('dev_user') ? JSON.parse(localStorage.getItem('dev_user')) : {};
+        const userInfo = getDevUserSession() || {};
         return {
             id: userId,
             full_name: userInfo.full_name || 'Enterprise Student',
