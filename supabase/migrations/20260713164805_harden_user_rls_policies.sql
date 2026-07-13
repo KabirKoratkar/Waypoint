@@ -9,6 +9,7 @@ begin
         drop policy if exists "Users can view own profile" on public.profiles;
         drop policy if exists "Users can update own profile" on public.profiles;
         drop policy if exists "Users can insert own profile" on public.profiles;
+        drop policy if exists "universal_profile_access" on public.profiles;
 
         create policy "Users can view own profile"
             on public.profiles for select
@@ -111,6 +112,11 @@ begin
                 target.table_name
             );
             execute format(
+                'drop policy if exists %I on public.%I',
+                'universal_' || target.table_name || '_access',
+                target.table_name
+            );
+            execute format(
                 'create policy %I on public.%I for all to authenticated using ((select auth.uid())::text = %I::text) with check ((select auth.uid())::text = %I::text)',
                 target.policy_name,
                 target.table_name,
@@ -119,5 +125,39 @@ begin
             );
         end if;
     end loop;
+end
+$$;
+
+do $$
+begin
+    if to_regclass('public.required_documents') is not null then
+        alter table public.required_documents enable row level security;
+
+        drop policy if exists "Users can view their own required documents" on public.required_documents;
+        drop policy if exists "Users can insert their own required documents" on public.required_documents;
+        drop policy if exists "Users can update their own required documents" on public.required_documents;
+        drop policy if exists "Users can delete their own required documents" on public.required_documents;
+
+        create policy "Users can view their own required documents"
+            on public.required_documents for select
+            to authenticated
+            using ((select auth.uid())::text = user_id::text);
+
+        create policy "Users can insert their own required documents"
+            on public.required_documents for insert
+            to authenticated
+            with check ((select auth.uid())::text = user_id::text);
+
+        create policy "Users can update their own required documents"
+            on public.required_documents for update
+            to authenticated
+            using ((select auth.uid())::text = user_id::text)
+            with check ((select auth.uid())::text = user_id::text);
+
+        create policy "Users can delete their own required documents"
+            on public.required_documents for delete
+            to authenticated
+            using ((select auth.uid())::text = user_id::text);
+    end if;
 end
 $$;
