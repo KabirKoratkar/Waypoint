@@ -3,7 +3,7 @@
  * Handles global UI updates like the navbar user badge.
  */
 
-import { signOut, getTrialInfo } from './supabase-config.js';
+import { getTrialInfo } from './supabase-config.js';
 
 export function updateNavbarUser(user, profile = null) {
     const userBadge = document.getElementById('user-badge');

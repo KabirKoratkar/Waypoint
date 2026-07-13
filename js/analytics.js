@@ -3,7 +3,7 @@
  * Handles data fetching and chart rendering for the analytics page.
  */
 
-import { getCurrentUser, getUserProfile, getUserColleges, getUserEssays, getUserTasks, getUserConversations, getEssayComments, supabase } from './supabase-config.js';
+import { getCurrentUser, getUserProfile, getUserColleges, getUserEssays, getUserTasks, supabase } from './supabase-config.js';
 import { updateNavbarUser } from './ui.js';
 import { calculateSmartProgress } from './utils.js';
 
