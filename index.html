@@ -31,6 +31,7 @@
     <link rel="stylesheet" href="css/components.css">
     <link rel="stylesheet" href="css/pages.css">
     <link rel="stylesheet" href="css/beta-request.css">
+    <link rel="stylesheet" href="css/landing-refinement.css">
     <link rel="icon" type="image/png" href="assets/logo.png">
 
     <!-- Theme Initialization -->
@@ -46,7 +47,7 @@
     <script src="https://unpkg.com/@phosphor-icons/web@2.1.2"></script>
 </head>
 
-<body>
+<body class="landing-page">
     <!-- Navigation -->
     <nav class="navbar">
         <div class="navbar-container">
@@ -56,11 +57,11 @@
             </a>
 
             <ul class="navbar-links" id="navLinks">
-                <li><a href="#features" class="navbar-link"><i class="ph ph-lightning nav-icon"></i>Features</a></li>
-                <li><a href="#how-it-works" class="navbar-link"><i class="ph ph-footprints nav-icon"></i>Process</a>
+                <li><a href="#features" class="navbar-link">Features</a></li>
+                <li><a href="#how-it-works" class="navbar-link">Process</a>
                 </li>
-                <li><a href="#pricing" class="navbar-link"><i class="ph ph-tag nav-icon"></i>Pricing</a></li>
-                <li><a href="dashboard.html" class="navbar-link"><i class="ph ph-layout nav-icon"></i>Dashboard</a></li>
+                <li><a href="#pricing" class="navbar-link">Pricing</a></li>
+                <li><a href="dashboard.html" class="navbar-link">Dashboard</a></li>
                 <!-- Mobile-only auth links (hidden on desktop) -->
                 <li class="mobile-only-nav"><a href="login.html" class="navbar-link" style="font-weight:700;">Log In</a>
                 </li>
@@ -69,14 +70,14 @@
             </ul>
 
             <div class="navbar-actions">
-                <button id="themeToggle" class="theme-toggle-btn">
+                <button id="themeToggle" class="theme-toggle-btn" aria-label="Toggle color theme">
                     <i class="ph ph-moon"></i>
                 </button>
                 <a href="login.html" class="navbar-link">Log In</a>
                 <a href="signup.html" class="btn btn-primary btn-sm" style="border-radius: 99px;">Get Started</a>
             </div>
 
-            <button class="mobile-menu-toggle" id="mobileToggle">
+            <button class="mobile-menu-toggle" id="mobileToggle" aria-label="Open navigation menu">
                 <i class="ph ph-list"></i>
             </button>
         </div>
@@ -87,11 +88,11 @@
         <div class="container hero-grid">
             <div class="hero-content reveal-left">
                 <div class="hero-badge">
-                    <i class="ph ph-sparkle"></i> AI-Powered Command Center
+                    Private beta · built for application season
                 </div>
-                <h1 class="hero-title">Your College Application Command Center</h1>
-                <p class="hero-subtitle">One place for deadlines, essays, tasks, documents, and AI guidance. Organize
-                    your entire college application process with confidence.</p>
+                <h1 class="hero-title">Keep your entire college application in one place.</h1>
+                <p class="hero-subtitle">Track deadlines, write essays, organize documents, and get focused guidance
+                    without juggling five different tools.</p>
 
                 <!-- Auth CTA block -->
                 <div class="hero-cta-wrap"
@@ -122,7 +123,7 @@
 
                     <!-- Email Sign Up -->
                     <a href="signup.html" class="btn btn-primary btn-lg"
-                        style="border-radius: 99px; justify-content: center;">Start Free — 7 Days No Credit Card</a>
+                        style="justify-content: center;">Create your free account</a>
 
                     <!-- Already have account -->
                     <p style="text-align: center; margin: 0; font-size: 13px; color: var(--gray-500);">Already have an
@@ -131,65 +132,40 @@
                 </div>
             </div>
             <div class="hero-image reveal-right">
-                <div class="map-container hero-map" id="interactiveMap"
-                    style="border: none; background: transparent; box-shadow: none; backdrop-filter: none; position: relative; overflow: visible; margin: 0 auto;">
-                    <div class="cursor-reveal" id="cursorReveal"></div>
-
-                    <!-- Vertical Swirly SVG Line -->
-                    <svg class="map-swirly-svg" viewBox="0 0 400 600" preserveAspectRatio="xMidYMid meet"
-                        style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 1;">
-                        <path
-                            d="M 200 0 C 200 50, 50 50, 50 150 C 50 250, 350 250, 350 350 C 350 450, 100 450, 100 550 C 100 570, 200 580, 200 600"
-                            fill="transparent" stroke="var(--gray-400)" stroke-width="2" stroke-linecap="round" opacity="0.2" />
-                        <path class="animated-path" id="drawingPath"
-                            d="M 200 0 C 200 50, 50 50, 50 150 C 50 250, 350 250, 350 350 C 350 450, 100 450, 100 550 C 100 570, 200 580, 200 600"
-                            fill="transparent" stroke="url(#lineGradient)" stroke-width="4" stroke-linecap="round" />
-                        <defs>
-                            <linearGradient id="lineGradient" x1="0%" y1="0%" x2="0%" y2="100%">
-                                <stop offset="0%" stop-color="var(--primary-blue)" />
-                                <stop offset="100%" stop-color="var(--primary-purple)" />
-                            </linearGradient>
-                        </defs>
-                    </svg>
-
-                    <!-- Point 1 -->
-                    <div class="map-wrapper" style="left: 50px; top: 151px;">
-                        <div class="map-point"></div>
-                        <div class="map-content">
-                            <span class="node-icon">🔍</span>
-                            <h4>1. Discovery</h4>
-                            <p>Search thousands of colleges and find your perfect match with AI-powered search.</p>
+                <div class="product-preview" aria-label="Preview of the Waypoint dashboard">
+                    <div class="preview-topbar">
+                        <div>
+                            <span class="preview-eyebrow">Tuesday, October 14</span>
+                            <h2>Today</h2>
                         </div>
+                        <span class="preview-status"><span></span> On track</span>
                     </div>
-
-                    <!-- Point 2 -->
-                    <div class="map-wrapper" style="left: 350px; top: 351px;">
-                        <div class="map-point"></div>
-                        <div class="map-content">
-                            <span class="node-icon">🎯</span>
-                            <h4>2. Strategy</h4>
-                            <p>Generate a custom tactical plan and timeline for your specific goals.</p>
+                    <div class="preview-progress">
+                        <div class="preview-progress-copy">
+                            <span>Application progress</span>
+                            <strong>62%</strong>
                         </div>
+                        <div class="preview-progress-track"><span></span></div>
                     </div>
-
-                    <!-- Point 3 -->
-                    <div class="map-wrapper" style="left: 100px; top: 550px;">
-                        <div class="map-point"></div>
-                        <div class="map-content">
-                            <span class="node-icon">✍️</span>
-                            <h4>3. Narration</h4>
-                            <p>Draft compelling essays with real-time conceptual AI feedback.</p>
-                        </div>
+                    <div class="preview-section-label">Next up</div>
+                    <div class="preview-task">
+                        <i class="ph ph-pencil-simple-line"></i>
+                        <div><strong>Revise personal statement</strong><span>Due Friday · 650 words</span></div>
+                        <span class="preview-chip">Essay</span>
                     </div>
-
-                    <!-- Point 4 -->
-                    <div class="map-wrapper" style="left: 200px; top: 600px;">
-                        <div class="map-point"></div>
-                        <div class="map-content map-content-center">
-                            <span class="node-icon">🎓</span>
-                            <h4>4. Acceptance</h4>
-                            <p>Submit your best possible application with total confidence.</p>
-                        </div>
+                    <div class="preview-task">
+                        <i class="ph ph-envelope-simple"></i>
+                        <div><strong>Request counselor letter</strong><span>Due in 8 days</span></div>
+                        <span class="preview-chip">Task</span>
+                    </div>
+                    <div class="preview-task preview-task-muted">
+                        <i class="ph ph-check"></i>
+                        <div><strong>Upload transcript</strong><span>Completed yesterday</span></div>
+                        <span class="preview-chip">Done</span>
+                    </div>
+                    <div class="preview-deadline">
+                        <span><i class="ph ph-calendar-blank"></i> Next deadline</span>
+                        <strong>Nov 1 · Early Action</strong>
                     </div>
                 </div>
             </div>
@@ -201,106 +177,77 @@
     <!-- Features Section -->
     <section id="features" class="features-section">
         <div class="container">
-            <h2 class="section-title">Everything You Need in One Place</h2>
-            <p class="section-subtitle">Built for high school students who are tired of juggling five different portals
-                and losing track of deadlines.</p>
+            <p class="section-kicker">The workspace</p>
+            <h2 class="section-title">The practical parts, connected.</h2>
+            <p class="section-subtitle">Waypoint keeps the work of applying organized without trying to replace the
+                Common App or your counselor.</p>
 
             <div class="features-grid">
                 <div class="feature-card reveal delay-100">
-                    <div class="feature-icon">📋</div>
-                    <h3 class="feature-title">Daily Task Dashboard</h3>
-                    <p class="feature-description">Know exactly what to work on today. No more wondering what's next—we
-                        organize everything by priority and deadline.</p>
+                    <div class="feature-icon"><i class="ph ph-check-square-offset"></i></div>
+                    <h3 class="feature-title">Plan the work</h3>
+                    <p class="feature-description">Turn deadlines into a clear daily task list, ordered by what needs
+                        attention first.</p>
                 </div>
 
                 <div class="feature-card reveal delay-200">
-                    <div class="feature-icon">✍️</div>
-                    <h3 class="feature-title">Essay Workspace</h3>
-                    <p class="feature-description">Write all your essays in one clean editor. Common App, UC PIQs, and
-                        supplementals—all organized and tracked.</p>
+                    <div class="feature-icon"><i class="ph ph-pencil-line"></i></div>
+                    <h3 class="feature-title">Write every essay</h3>
+                    <p class="feature-description">Keep personal statements, supplements, drafts, and word counts in one
+                        focused workspace.</p>
                 </div>
 
                 <div class="feature-card reveal delay-300">
-                    <div class="feature-icon">🤖</div>
-                    <h3 class="feature-title">AI Counselor</h3>
-                    <p class="feature-description">Get instant answers about requirements, deadlines, and essay prompts.
-                        Your 24/7 college application expert.</p>
+                    <div class="feature-icon"><i class="ph ph-chats-circle"></i></div>
+                    <h3 class="feature-title">Get a second opinion</h3>
+                    <p class="feature-description">Ask focused questions about your list, schedule, and drafts while
+                        keeping your own voice in control.</p>
                 </div>
 
                 <div class="feature-card reveal delay-100">
-                    <div class="feature-icon">🎓</div>
-                    <h3 class="feature-title">College Requirement Loader</h3>
-                    <p class="feature-description">Add a college, see all requirements instantly: essays, test policies,
-                        LORs, portfolios, and exact deadlines.</p>
+                    <div class="feature-icon"><i class="ph ph-buildings"></i></div>
+                    <h3 class="feature-title">Compare requirements</h3>
+                    <p class="feature-description">See essays, testing policies, recommendations, and deadlines beside
+                        each school on your list.</p>
                 </div>
 
                 <div class="feature-card reveal delay-200">
-                    <div class="feature-icon">📁</div>
-                    <h3 class="feature-title">Document Vault</h3>
-                    <p class="feature-description">Store transcripts, resumes, awards, test scores, and drafts in one
-                        secure place. Access everything instantly.</p>
+                    <div class="feature-icon"><i class="ph ph-folder-simple"></i></div>
+                    <h3 class="feature-title">Keep files together</h3>
+                    <p class="feature-description">Organize transcripts, resumes, awards, scores, and drafts next to the
+                        applications that need them.</p>
                 </div>
 
                 <div class="feature-card reveal delay-300">
-                    <div class="feature-icon">📊</div>
-                    <h3 class="feature-title">Progress Tracker</h3>
-                    <p class="feature-description">Visual progress bars show completion status for essays, tasks, and
-                        documents. Stay motivated and on track.</p>
-                </div>
-
-                <div class="feature-card reveal delay-100">
-                    <div class="feature-icon">🕵️</div>
-                    <h3 class="feature-title">Intelligence Search</h3>
-                    <p class="feature-description">Generate deep-dive intelligence reports on any college or admission
-                        topic instantly. Master every detail of your application.</p>
+                    <div class="feature-icon"><i class="ph ph-chart-line-up"></i></div>
+                    <h3 class="feature-title">See what is unfinished</h3>
+                    <p class="feature-description">Review progress across colleges, essays, tasks, and documents before
+                        anything falls through the cracks.</p>
                 </div>
             </div>
         </div>
     </section>
 
-
-
-    <!-- What Beta Testers Say -->
-    <section class="py-3xl">
+    <section id="how-it-works" class="process-section">
         <div class="container">
-            <h2 class="section-title">What Our Beta Testers Say</h2>
-            <p class="section-subtitle">Real feedback from students in our early access program</p>
-            <div class="grid grid-3 gap-lg mt-2xl">
-                <div class="testimonial-card reveal delay-100">
-                    <p class="testimonial-text">"I went from drowning in five different portals to actually feeling
-                        organized for the first time. This is what I needed."</p>
-                    <div class="testimonial-author">
-                        <div class="testimonial-avatar">🎓</div>
-                        <div class="testimonial-info">
-                            <h5>Beta Tester</h5>
-                            <p>Class of 2027</p>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="testimonial-card reveal delay-200">
-                    <p class="testimonial-text">"The AI counselor answered questions my school counselor didn't have
-                        time for. It actually knows the deadlines and requirements."</p>
-                    <div class="testimonial-author">
-                        <div class="testimonial-avatar">🤖</div>
-                        <div class="testimonial-info">
-                            <h5>Beta Tester</h5>
-                            <p>Class of 2027</p>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="testimonial-card reveal delay-300">
-                    <p class="testimonial-text">"Seeing my progress bars fill up keeps me motivated. I finally know
-                        exactly what's left to do instead of guessing."</p>
-                    <div class="testimonial-author">
-                        <div class="testimonial-avatar">📊</div>
-                        <div class="testimonial-info">
-                            <h5>Beta Tester</h5>
-                            <p>Class of 2027</p>
-                        </div>
-                    </div>
-                </div>
+            <p class="section-kicker">How it works</p>
+            <h2 class="section-title">Start with what you already know.</h2>
+            <div class="process-grid">
+                <article class="process-step reveal delay-100">
+                    <span class="process-number">01</span>
+                    <h3>Add your schools</h3>
+                    <p>Build your list and keep each college's requirements, deadlines, and status together.</p>
+                </article>
+                <article class="process-step reveal delay-200">
+                    <span class="process-number">02</span>
+                    <h3>Get a working plan</h3>
+                    <p>Turn those requirements into essays, documents, and tasks you can actually work through.</p>
+                </article>
+                <article class="process-step reveal delay-300">
+                    <span class="process-number">03</span>
+                    <h3>Review as you go</h3>
+                    <p>Use the dashboard and counselor to spot gaps, revise drafts, and keep deadlines visible.</p>
+                </article>
             </div>
         </div>
     </section>
@@ -312,21 +259,21 @@
             <div class="faq-container mt-2xl">
                 <div class="faq-item">
                     <h4 class="faq-question">Does this replace Common App?</h4>
-                    <p class="faq-answer">No! Waypoint organizes everything around Common App, UC App, and
-                        Coalition. You still submit through those platforms—we just make it way easier to manage.</p>
+                    <p class="faq-answer">No. You still submit through Common App, the UC application, or each
+                        college's portal. Waypoint helps you organize the work around those systems.</p>
                 </div>
 
                 <div class="faq-item">
                     <h4 class="faq-question">How does the AI counselor work?</h4>
-                    <p class="faq-answer">Ask any question about college requirements, deadlines, essays, or test
-                        policies. It knows the latest data for thousands of colleges and can help you brainstorm and
-                        outline essays.</p>
+                    <p class="faq-answer">It uses the profile, college list, tasks, and essays you keep in Waypoint to
+                        give more relevant answers. Treat it as a planning and revision aid, not a replacement for a
+                        school counselor or official college source.</p>
                 </div>
 
                 <div class="faq-item">
                     <h4 class="faq-question">Is my data secure?</h4>
-                    <p class="faq-answer">Absolutely. All your documents and essays are encrypted and stored securely.
-                        We never share your information with anyone.</p>
+                    <p class="faq-answer">Your account data is protected with authenticated, per-user access controls.
+                        We do not sell student information. See the privacy policy for details.</p>
                 </div>
 
                 <div class="faq-item">
@@ -379,7 +326,7 @@
 
                 <!-- Pro -->
                 <div class="pricing-card featured reveal delay-200" style="max-width: 350px; width: 100%;">
-                    <div class="pricing-badge">BEST VALUE</div>
+                    <div class="pricing-badge">FULL ACCESS</div>
                     <h3 class="pricing-name">Waypoint Pro</h3>
                     <div class="pricing-price">$55.99</div>
                     <p class="pricing-period">per application season (6 months)</p>
@@ -397,15 +344,12 @@
         </div>
     </section>
 
-    <section class="py-3xl" style="background: var(--gradient-primary); color: var(--fixed-white);">
+    <section class="launch-cta py-3xl">
         <div class="container text-center">
-            <h2 style="color: var(--fixed-white); font-size: var(--text-4xl); margin-bottom: var(--space-lg);">Ready to
-                Take
-                Control of Your Applications?</h2>
+            <h2>One less place to lose track of something.</h2>
             <p
                 style="font-size: var(--text-xl); margin-bottom: var(--space-2xl); opacity: 0.95; color: var(--fixed-white);">
-                Join the students who
-                are applying to college with confidence.</p>
+                Start with your college list. Waypoint will help you organize the rest.</p>
             <a href="signup.html" class="btn btn-secondary btn-lg"
                 style="background: var(--fixed-white); color: var(--primary-blue);">Start Your Application Plan</a>
         </div>
@@ -416,15 +360,12 @@
         <div class="container reveal">
             <div class="beta-card">
                 <div class="beta-content">
-                    <div class="beta-badge-large">
-                        <i class="ph ph-sparkle"></i> Exclusive Opportunity
-                    </div>
-                    <h2 class="beta-title">Help Us Shape the Future</h2>
-                    <p class="beta-description">We're looking for ambitious students and parents to join our early
-                        access program. Get the command center before anyone else and help us build the ultimate
-                        application tool.</p>
+                    <div class="beta-badge-large">Early beta</div>
+                    <h2 class="beta-title">Try it. Tell us what feels off.</h2>
+                    <p class="beta-description">Waypoint is being built in public with students and families. Honest
+                        feedback about confusing screens, missing features, and rough edges is genuinely useful.</p>
                     <button class="btn btn-primary btn-lg btn-request-beta">
-                        <i class="ph ph-rocket-launch"></i> Request Beta Access
+                        Share feedback
                     </button>
                 </div>
             </div>

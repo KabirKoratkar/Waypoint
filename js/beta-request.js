@@ -25,22 +25,20 @@ function injectBetaModal() {
     const modalHtml = `
         <div id="betaModal" class="beta-modal-overlay">
             <div class="beta-modal">
-                <button class="beta-modal-close" onclick="closeBetaModal()">
+                <button class="beta-modal-close" onclick="closeBetaModal()" aria-label="Close feedback dialog">
                     <i class="ph ph-x"></i>
                 </button>
-                <div class="beta-modal-icon">
-                    <i class="ph ph-rocket-launch"></i>
-                </div>
-                <h2 class="beta-modal-title">Join the Waypoint Beta</h2>
+                <div class="beta-modal-icon"><i class="ph ph-chat-centered-text"></i></div>
+                <h2 class="beta-modal-title">Help improve Waypoint</h2>
                 <p class="beta-modal-text">
-                    We're building the future of college applications. Join our exclusive beta program to get early access, shape the roadmap, and receive complimentary Pro features during the testing phase.
+                    We're looking for direct feedback from students and families. Tell us what is confusing, what is missing, and what would make the application process easier to manage.
                 </p>
                 <div class="flex flex-col gap-md">
-                    <a href="${BETA_FORM_URL}" target="_blank" class="btn btn-primary btn-lg" onclick="closeBetaModal()">
-                        Apply for Beta Access
+                    <a href="${BETA_FORM_URL}" target="_blank" rel="noopener noreferrer" class="btn btn-primary btn-lg" onclick="closeBetaModal()">
+                        Open feedback form
                     </a>
                     <button class="btn btn-secondary" onclick="closeBetaModal()">
-                        Maybe Later
+                        Close
                     </button>
                 </div>
             </div>
