@@ -482,22 +482,15 @@
     <script src="js/beta-request.js"></script>
     <script type="module">
         // Wire hero Google button to trigger Supabase OAuth directly
-        import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.89.0/+esm';
-        import config from './js/config.js';
-
-        const supabase = createClient(config.supabaseUrl, config.supabaseKey);
+        import { signInWithGoogle } from './js/supabase-config.js';
 
         const heroGoogleBtn = document.getElementById('heroGoogleBtn');
         if (heroGoogleBtn) {
             heroGoogleBtn.addEventListener('click', async (e) => {
                 e.preventDefault();
                 try {
-                    const redirectTo = window.location.origin + '/dashboard.html';
-                    const { error } = await supabase.auth.signInWithOAuth({
-                        provider: 'google',
-                        options: { redirectTo }
-                    });
-                    if (error) {
+                    const result = await signInWithGoogle('dashboard.html');
+                    if (!result) {
                         // Supabase project unreachable — send to login page with error param
                         window.location.href = 'login.html?error=server_unavailable';
                     }

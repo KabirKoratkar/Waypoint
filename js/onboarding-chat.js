@@ -4,14 +4,11 @@ import {
     upsertProfile,
     addCollege,
     getUserProfile,
-    apiFetch
+    apiFetch,
+    supabase
 } from './supabase-config.js';
 import config from './config.js';
 import { formatAIMessage } from './utils.js';
-
-// Import Supabase client for activities insert
-import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.89.0/+esm';
-const supabase = createClient(config.supabaseUrl, config.supabaseKey);
 
 const AI_SERVER_URL = config.apiUrl;
 
