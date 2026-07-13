@@ -14,7 +14,7 @@
         rel="stylesheet">
 
     <!-- Chart.js -->
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.5.1"></script>
 
     <!-- Styles -->
     <link rel="stylesheet" href="css/design-system.css">
@@ -453,7 +453,8 @@
     <script src="js/main.js"></script>
     <script type="module">
         import config from './js/config.js';
-        import { getCurrentUser, getUserProfile } from './js/supabase-config.js';
+        import { apiFetch, getCurrentUser, getUserProfile } from './js/supabase-config.js';
+        import { escapeHTML } from './js/utils.js';
         import { updateNavbarUser } from './js/ui.js';
 
         let currentUser = null;
@@ -506,7 +507,7 @@
             document.getElementById('topicInput').value = topic;
 
             try {
-                const response = await fetch(`${config.apiUrl}/api/resources/research`, {
+                const response = await apiFetch(`${config.apiUrl}/api/resources/research`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ userId: currentUser.id, topic })
@@ -568,9 +569,9 @@
                 return items.map(item => `
                     <div style="margin-bottom: var(--space-md); padding-bottom: var(--space-sm); border-bottom: 1px dashed var(--gray-200);">
                         <div style="font-weight: 700; color: var(--primary-blue); margin-bottom: 4px; display: flex; align-items: center; gap: 8px;">
-                            ${item.title}
+                            ${escapeHTML(item.title)}
                         </div>
-                        <div style="font-size: var(--text-base); color: var(--gray-600); line-height: 1.6;">${item.content}</div>
+                        <div style="font-size: var(--text-base); color: var(--gray-600); line-height: 1.6;">${escapeHTML(item.content)}</div>
                     </div>
                 `).join('');
             };

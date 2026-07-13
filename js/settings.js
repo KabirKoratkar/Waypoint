@@ -1,4 +1,4 @@
-import { getCurrentUser, getUserProfile, upsertProfile, supabase, getTrialInfo } from './supabase-config.js';
+import { apiFetch, getCurrentUser, getUserProfile, upsertProfile, supabase, getTrialInfo } from './supabase-config.js';
 import { updateNavbarUser } from './ui.js';
 import config from './config.js';
 
@@ -257,7 +257,7 @@ async function handleUpgrade(btnId = 'upgradeBtn') {
 
         const endpoint = isPremium ? 'create-portal-session' : 'create-checkout-session';
 
-        const response = await fetch(`${config.apiUrl}/api/payments/${endpoint}`, {
+        const response = await apiFetch(`${config.apiUrl}/api/payments/${endpoint}`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'

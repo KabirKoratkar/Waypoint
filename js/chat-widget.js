@@ -6,7 +6,8 @@
 import {
     getCurrentUser,
     getUserConversations,
-    getUserProfile
+    getUserProfile,
+    apiFetch
 } from './supabase-config.js';
 import config from './config.js';
 import { formatAIMessage } from './utils.js';
@@ -166,7 +167,7 @@ class AIChatWidget {
         this.showTyping(true);
 
         try {
-            const response = await fetch(`${this.apiUrl}/api/chat`, {
+            const response = await apiFetch(`${this.apiUrl}/api/chat`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({

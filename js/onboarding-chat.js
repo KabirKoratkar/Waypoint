@@ -3,12 +3,14 @@ import {
     getCurrentUser,
     upsertProfile,
     addCollege,
-    getUserProfile
+    getUserProfile,
+    apiFetch
 } from './supabase-config.js';
 import config from './config.js';
+import { formatAIMessage } from './utils.js';
 
 // Import Supabase client for activities insert
-import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
+import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.89.0/+esm';
 const supabase = createClient(config.supabaseUrl, config.supabaseKey);
 
 const AI_SERVER_URL = config.apiUrl;
@@ -106,7 +108,7 @@ async function playTTS(text) {
     if (!isVoiceEnabled || !text) return;
 
     try {
-        const response = await fetch(`${AI_SERVER_URL}/api/tts`, {
+        const response = await apiFetch(`${AI_SERVER_URL}/api/tts`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ text })
@@ -127,7 +129,7 @@ async function playTTS(text) {
 async function initChat() {
     appendTyping();
     try {
-        const response = await fetch(`${AI_SERVER_URL}/api/chat`, {
+        const response = await apiFetch(`${AI_SERVER_URL}/api/chat`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -178,7 +180,7 @@ async function handleSend() {
     appendTyping();
 
     try {
-        const response = await fetch(`${AI_SERVER_URL}/api/chat`, {
+        const response = await apiFetch(`${AI_SERVER_URL}/api/chat`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -282,7 +284,7 @@ JSON structure REQUIRED:
         console.log('[ONBOARDING] Saving profile via backend:', payload);
 
         try {
-            const r = await fetch(`${AI_SERVER_URL}/api/profile/save`, {
+            const r = await apiFetch(`${AI_SERVER_URL}/api/profile/save`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(payload)
@@ -325,7 +327,7 @@ JSON structure REQUIRED:
     
     // --- STEP 1: Extraction ---
     try {
-        const response = await fetch(`${AI_SERVER_URL}/api/onboarding/extract`, {
+        const response = await apiFetch(`${AI_SERVER_URL}/api/onboarding/extract`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -366,7 +368,7 @@ JSON structure REQUIRED:
 
     // --- STEP 4: Generate Strategy Plan ---
     try {
-        const planRes = await fetch(`${AI_SERVER_URL}/api/onboarding/plan`, {
+        const planRes = await apiFetch(`${AI_SERVER_URL}/api/onboarding/plan`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -448,7 +450,10 @@ function appendAIMessage(text) {
     const container = document.getElementById('chatMessages');
     const row = document.createElement('div');
     row.className = 'msg-row';
-    row.innerHTML = `<div class="msg-bubble ai">${text}</div>`;
+    const bubble = document.createElement('div');
+    bubble.className = 'msg-bubble ai';
+    bubble.innerHTML = formatAIMessage(text);
+    row.appendChild(bubble);
     container.appendChild(row);
     container.scrollTop = container.scrollHeight;
 }
@@ -457,7 +462,10 @@ function appendUserMessage(text) {
     const container = document.getElementById('chatMessages');
     const row = document.createElement('div');
     row.className = 'msg-row user';
-    row.innerHTML = `<div class="msg-bubble user">${text}</div>`;
+    const bubble = document.createElement('div');
+    bubble.className = 'msg-bubble user';
+    bubble.textContent = text;
+    row.appendChild(bubble);
     container.appendChild(row);
     container.scrollTop = container.scrollHeight;
 }

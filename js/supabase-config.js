@@ -4,7 +4,7 @@ const SUPABASE_URL = config.supabaseUrl;
 const SUPABASE_ANON_KEY = config.supabaseKey;
 
 // Import Supabase client from CDN
-import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
+import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.89.0/+esm';
 
 // Singleton: reuse client if already created (prevents multiple GoTrueClient warnings)
 const _key = '__waypoint_supabase__';
@@ -26,6 +26,20 @@ function getDevUserSession() {
         localStorage.removeItem('dev_user');
         return null;
     }
+}
+
+async function apiFetch(url, options = {}) {
+    const headers = new Headers(options.headers || {});
+    const { data: { session } } = await awsClient.auth.getSession();
+
+    if (session?.access_token) {
+        headers.set('Authorization', `Bearer ${session.access_token}`);
+    } else {
+        const devUser = getDevUserSession();
+        if (devUser?.id) headers.set('X-Waypoint-Dev-User', devUser.id);
+    }
+
+    return fetch(url, { ...options, headers });
 }
 
 // Get current user
@@ -254,7 +268,7 @@ async function getUserColleges(userId) {
     // 1. If generic user, use proxy
     if (userId.startsWith('auth0') || userId.startsWith('dev')) {
         try {
-            const response = await fetch(`${config.apiUrl}/api/app-status/${userId}`);
+            const response = await apiFetch(`${config.apiUrl}/api/app-status/${userId}`);
             if (response.ok) {
                 const data = await response.json();
                 return data.data.colleges || [];
@@ -284,7 +298,7 @@ async function addCollege(userIdOrObject, name = null, type = null, major = null
     if (name && typeof userIdOrObject === 'string') {
         try {
             console.log(`Attempting smart college add for: ${name}`);
-            const response = await fetch(`${config.apiUrl}/api/colleges/add`, {
+            const response = await apiFetch(`${config.apiUrl}/api/colleges/add`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ userId: userIdOrObject, collegeName: name, type, intendedMajor: major })
@@ -374,7 +388,7 @@ async function deleteCollege(id) {
 async function getUserEssays(userId) {
     if (userId.startsWith('auth0') || userId.startsWith('dev')) {
         try {
-            const response = await fetch(`${config.apiUrl}/api/app-status/${userId}`);
+            const response = await apiFetch(`${config.apiUrl}/api/app-status/${userId}`);
             if (response.ok) {
                 const data = await response.json();
                 return data.data.essays || [];
@@ -475,7 +489,7 @@ async function saveEssayVersion(essayId, userId, content, wordCount, version) {
 async function getUserTasks(userId, completed = null) {
     if (userId.startsWith('auth0') || userId.startsWith('dev')) {
         try {
-            const response = await fetch(`${config.apiUrl}/api/app-status/${userId}`);
+            const response = await apiFetch(`${config.apiUrl}/api/app-status/${userId}`);
             if (response.ok) {
                 const data = await response.json();
                 let tasks = data.data.tasks || [];
@@ -1068,7 +1082,7 @@ async function getCollegeFromCatalog(name) {
 
 async function syncEssays(userId) {
     try {
-        const response = await fetch(`${config.apiUrl}/api/essays/sync`, {
+        const response = await apiFetch(`${config.apiUrl}/api/essays/sync`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ userId })
@@ -1086,7 +1100,7 @@ async function syncEssays(userId) {
 async function getActivities(userId) {
     if (userId.startsWith('auth0') || userId.startsWith('dev')) {
         try {
-            const response = await fetch(`${config.apiUrl}/api/app-status/${userId}`);
+            const response = await apiFetch(`${config.apiUrl}/api/app-status/${userId}`);
             if (response.ok) {
                 const data = await response.json();
                 return data.data.activities || [];
@@ -1126,7 +1140,7 @@ async function deleteActivity(id) {
 async function getAwards(userId) {
     if (userId.startsWith('auth0') || userId.startsWith('dev')) {
         try {
-            const response = await fetch(`${config.apiUrl}/api/app-status/${userId}`);
+            const response = await apiFetch(`${config.apiUrl}/api/app-status/${userId}`);
             if (response.ok) {
                 const data = await response.json();
                 return data.data.awards || [];
@@ -1166,6 +1180,7 @@ async function deleteAward(id) {
 export {
     awsClient,
     awsClient as supabase,
+    apiFetch,
     getCurrentUser,
     getUserProfile,
     upsertProfile,

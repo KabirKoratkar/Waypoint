@@ -7,7 +7,8 @@ import {
     getUserTasks,
     getUserDocuments,
     updateEssay,
-    toggleTaskCompletion
+    toggleTaskCompletion,
+    apiFetch
 } from './supabase-config.js';
 import { updateNavbarUser } from './ui.js';
 import { calculateSmartProgress, formatAIMessage } from './utils.js';
@@ -43,7 +44,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     try {
         // Parallel load college data and user's context
         const [researchData, colleges, essays, tasks, documents] = await Promise.all([
-            fetch(`${config.apiUrl}/api/colleges/research?name=${encodeURIComponent(collegeName)}`).then(r => r.json()),
+            apiFetch(`${config.apiUrl}/api/colleges/research?name=${encodeURIComponent(collegeName)}`).then(r => r.json()),
             getUserColleges(currentUser.id),
             getUserEssays(currentUser.id),
             getUserTasks(currentUser.id),
@@ -327,7 +328,7 @@ async function renderRequiredDocuments() {
     listContainer.innerHTML = '<p style="color: var(--gray-500); font-size: var(--text-sm);">Loading checklist...</p>';
 
     try {
-        const res = await fetch(`${config.apiUrl}/api/documents/required?userId=${encodeURIComponent(currentUser.id)}&collegeId=${encodeURIComponent(userCollege.id)}`);
+        const res = await apiFetch(`${config.apiUrl}/api/documents/required?userId=${encodeURIComponent(currentUser.id)}&collegeId=${encodeURIComponent(userCollege.id)}`);
         const data = await res.json();
         const items = data.items || [];
 
@@ -356,7 +357,7 @@ window.cycleDocStatus = async (itemId, currentStatus) => {
     const nextStatus = STATUS_CYCLE[nextIndex];
 
     try {
-        const res = await fetch(`${config.apiUrl}/api/documents/required/${itemId}`, {
+        const res = await apiFetch(`${config.apiUrl}/api/documents/required/${itemId}`, {
             method: 'PATCH',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ userId: currentUser.id, status: nextStatus })
@@ -446,7 +447,7 @@ async function addCollegeToList(name) {
     }
 
     try {
-        const response = await fetch(`${config.apiUrl}/api/colleges/add`, {
+        const response = await apiFetch(`${config.apiUrl}/api/colleges/add`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ userId: currentUser.id, collegeName: name })
@@ -467,7 +468,7 @@ async function addCollegeToList(name) {
             checkUserStatus();
 
             // Trigger essay creation on server if needed
-            fetch(`${config.apiUrl}/api/essays/sync`, {
+            apiFetch(`${config.apiUrl}/api/essays/sync`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ userId: currentUser.id })
@@ -478,7 +479,7 @@ async function addCollegeToList(name) {
             });
 
             // Trigger required documents checklist generation
-            fetch(`${config.apiUrl}/api/documents/required/sync`, {
+            apiFetch(`${config.apiUrl}/api/documents/required/sync`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ userId: currentUser.id })
@@ -624,7 +625,7 @@ function setupIntelligenceReport() {
             if (window.showNotification) window.showNotification(`Building Intelligence Report for ${currentCollege.name}...`, 'info');
 
             try {
-                const response = await fetch(`${config.apiUrl}/api/colleges/research-deep`, {
+                const response = await apiFetch(`${config.apiUrl}/api/colleges/research-deep`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
@@ -660,7 +661,7 @@ async function loadAdmissionChances(collegeName, userId) {
     if (!card) return;
 
     try {
-        const res = await fetch(`${config.apiUrl}/api/colleges/chances?name=${encodeURIComponent(collegeName)}&userId=${encodeURIComponent(userId)}`);
+        const res = await apiFetch(`${config.apiUrl}/api/colleges/chances?name=${encodeURIComponent(collegeName)}&userId=${encodeURIComponent(userId)}`);
         if (!res.ok) return; // Silently skip if college not in catalog yet
         const data = await res.json();
         if (!data.success) return;

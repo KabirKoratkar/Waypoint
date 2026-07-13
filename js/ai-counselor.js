@@ -6,7 +6,8 @@ import {
     getUserConversations,
     saveMessage,
     getUserProfile,
-    isPremiumUser
+    isPremiumUser,
+    apiFetch
 } from './supabase-config.js';
 import { updateNavbarUser } from './ui.js';
 import config from './config.js';
@@ -33,7 +34,7 @@ document.addEventListener('DOMContentLoaded', async function () {
     if (window.addIntelLog) {
         window.addIntelLog("Network: Establishing Secure Proxy tunnel...", "process");
         try {
-            const health = await fetch(`${AI_SERVER_URL}/api/health`).catch(() => null);
+            const health = await apiFetch(`${AI_SERVER_URL}/api/health`).catch(() => null);
             if (health && health.ok) {
                 window.addIntelLog("Network: Core Systems online (Supabase Native)", "success");
             } else {
@@ -109,7 +110,10 @@ function addMessageToUI(role, content) {
     const chatMessages = document.getElementById('chatMessages');
     const div = document.createElement('div');
     div.className = `chat-message ${role}`;
-    div.innerHTML = `<div class="message-content">${content}</div>`;
+    const messageContent = document.createElement('div');
+    messageContent.className = 'message-content';
+    messageContent.textContent = content;
+    div.appendChild(messageContent);
     chatMessages.appendChild(div);
     chatMessages.scrollTop = chatMessages.scrollHeight;
 }
@@ -124,7 +128,7 @@ async function sendMessageToAI(message) {
 
     try {
         const endpoint = currentModel === 'claude' ? '/api/chat/claude' : '/api/chat';
-        const response = await fetch(`${AI_SERVER_URL}${endpoint}`, {
+        const response = await apiFetch(`${AI_SERVER_URL}${endpoint}`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -227,7 +231,7 @@ async function startScoutPolling(taskId) {
     while (!completed && attempts < maxAttempts) {
         attempts++;
         try {
-            const res = await fetch(`${AI_SERVER_URL}/api/scout/status/${taskId}`);
+            const res = await apiFetch(`${AI_SERVER_URL}/api/scout/status/${taskId}`);
             const data = await res.json();
 
             const statusLabel = statusBubble.querySelector('.scout-status-label');

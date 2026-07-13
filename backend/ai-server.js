@@ -22,6 +22,7 @@ import NodeCache from 'node-cache';
 import { Resend } from 'resend';
 import paymentsRouter from './payments.js';
 import Anthropic from '@anthropic-ai/sdk';
+import { createAuthMiddleware, escapeHtml, isAllowedOrigin } from './security.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const LOCAL_CATALOG_PATH = path.join(__dirname, 'college_catalog.json');
@@ -29,6 +30,7 @@ const LOCAL_CATALOG_PATH = path.join(__dirname, 'college_catalog.json');
 dotenv.config({ path: path.join(__dirname, '.env') });
 
 const app = express();
+app.disable('x-powered-by');
 app.set('trust proxy', 1); // Trust Railway/cloud proxy for rate limiting
 const PORT = process.env.PORT || 3001;
 
@@ -100,23 +102,7 @@ const researchLimiter = rateLimit({
 
 app.use(cors({
     origin: (origin, callback) => {
-        // Allow local development
-        if (!origin || origin.includes('localhost') || origin.includes('127.0.0.1')) {
-            return callback(null, true);
-        }
-        
-        // Allow any Vercel subdomain and waypointedu.org variations
-        const allowedPatterns = [
-            /\.vercel\.app$/,
-            /waypointedu\.org$/
-        ];
-        
-        const isAllowed = !origin || 
-                         origin.includes('localhost') || 
-                         origin.includes('127.0.0.1') ||
-                         allowedPatterns.some(pattern => pattern.test(origin));
-
-        if (isAllowed) {
+        if (isAllowedOrigin(origin)) {
             callback(null, true);
         } else {
             console.warn('Blocked by CORS:', origin);
@@ -133,26 +119,31 @@ app.use((req, res, next) => {
     }
 });
 
-app.use('/api/payments', paymentsRouter);
 // Health Checks (Defined before limiter to avoid false negatives)
 app.get('/', (req, res) => res.json({ status: 'ok', service: 'waypoint-ai', timestamp: new Date().toISOString() }));
 app.get('/api/health', (req, res) => {
     res.json({
         status: 'ok',
-        version: 'v3.2',
-        services: {
-            openai: !!process.env.OPENAI_API_KEY,
-            stripe: !!process.env.STRIPE_SECRET_KEY,
-            supabase: !!process.env.SUPABASE_SERVICE_KEY,
-            anthropic: !!process.env.ANTHROPIC_API_KEY,
-            stripe_keys_found: Object.keys(process.env).filter(k => k.startsWith('STRIPE_'))
-        },
-        infrastructure: 'Railway + Supabase'
+        version: 'v3.2'
     });
 });
-app.get('/health', (req, res) => res.json({ status: 'ok', stripe: !!process.env.STRIPE_SECRET_KEY }));
+app.get('/health', (req, res) => res.json({ status: 'ok' }));
 
 app.use('/api/', globalLimiter);
+
+const requireAuth = createAuthMiddleware(supabase);
+const publicApiRoutes = new Set([
+    'GET /health',
+    'POST /feedback',
+    'POST /payments/webhook'
+]);
+
+app.use('/api', (req, res, next) => {
+    if (publicApiRoutes.has(`${req.method} ${req.path}`)) return next();
+    return requireAuth(req, res, next);
+});
+
+app.use('/api/payments', paymentsRouter);
 
 // Feedback and Tickets
 app.post('/api/feedback', async (req, res) => {
@@ -178,7 +169,7 @@ app.post('/api/feedback', async (req, res) => {
                 from: 'Waypoint Support <help@waypointedu.org>',
                 to: adminEmails,
                 subject: `[Waypoint Beta] ${type || 'Feedback'}: ${subject || 'No Subject'}`,
-                html: `<p><strong>From:</strong> ${email || 'Anonymous'}</p><p>${message}</p>`
+                html: `<p><strong>From:</strong> ${escapeHtml(email || 'Anonymous')}</p><p>${escapeHtml(message)}</p>`
             }).catch(e => console.error('Email failed:', e));
         }
 
@@ -532,6 +523,9 @@ app.post('/api/onboarding/plan', async (req, res) => {
 app.get('/api/app-status/:userId', async (req, res) => {
     try {
         const { userId } = req.params;
+        if (userId !== req.user.id) {
+            return res.status(403).json({ error: 'User ID does not match authenticated session' });
+        }
         console.log(`📡 Fetching app status for user: ${userId}`);
 
         const [collegesResult, tasksResult, essaysResult, awardsResult] = await Promise.all([
@@ -664,13 +658,30 @@ app.patch('/api/documents/required/:id', async (req, res) => {
 // Profile Save (upsert via service key — bypasses RLS for new user creation)
 app.post('/api/profile/save', async (req, res) => {
     try {
-        const { userId, email, ...profileFields } = req.body;
+        const {
+            userId,
+            full_name,
+            high_school_name,
+            graduation_year,
+            sat_score,
+            act_score,
+            weighted_gpa,
+            unweighted_gpa,
+            ai_profile
+        } = req.body;
         if (!userId) return res.status(400).json({ error: 'userId is required' });
 
         const profileData = {
             id: userId,
-            email: email || null,
-            ...profileFields,
+            email: req.user.email || null,
+            full_name,
+            high_school_name,
+            graduation_year,
+            sat_score,
+            act_score,
+            weighted_gpa,
+            unweighted_gpa,
+            ai_profile,
             updated_at: new Date().toISOString()
         };
 
@@ -683,7 +694,7 @@ app.post('/api/profile/save', async (req, res) => {
 
         if (error) {
             console.error('[PROFILE] Upsert error:', error);
-            return res.status(500).json({ success: false, error: error.message });
+            return res.status(500).json({ success: false, error: 'Failed to save profile' });
         }
 
         console.log(`[PROFILE] Saved successfully for ${userId}`);
@@ -870,7 +881,7 @@ app.post('/api/tts', async (req, res) => {
 
     } catch (error) {
         console.error('TTS Error:', error);
-        res.status(500).json({ error: 'Text-to-speech failed', details: error.message });
+        res.status(500).json({ error: 'Text-to-speech failed' });
     }
 });
 // Dedicated JSON extraction for onboarding (guaranteed JSON object)
@@ -915,7 +926,7 @@ app.post('/api/onboarding/extract', async (req, res) => {
         res.json({ success: true, profile: jsonData });
     } catch (e) {
         console.error('[ONBOARDING-EXTRACT] Error:', e);
-        res.status(500).json({ success: false, error: e.message });
+        res.status(500).json({ success: false, error: 'Failed to extract onboarding profile' });
     }
 });
 

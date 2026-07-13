@@ -27,7 +27,8 @@ import {
     deleteAward,
     isPremiumUser,
     getUserColleges,
-    getTierLimits
+    getTierLimits,
+    apiFetch
 } from './supabase-config.js';
 import config from './config.js';
 import { updateNavbarUser } from './ui.js';
@@ -1088,7 +1089,7 @@ async function handleConceptualReview(selection, isModule = false) {
             `;
         }
 
-        const response = await fetch(`${config.apiUrl}/api/chat`, {
+        const response = await apiFetch(`${config.apiUrl}/api/chat`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -1369,4 +1370,3 @@ window.removeAward = async (id) => {
 
 window.switchView = switchView;
 window.loadModuleData = loadModuleData;
-

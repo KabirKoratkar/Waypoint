@@ -1,4 +1,4 @@
-import { getCurrentUser, getUserProfile, getUserColleges, addCollege, updateCollege, searchCollegeCatalog, getUserEssays, getUserTasks, getTierLimits, createTask } from './supabase-config.js';
+import { apiFetch, getCurrentUser, getUserProfile, getUserColleges, addCollege, updateCollege, searchCollegeCatalog, getUserEssays, getUserTasks, getTierLimits, createTask } from './supabase-config.js';
 import { updateNavbarUser } from './ui.js';
 import config from './config.js';
 import { calculateSmartProgress, formatAIMessage } from './utils.js';
@@ -202,7 +202,7 @@ async function performAddCollege(collegeName, type = 'Target', intendedMajor = '
             showNotification(`${collegeName} added successfully! Synchronizing requirements...`, 'success');
             
             // Trigger essay sync in background
-            fetch(`${config.apiUrl}/api/essays/sync`, {
+            apiFetch(`${config.apiUrl}/api/essays/sync`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ userId: currentUser.id })
@@ -421,7 +421,7 @@ async function getAIStrategy(collegeName) {
     showNotification(`Building success strategy for ${collegeName}...`, 'info');
 
     try {
-        const response = await fetch(`${config.apiUrl}/api/chat`, {
+        const response = await apiFetch(`${config.apiUrl}/api/chat`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -484,7 +484,7 @@ async function deepResearch(collegeName) {
     showNotification(`Deep researching ${collegeName} for your "Why Us" essays...`, 'info');
 
     try {
-        const response = await fetch(`${config.apiUrl}/api/colleges/research-deep`, {
+        const response = await apiFetch(`${config.apiUrl}/api/colleges/research-deep`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({

@@ -61,7 +61,7 @@
                 console.error('Auth0 Hash Error:', err);
                 statusEl.textContent = 'Authentication Halted';
                 statusEl.style.color = '#ef4444';
-                detailEl.innerHTML = `Error: <strong>${err.errorDescription || err.error}</strong><br><br>Redirecting...`;
+                detailEl.textContent = `Error: ${err.errorDescription || err.error || 'Authentication failed'} Redirecting...`;
 
                 setTimeout(() => {
                     window.location.assign('login.html');

@@ -1,4 +1,4 @@
-import { getCurrentUser, upsertProfile, addCollege as supabaseAddCollege, getUserProfile, searchCollegeCatalog, searchHighSchools, addHighSchool, addCollegeToCatalog } from './supabase-config.js';
+import { apiFetch, getCurrentUser, upsertProfile, addCollege as supabaseAddCollege, getUserProfile, searchCollegeCatalog, searchHighSchools, addHighSchool, addCollegeToCatalog } from './supabase-config.js';
 import config from './config.js';
 
 let currentStep = 1;
@@ -530,7 +530,7 @@ async function generateAIPlan() {
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), 30000); // 30s timeout
 
-        const response = await fetch(`${config.apiUrl}/api/onboarding/plan`, {
+        const response = await apiFetch(`${config.apiUrl}/api/onboarding/plan`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             signal: controller.signal,
@@ -738,7 +738,7 @@ document.addEventListener('DOMContentLoaded', async function () {
                     if (window.showNotification) window.showNotification('Redirecting to secure checkout...', 'info');
 
                     try {
-                        const checkoutResponse = await fetch(`${config.apiUrl}/api/payments/create-checkout-session`, {
+                        const checkoutResponse = await apiFetch(`${config.apiUrl}/api/payments/create-checkout-session`, {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
                             body: JSON.stringify({ userId: currentUser.id, email: currentUser.email })

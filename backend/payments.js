@@ -4,6 +4,7 @@ import { createClient } from '@supabase/supabase-js';
 import dotenv from 'dotenv';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { getAppBaseUrl } from './security.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 dotenv.config({ path: path.join(__dirname, '.env') });
@@ -30,15 +31,14 @@ const supabase = createClient(
 
 // Price ID for the Pro Plan (should be in .env)
 const PRO_PLAN_PRICE_ID = process.env.STRIPE_PRO_PRICE_ID;
-const APP_URL = process.env.APP_URL || 'http://localhost:5500';
-
 /**
  * Create a Stripe Checkout Session
  * POST /api/payments/create-checkout-session
  */
 router.post('/create-checkout-session', async (req, res) => {
     try {
-        const { userId, email } = req.body;
+        const userId = req.user.id;
+        const email = req.user.email || (process.env.NODE_ENV !== 'production' ? req.body.email : null);
 
         if (!userId || !email) {
             return res.status(400).json({ error: 'User ID and Email are required' });
@@ -52,8 +52,7 @@ router.post('/create-checkout-session', async (req, res) => {
             });
         }
 
-        // Infer the base URL for redirects (Priority: Environment Var -> Request Origin -> Default)
-        const baseUrl = process.env.APP_URL || req.headers.origin || 'http://localhost:5500';
+        const baseUrl = getAppBaseUrl(req.headers.origin);
 
         // Create Checkout Session
         const session = await stripe.checkout.sessions.create({
@@ -77,7 +76,7 @@ router.post('/create-checkout-session', async (req, res) => {
         res.json({ id: session.id, url: session.url });
     } catch (error) {
         console.error('Error creating checkout session:', error);
-        res.status(500).json({ error: error.message });
+        res.status(500).json({ error: 'Failed to create checkout session' });
     }
 });
 
@@ -87,7 +86,8 @@ router.post('/create-checkout-session', async (req, res) => {
  */
 router.post('/create-portal-session', async (req, res) => {
     try {
-        const { userId, email } = req.body;
+        const userId = req.user.id;
+        const email = req.user.email || (process.env.NODE_ENV !== 'production' ? req.body.email : null);
 
         if (!userId) {
             return res.status(400).json({ error: 'User ID is required' });
@@ -127,7 +127,7 @@ router.post('/create-portal-session', async (req, res) => {
         }
 
         // Create Portal Session
-        const baseUrl = process.env.APP_URL || req.headers.origin || 'http://localhost:5500';
+        const baseUrl = getAppBaseUrl(req.headers.origin);
         const session = await stripe.billingPortal.sessions.create({
             customer: customerId,
             return_url: `${baseUrl}/settings.html`,
@@ -136,7 +136,7 @@ router.post('/create-portal-session', async (req, res) => {
         res.json({ url: session.url });
     } catch (error) {
         console.error('Error creating portal session:', error);
-        res.status(500).json({ error: error.message });
+        res.status(500).json({ error: 'Failed to create portal session' });
     }
 });
 
@@ -162,7 +162,7 @@ router.post('/webhook', express.raw({ type: 'application/json' }), async (req, r
         );
     } catch (err) {
         console.error(`Webhook Error: ${err.message}`);
-        return res.status(400).send(`Webhook Error: ${err.message}`);
+        return res.status(400).send('Invalid webhook signature');
     }
 
     // Handle the event
@@ -227,7 +227,7 @@ router.post('/webhook', express.raw({ type: 'application/json' }), async (req, r
         res.json({ received: true });
     } catch (err) {
         console.error('Error processing webhook event:', err);
-        res.status(500).json({ error: 'Webhook processing failed', details: err.message });
+        res.status(500).json({ error: 'Webhook processing failed' });
     }
 });
 

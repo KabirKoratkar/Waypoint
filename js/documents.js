@@ -1,4 +1,4 @@
-import { getCurrentUser, getUserProfile, getUserDocuments, uploadDocument, getDocumentUrl, deleteDocument, getTierLimits } from './supabase-config.js';
+import { apiFetch, getCurrentUser, getUserProfile, getUserDocuments, uploadDocument, getDocumentUrl, deleteDocument, getTierLimits } from './supabase-config.js';
 import { updateNavbarUser } from './ui.js';
 import config from './config.js';
 
@@ -207,7 +207,7 @@ async function reviewWithAI(name, category) {
     results.style.display = 'none';
 
     try {
-        const response = await fetch(`${config.apiUrl}/api/chat`, {
+        const response = await apiFetch(`${config.apiUrl}/api/chat`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({

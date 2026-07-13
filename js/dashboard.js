@@ -5,7 +5,8 @@ import {
     getUserColleges,
     getUserProfile,
     getUserConversations,
-    saveMessage
+    saveMessage,
+    apiFetch
 } from './supabase-config.js';
 import { updateNavbarUser, showLoading, hideLoading } from './ui.js';
 import { getTierLimits, isPremiumUser, updateProfile } from './supabase-config.js';
@@ -456,7 +457,7 @@ async function fireProactiveGreeting(profile, tasks, essays, colleges) {
     ].join('. ');
 
     try {
-        const response = await fetch(`${AI_SERVER_URL}/api/chat`, {
+        const response = await apiFetch(`${AI_SERVER_URL}/api/chat`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -532,7 +533,7 @@ async function sendToAI(message) {
     const typingEl = appendTyping();
 
     try {
-        const response = await fetch(`${AI_SERVER_URL}/api/chat`, {
+        const response = await apiFetch(`${AI_SERVER_URL}/api/chat`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
